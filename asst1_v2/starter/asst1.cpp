@@ -39,7 +39,7 @@ using namespace std;      // for string, vector, iostream and other standard C++
 // If g_Gl2Compatible=false, shaders with -gl3 suffix will be loaded.
 // To complete the assignment you only need to edit the shader files that get loaded
 // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-static const bool g_Gl2Compatible = true;
+static const bool g_Gl2Compatible = false;
 
 
 static int g_width             = 512;       // screen width
