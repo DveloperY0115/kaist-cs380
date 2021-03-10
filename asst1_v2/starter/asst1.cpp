@@ -50,6 +50,7 @@ static float g_objScale        = 1.0;       // scale factor for object
 static int g_leftClickX, g_leftClickY;      // coordinates for mouse left click event
 static int g_rightClickX, g_rightClickY;    // coordinates for mouse right click event
 
+// Structure for storing data related to OpenGL shaders
 struct ShaderState {
   // DO NOTE that it's a handle for
   // compiled OpenGL shaders written in GLSL
@@ -89,18 +90,21 @@ struct ShaderState {
 
 // To render an image on OpenGL, we need a pair of VS and FS
 static const int g_numShaders = 1;
+
+// Specify locations of GLSL source files in disk
 static const char * const g_shaderFiles[g_numShaders][2] = {
     // GLSL 1.3 shaders
   {"./shaders/asst1-gl3.vshader", "./shaders/asst1-gl3.fshader"}
-};
+};    // GLSL 1.3
 static const char * const g_shaderFilesGl2[g_numShaders][2] = {
     // GLSL 1.2 shaders
   {"./shaders/asst1-gl2.vshader", "./shaders/asst1-gl2.fshader"}
-};
+};    // GLSL 1.2
 static vector<shared_ptr<ShaderState> > g_shaderStates; // our global shader states
 
 static shared_ptr<GlTexture> g_tex0, g_tex1; // our global texture instance
 
+// Structure for storing data related to Scene geometries -> Fixed in this assignment!
 struct SquareGeometry {
   GlBufferObject posVbo, texVbo, colVbo;
 
@@ -168,28 +172,28 @@ struct SquareGeometry {
 
   void draw(const ShaderState& curSS) {
     int numverts=6;
-    safe_glEnableVertexAttribArray(curSS.h_aPosition);    // handle for vertex position array
-    safe_glEnableVertexAttribArray(curSS.h_aTexCoord0);   // handle for 1st texture coordinate 
-    safe_glEnableVertexAttribArray(curSS.h_aTexCoord1);   // handle for 2nd texture coordinate
-    safe_glEnableVertexAttribArray(curSS.h_aColor);    // handle for vertex color (for vertices not textured)
+    safe_glEnableVertexAttribArray(curSS.h_aPosition);    // enable vertex position array
+    safe_glEnableVertexAttribArray(curSS.h_aTexCoord0);   // enable 1st texture coordinate 
+    safe_glEnableVertexAttribArray(curSS.h_aTexCoord1);   // enable 2nd texture coordinate
+    safe_glEnableVertexAttribArray(curSS.h_aColor);    // enable RGB color array
 
     glBindBuffer(GL_ARRAY_BUFFER, posVbo);
     safe_glVertexAttribPointer(curSS.h_aPosition,
-                               2, GL_FLOAT, GL_FALSE, 0, 0);
+                               2, GL_FLOAT, GL_FALSE, 0, 0);    // positions of vertices can be specified by 2 numbers in 2D
 
     glBindBuffer(GL_ARRAY_BUFFER, texVbo);
     safe_glVertexAttribPointer(curSS.h_aTexCoord0,
-                               2, GL_FLOAT, GL_FALSE, 0, 0);
+                               2, GL_FLOAT, GL_FALSE, 0, 0);    // positions of textures can be specified by 2 numbers in 2D
 
     glBindBuffer(GL_ARRAY_BUFFER, texVbo);
     safe_glVertexAttribPointer(curSS.h_aTexCoord1,
-                               2, GL_FLOAT, GL_FALSE, 0, 0);
+                               2, GL_FLOAT, GL_FALSE, 0, 0);    // positions of textures can be specified by 2 numbers in 2D
 
     glBindBuffer(GL_ARRAY_BUFFER, colVbo);
     safe_glVertexAttribPointer(curSS.h_aColor,
-                               3, GL_FLOAT, GL_FALSE, 0, 0);
+                               3, GL_FLOAT, GL_FALSE, 0, 0);    // color values must be tuple of length 3 -> RGB
 
-    glDrawArrays(GL_TRIANGLES,0,numverts);
+    glDrawArrays(GL_TRIANGLES, 0, numverts);
 
     safe_glDisableVertexAttribArray(curSS.h_aPosition);
     safe_glDisableVertexAttribArray(curSS.h_aColor);
@@ -362,6 +366,11 @@ static void initGLState() {
     glEnable(GL_FRAMEBUFFER_SRGB);
 }
 
+// Initialize shader in our scene
+// This function performs followings:
+// 1) Read GLSL sources from disk
+// 2) Compile and create ShaderProgram
+// 3) Encapsulate all information related to shader to struct 'ShaderState'
 static void initShaders() {
   g_shaderStates.resize(g_numShaders);
   for (int i = 0; i < g_numShaders; ++i) {
@@ -372,6 +381,9 @@ static void initShaders() {
   }
 }
 
+// Initialize geometry in our scene
+// Generate new 'SquareGeometry' structure and
+// assign it to memory pointed by C++ shared_ptr
 static void initGeometry() {
   g_square.reset(new SquareGeometry());
 }
