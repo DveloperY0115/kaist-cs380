@@ -51,7 +51,10 @@ static int g_leftClickX, g_leftClickY;      // coordinates for mouse left click 
 static int g_rightClickX, g_rightClickY;    // coordinates for mouse right click event
 
 struct ShaderState {
-  GlProgram program;
+  // DO NOTE that it's a handle for
+  // compiled OpenGL shaders written in GLSL
+  // program here doesn't indicate your main program.
+  GlProgram program; 
 
   // Handles to uniform variables
   GLint h_uVertexScale;
@@ -84,11 +87,14 @@ struct ShaderState {
   }
 };
 
+// To render an image on OpenGL, we need a pair of VS and FS
 static const int g_numShaders = 1;
 static const char * const g_shaderFiles[g_numShaders][2] = {
+    // GLSL 1.3 shaders
   {"./shaders/asst1-gl3.vshader", "./shaders/asst1-gl3.fshader"}
 };
 static const char * const g_shaderFilesGl2[g_numShaders][2] = {
+    // GLSL 1.2 shaders
   {"./shaders/asst1-gl2.vshader", "./shaders/asst1-gl2.fshader"}
 };
 static vector<shared_ptr<ShaderState> > g_shaderStates; // our global shader states
@@ -132,14 +138,16 @@ struct SquareGeometry {
       0, 1, 1
     };
 
-    glBindBuffer(GL_ARRAY_BUFFER, posVbo);
+    // Initialize vertex buffer
+    glBindBuffer(GL_ARRAY_BUFFER, posVbo);  // Bind shader program's vertex buffer to variable 'posVbo'
     glBufferData(
       GL_ARRAY_BUFFER,
       12*sizeof(GLfloat),
-      sqPos,
+      sqPos,                                // Fill the values of the buffer with values in 'sqPos'
       GL_STATIC_DRAW);
     checkGlErrors();
 
+    // Initialize texture position(?) buffer
     glBindBuffer(GL_ARRAY_BUFFER, texVbo);
     glBufferData(
       GL_ARRAY_BUFFER,
@@ -148,21 +156,22 @@ struct SquareGeometry {
       GL_STATIC_DRAW);
     checkGlErrors();
 
+    // Initialize RGB value buffer
     glBindBuffer(GL_ARRAY_BUFFER, colVbo);
     glBufferData(
       GL_ARRAY_BUFFER,
       18*sizeof(GLfloat),
-      sqCol,
+      sqCol,                               // Fill the values of the buffer with values in 'sqCol'
       GL_STATIC_DRAW);
     checkGlErrors();
   }
 
   void draw(const ShaderState& curSS) {
     int numverts=6;
-    safe_glEnableVertexAttribArray(curSS.h_aPosition);
-    safe_glEnableVertexAttribArray(curSS.h_aTexCoord0);
-    safe_glEnableVertexAttribArray(curSS.h_aTexCoord1);
-    safe_glEnableVertexAttribArray(curSS.h_aColor);
+    safe_glEnableVertexAttribArray(curSS.h_aPosition);    // handle for vertex position array
+    safe_glEnableVertexAttribArray(curSS.h_aTexCoord0);   // handle for 1st texture coordinate 
+    safe_glEnableVertexAttribArray(curSS.h_aTexCoord1);   // handle for 2nd texture coordinate
+    safe_glEnableVertexAttribArray(curSS.h_aColor);    // handle for vertex color (for vertices not textured)
 
     glBindBuffer(GL_ARRAY_BUFFER, posVbo);
     safe_glVertexAttribPointer(curSS.h_aPosition,
@@ -210,9 +219,14 @@ static shared_ptr<SquareGeometry> g_square; // our global geometries
 static void display(void) {
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
+  // 'g_shaderStates' is a C++ std::vector containing
+  // shared pointers of 'ShaderState' structures
+  // Note: curSS stands for 'currentShaderState
+  // For complicated programs, they may have many shader programs for different situations
   const ShaderState& curSS = *g_shaderStates[0];
   glUseProgram(curSS.program);
 
+  // Set uniform variables used in GLSL codes
   safe_glUniform1i(curSS.h_uTexUnit0, 0);
   safe_glUniform1i(curSS.h_uTexUnit1, 1);
   safe_glUniform1f(curSS.h_uVertexScale, g_objScale);
