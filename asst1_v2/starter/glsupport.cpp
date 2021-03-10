@@ -62,6 +62,7 @@ void readAndCompileSingleShader(GLuint shaderHandle, const char *fn) {
 
   printInfoLog(shaderHandle, fn);
 
+  // check if there's any error
   GLint compiled = 0;
   glGetShaderiv(shaderHandle, GL_COMPILE_STATUS, &compiled);
   if (!compiled)

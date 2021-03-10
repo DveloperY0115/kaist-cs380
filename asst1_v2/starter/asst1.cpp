@@ -143,11 +143,11 @@ struct SquareGeometry {
     };
 
     // Initialize vertex buffer
-    glBindBuffer(GL_ARRAY_BUFFER, posVbo);  // Bind shader program's vertex buffer to variable 'posVbo'
+    glBindBuffer(GL_ARRAY_BUFFER, posVbo);  // GL_ARRAY_BUFFER is currently bound to GLBufferObject 'posVbo'
     glBufferData(
       GL_ARRAY_BUFFER,
       12*sizeof(GLfloat),
-      sqPos,                                // Fill the values of the buffer with values in 'sqPos'
+      sqPos,                                // Send data to buffer bound to 'posVbo'
       GL_STATIC_DRAW);
     checkGlErrors();
 
@@ -165,7 +165,7 @@ struct SquareGeometry {
     glBufferData(
       GL_ARRAY_BUFFER,
       18*sizeof(GLfloat),
-      sqCol,                               // Fill the values of the buffer with values in 'sqCol'
+      sqCol,                               
       GL_STATIC_DRAW);
     checkGlErrors();
   }
@@ -359,7 +359,7 @@ static void initGlutState(int argc, char **argv) {
 }
 
 static void initGLState() {
-  glClearColor(128./255,200./255,1,0);
+  glClearColor(128./255,200./255,1,0);    // This is why our background color is sky blue!!
   glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
   glPixelStorei(GL_PACK_ALIGNMENT, 1);
   if (!g_Gl2Compatible)
@@ -388,6 +388,7 @@ static void initGeometry() {
   g_square.reset(new SquareGeometry());
 }
 
+// Load texture image from memory and send data to GPU
 static void loadTexture(GLuint texHandle, const char *ppmFilename) {
   int texWidth, texHeight;
   vector<PackedPixel> pixData;
