@@ -47,6 +47,8 @@ static int g_height            = 512;       // screen height
 static bool g_leftClicked      = false;     // is the left mouse button down?
 static bool g_rightClicked     = false;     // is the right mouse button down?
 static float g_objScale        = 1.0;       // scale factor for object
+static float g_scaleX = 1.0;
+static float g_scaleY = 1.0;
 static int g_leftClickX, g_leftClickY;      // coordinates for mouse left click event
 static int g_rightClickX, g_rightClickY;    // coordinates for mouse right click event
 
@@ -58,7 +60,7 @@ struct ShaderState {
   GlProgram program; 
 
   // Handles to uniform variables
-  GLint h_uVertexScale;
+  GLint h_uVertexScale, h_uScaleX, h_uScaleY;
   GLint h_uTexUnit0, h_uTexUnit1;
 
   // Handles to vertex attributes
@@ -73,6 +75,8 @@ struct ShaderState {
 
     // Retrieve handles to uniform variables
     h_uVertexScale = safe_glGetUniformLocation(h, "uVertexScale");
+    h_uScaleX = safe_glGetUniformLocation(h, "uScaleX");
+    h_uScaleY = safe_glGetUniformLocation(h, "uScaleY");
     h_uTexUnit0 = safe_glGetUniformLocation(h, "uTexUnit0");
     h_uTexUnit1 = safe_glGetUniformLocation(h, "uTexUnit1");
 
@@ -193,6 +197,7 @@ struct SquareGeometry {
     safe_glVertexAttribPointer(curSS.h_aColor,
                                3, GL_FLOAT, GL_FALSE, 0, 0);    // color values must be tuple of length 3 -> RGB
 
+    // glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);   // wireframe mode for debugging
     glDrawArrays(GL_TRIANGLES, 0, numverts);
 
     safe_glDisableVertexAttribArray(curSS.h_aPosition);
@@ -234,6 +239,9 @@ static void display(void) {
   safe_glUniform1i(curSS.h_uTexUnit0, 0);
   safe_glUniform1i(curSS.h_uTexUnit1, 1);
   safe_glUniform1f(curSS.h_uVertexScale, g_objScale);
+  safe_glUniform1f(curSS.h_uScaleX, g_scaleX);
+  safe_glUniform1f(curSS.h_uScaleY, g_scaleY);
+
   g_square->draw(curSS);
 
   glutSwapBuffers();
@@ -253,10 +261,27 @@ static void display(void) {
 ///  callback function to handle it appropriately.
 
 static void reshape(int w, int h) {
-  g_width = w;
-  g_height = h;
-  glViewport(0, 0, w, h);
-  glutPostRedisplay();
+    g_width = w;
+    g_height = h;
+    glViewport(0, 0, w, h);
+    
+    if (w > h) {
+        // width is longer
+        g_scaleX = (float)h / w;
+        g_scaleY = 1.0;
+    } 
+    else if (h > w) {
+        // height is longer
+        g_scaleX = 1.0;
+        g_scaleY = (float)w / h;
+    }
+    else {
+        // viewport is square
+        g_scaleX = 1.0;
+        g_scaleY = 1.0;
+    }
+
+    glutPostRedisplay();
 }
 
 
