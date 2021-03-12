@@ -11,13 +11,15 @@ void display();
 // global variables
 int winID = 0;
 
+typedef struct ShaderState {
+
+} ShaderState;
+
 float vertices[] = {
 		0.0f, 0.5f, 0.0f,
 		-0.5f, -0.5f, 0.0f,
 		0.5f, -0.5f, 0.0f
 };
-
-int on_off = 1;
 
 int main(int argc, char** argv) {
 
