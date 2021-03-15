@@ -67,10 +67,11 @@
       <AdditionalIncludeDirectories>.\lib</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
-      <AdditionalDependencies>./lib/glew32.lib;./lib/glew32s.lib;./lib/glut32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>glew32.lib;glut32.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <SubSystem>Console</SubSystem>
       <TargetMachine>MachineX86</TargetMachine>
+      <AdditionalLibraryDirectories>lib</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
