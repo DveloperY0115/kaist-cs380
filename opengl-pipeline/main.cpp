@@ -1,7 +1,13 @@
 #include <iostream>
+#include <string>
+#include <vector>
+#include <memory>
 
 #include <GL/glew.h>
 #include <GL/glut.h>
+
+#include "ppm.h"
+#include "glsupport.h"
 
 // forward declaration
 void initGLUT(int argc, char** argv);
@@ -9,17 +15,157 @@ void keyboardCallback(unsigned char key, int x, int y);;
 void display();
 
 // global variables
-int winID = 0;
+static int winID = 0;
+static int g_width = 512;
+static int g_height = 512;
 
 typedef struct ShaderState {
+	
+	// Handle for shader program
+	GlProgram programHandle;
+	
+	// Handles to attribute variables
+	
+	GLuint h_aPos;
+	GLuint h_aColor;
+
+	//! Constructor
+	//! Initialize shader program with given VS, FS sources
+	ShaderState(const char* vsfn, const char* fsfn) {
+		
+		// read VS, FS source, compile them, and link them
+		readAndCompileShader(programHandle, vsfn, fsfn);
+		std::cerr << "Built OpenGL shader successfully\n";
+
+		h_aPos = safe_glGetAttribLocation(programHandle, "aPos");
+		h_aColor = safe_glGetAttribLocation(programHandle, "aColor");
+		glBindFragDataLocation(programHandle, 0, "FragColor");
+	}
 
 } ShaderState;
 
-float vertices[] = {
-		0.0f, 0.5f, 0.0f,
-		-0.5f, -0.5f, 0.0f,
-		0.5f, -0.5f, 0.0f
-};
+// To render an image on OpenGL, we need a pair of VS and FS
+static const int g_numShaders = 1;
+
+// Specify locations of GLSL source files in disk
+static const char* const g_shaderFiles[g_numShaders][2] = {
+	// GLSL 1.3 shaders
+  {"./shaders/vs.vshader", "./shaders/fs.fshader"}
+};    // GLSL 1.3
+
+// Vector holding pointers to ShaderState structs
+static std::vector<std::shared_ptr<ShaderState>> g_ShaderStates;
+
+typedef struct SimpleGeometry {
+	GlBufferObject posVBO, colVBO;
+
+	SimpleGeometry() {
+		// triangle at the center of the screen
+		static GLfloat vertices[] = {
+			0.0f, 0.5f, 0.0f,
+			-0.5f, -0.5f, 0.0f,
+			0.5f, -0.5f, 0.0f
+		};
+
+		// colors of each vertice
+		static GLfloat colors[]{
+			1, 0, 0,
+			0, 1, 0,
+			0, 0, 1
+		};
+
+		// initialize pos buffer
+		glBindBuffer(GL_ARRAY_BUFFER, posVBO);    // bind coordinate buffer
+		glBufferData(GL_ARRAY_BUFFER,    // transfer data to GPU
+			9 * sizeof(GLfloat), 
+			vertices, 
+			GL_STATIC_DRAW);
+		checkGlErrors();
+
+		// initialize color buffer
+		glBindBuffer(GL_ARRAY_BUFFER, colVBO);    // bind color buffer
+		glBufferData(GL_ARRAY_BUFFER,    // transfer data to GPU
+			9 * sizeof(GLfloat),
+			colors,
+			GL_STATIC_DRAW);
+		checkGlErrors();
+	}
+
+	void drawObj(const ShaderState& curSS) {
+
+		safe_glEnableVertexAttribArray(curSS.h_aPos);
+		safe_glEnableVertexAttribArray(curSS.h_aColor);
+
+		glBindBuffer(GL_ARRAY_BUFFER, posVBO);
+		safe_glVertexAttribPointer(curSS.h_aPos,
+				3, GL_FLOAT, GL_FALSE, 0, 0);
+		
+		glBindBuffer(GL_ARRAY_BUFFER, colVBO);
+		safe_glVertexAttribPointer(curSS.h_aColor,
+				3, GL_FLOAT, GL_FALSE, 0, 0);
+	    
+		glDrawArrays(GL_TRIANGLES, 0, 3);
+
+		safe_glDisableVertexAttribArray(curSS.h_aPos);
+		safe_glDisableVertexAttribArray(curSS.h_aColor);
+	}
+} SimpleGeometry;
+
+static std::shared_ptr<SimpleGeometry> g_simple;
+
+void initGLUT(int argc, char** argv) {	
+
+	// Initialize GLUT and window
+	glutInit(&argc, argv);
+	glutInitDisplayMode(GLUT_RGBA | GLUT_DOUBLE | GLUT_DEPTH);
+	glutInitWindowSize(g_width, g_height);
+	winID = glutCreateWindow("Test");
+
+	// Register callback functions
+	glutDisplayFunc(display);
+	glutKeyboardFunc(keyboardCallback);
+}
+
+static void initGLState() {
+	glClearColor(128. / 255, 200. / 255, 1, 0);    // This is why our background color is sky blue!!
+	glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+	glPixelStorei(GL_PACK_ALIGNMENT, 1);
+}
+
+static void initShaders() {
+	g_ShaderStates.resize(g_numShaders);
+	for (int i = 0; i < g_numShaders; ++i) {
+			g_ShaderStates[i].reset(new ShaderState(g_shaderFiles[i][0], g_shaderFiles[i][1]));
+	}
+}
+
+static void initGeometry() {
+	g_simple.reset(new SimpleGeometry());
+}
+
+void display() {
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+	
+	const ShaderState& curSS = *g_ShaderStates[0];
+	glUseProgram(curSS.programHandle);
+
+	g_simple->drawObj(curSS);
+	
+	glutSwapBuffers();
+	checkGlErrors();
+}
+
+void keyboardCallback(unsigned char key, int x, int y) {
+
+	switch (key) {
+	case 'q':
+		// quit program
+		std::cout << "Recieved 'q'! Terminating... \n";
+		glutDestroyWindow(winID);
+		exit(EXIT_SUCCESS);
+	}
+}
 
 int main(int argc, char** argv) {
 
@@ -38,83 +184,9 @@ int main(int argc, char** argv) {
 		printf("GLEW init success!\n");
 	}
 
-	// define VBO for vertices of triangle
-	GLuint VBO;
-	glGenBuffers(1, &VBO);
-	glBindBuffer(GL_ARRAY_BUFFER, VBO);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
-
-	// simple Vertex Shader
-	const char* simple_vs_source = "#version 130"
-		"in vec3 aPos;\n"
-		"void main() {\n"
-		"gl_Position = vec4(aPos.x, aPos.y, aPos.z, 1.0);\n"
-		"}\0";
-
-	// create and compile vertex shader
-	unsigned int vertexShader = glCreateShader(GL_VERTEX_SHADER);
-	glShaderSource(vertexShader, 1, &simple_vs_source, NULL);
-	glCompileShader(vertexShader);
-
-	// simple Fragment Shader
-	const char* simple_fs_source = "#version 130"
-		"out vec4 FragColor;\n"
-		"void main() {\n"
-		"FragColor = vec4(1.0f, 0.5f, 0.2f, 1.0f);\n"
-		"}\0";
-
-	// create and compile fragment shader
-	unsigned int fragShader = glCreateShader(GL_FRAGMENT_SHADER);
-	glShaderSource(fragShader, 1, &simple_fs_source, NULL);
-	glCompileShader(fragShader);
-
-	// link shaders to make 'Shader Program'
-	unsigned int shaderProgram;
-	shaderProgram = glCreateProgram();
-	glAttachShader(shaderProgram, vertexShader);
-	glAttachShader(shaderProgram, fragShader);
-	glLinkProgram(shaderProgram);
-
-
-	glBindBuffer(GL_ARRAY_BUFFER, VBO); // Although we've already bound buffer but for explanation!
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
-	glEnableVertexAttribArray(0);
-
+	initGLState();
+	initShaders();
+	initGeometry();
 	glutMainLoop();   // block here
-
 	return 0;
-}
-
-void initGLUT(int argc, char** argv) {	
-	glutInit(&argc, argv);
-
-	winID = glutCreateWindow("Test");
-
-	glutDisplayFunc(display);
-	glutKeyboardFunc(keyboardCallback);
-}
-
-void display() {
-	glClear(GL_COLOR_BUFFER_BIT);
-
-	glBegin(GL_TRIANGLES);
-	glVertex2f(0.0f, 0.5f);
-	glVertex2f(-0.5f, -0.5f);
-	glVertex2f(0.5f, -0.5f);
-	glEnd();
-	glFinish();
-}
-
-/*
-* Keyboard callback
-*/
-void keyboardCallback(unsigned char key, int x, int y) {
-
-	switch (key) {
-	case 'q':
-		// quit program
-		std::cout << "Recieved 'q'! Terminating... \n";
-		glutDestroyWindow(winID);
-		exit(EXIT_SUCCESS);
-	}
 }
