@@ -56,6 +56,42 @@ static const char* const g_shaderFiles[g_numShaders][2] = {
 // Vector holding pointers to ShaderState structs
 static std::vector<std::shared_ptr<ShaderState>> g_ShaderStates;
 
+//! Base class for Geometry
+class Geometry {
+
+public:
+	Geometry() {
+		// Constructor of Base class
+		// Do nothing
+	}
+
+	virtual void BindVBOs(unsigned int num_verts) {
+		// initialize pos buffer
+		glBindBuffer(GL_ARRAY_BUFFER, posVBO);    // bind coordinate buffer
+		glBufferData(GL_ARRAY_BUFFER,    // transfer data to GPU
+			num_verts * sizeof(GLfloat),
+			vert,
+			GL_STATIC_DRAW);
+		checkGlErrors();
+
+		// initialize color buffer
+		glBindBuffer(GL_ARRAY_BUFFER, colVBO);    // bind color buffer
+		glBufferData(GL_ARRAY_BUFFER,    // transfer data to GPU
+			num_verts * sizeof(GLfloat),
+			col,
+			GL_STATIC_DRAW);
+		checkGlErrors();
+	}
+
+	virtual void drawObjs(ShaderState& curSS) {
+		// Do nothing
+	}
+
+private:
+	GlBufferObject posVBO, colVBO;
+	GLfloat* vert;
+	GLfloat* col;
+};
 typedef struct SimpleGeometry {
 	GlBufferObject posVBO, colVBO;
 
