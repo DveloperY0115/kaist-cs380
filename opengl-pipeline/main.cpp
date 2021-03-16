@@ -20,19 +20,19 @@ static int g_width = 512;
 static int g_height = 512;
 
 typedef struct ShaderState {
-	
+
 	// Handle for shader program
 	GlProgram programHandle;
-	
+
 	// Handles to attribute variables
-	
+
 	GLuint h_aPos;
 	GLuint h_aColor;
 
 	//! Constructor
 	//! Initialize shader program with given VS, FS sources
 	ShaderState(const char* vsfn, const char* fsfn) {
-		
+
 		// read VS, FS source, compile them, and link them
 		readAndCompileShader(programHandle, vsfn, fsfn);
 		std::cerr << "Built OpenGL shader successfully\n";
@@ -126,8 +126,8 @@ typedef struct SimpleGeometry {
 		// initialize pos buffer
 		glBindBuffer(GL_ARRAY_BUFFER, posVBO);    // bind coordinate buffer
 		glBufferData(GL_ARRAY_BUFFER,    // transfer data to GPU
-			9 * sizeof(GLfloat), 
-			vertices, 
+			9 * sizeof(GLfloat),
+			vertices,
 			GL_STATIC_DRAW);
 		checkGlErrors();
 
@@ -148,11 +148,11 @@ typedef struct SimpleGeometry {
 		glBindBuffer(GL_ARRAY_BUFFER, posVBO);
 		safe_glVertexAttribPointer(curSS.h_aPos,
 				3, GL_FLOAT, GL_FALSE, 0, 0);
-		
+
 		glBindBuffer(GL_ARRAY_BUFFER, colVBO);
 		safe_glVertexAttribPointer(curSS.h_aColor,
 				3, GL_FLOAT, GL_FALSE, 0, 0);
-	    
+
 		glDrawArrays(GL_TRIANGLES, 0, 3);
 
 		safe_glDisableVertexAttribArray(curSS.h_aPos);
@@ -162,7 +162,7 @@ typedef struct SimpleGeometry {
 
 static std::shared_ptr<SimpleGeometry> g_simple;
 
-void initGLUT(int argc, char** argv) {	
+void initGLUT(int argc, char** argv) {
 
 	// Initialize GLUT and window
 	glutInit(&argc, argv);
@@ -195,12 +195,12 @@ static void initGeometry() {
 void display() {
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-	
+
 	const ShaderState& curSS = *g_ShaderStates[0];
 	glUseProgram(curSS.programHandle);
 
 	g_simple->drawObj(curSS);
-	
+
 	glutSwapBuffers();
 	checkGlErrors();
 }
