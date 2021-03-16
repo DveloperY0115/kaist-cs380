@@ -92,6 +92,19 @@ private:
 	GLfloat* vert;
 	GLfloat* col;
 };
+
+class RandomTriangles : public Geometry {
+
+public:
+	void BindVBOs(unsigned int num_verts) final {
+
+	}
+
+	void GenerateVertices(unsigned int num_verts) {
+
+	}
+};
+
 typedef struct SimpleGeometry {
 	GlBufferObject posVBO, colVBO;
 
