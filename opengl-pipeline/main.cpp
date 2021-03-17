@@ -1,7 +1,9 @@
 #include <iostream>
 #include <string>
-#include <vector>
+#include <array>
 #include <memory>
+#include <random>
+#include <cassert>
 
 #include <GL/glew.h>
 #include <GL/glut.h>
@@ -65,25 +67,11 @@ public:
 		// Do nothing
 	}
 
-	virtual void BindVBOs(unsigned int num_verts) {
-		// initialize pos buffer
-		glBindBuffer(GL_ARRAY_BUFFER, posVBO);    // bind coordinate buffer
-		glBufferData(GL_ARRAY_BUFFER,    // transfer data to GPU
-			num_verts * sizeof(GLfloat),
-			vert,
-			GL_STATIC_DRAW);
-		checkGlErrors();
-
-		// initialize color buffer
-		glBindBuffer(GL_ARRAY_BUFFER, colVBO);    // bind color buffer
-		glBufferData(GL_ARRAY_BUFFER,    // transfer data to GPU
-			num_verts * sizeof(GLfloat),
-			col,
-			GL_STATIC_DRAW);
-		checkGlErrors();
+	virtual void BindVBOs() {
+		// Do nothing
 	}
 
-	virtual void drawObjs(ShaderState& curSS) {
+	virtual void DrawObj(const ShaderState& curSS) {
 		// Do nothing
 	}
 
@@ -96,13 +84,139 @@ private:
 class RandomTriangles : public Geometry {
 
 public:
-	void BindVBOs(unsigned int num_verts) final {
 
+	RandomTriangles(unsigned int num_verts) {
+		num_vertices = num_verts;
+		vertices = new GLfloat[3 * num_verts];
+		colors = new GLfloat[3 * num_verts];
+		GeneratePoints2D();
+		BindVBOs();
 	}
 
-	void GenerateVertices(unsigned int num_verts) {
+	void BindVBOs() final {
+		// initialize pos buffer
+		glBindBuffer(GL_ARRAY_BUFFER, posVBO);    // bind coordinate buffer
+		glBufferData(GL_ARRAY_BUFFER,    // transfer data to GPU
+			3 * num_vertices * sizeof(GLfloat),
+			vertices,
+			GL_STATIC_DRAW);
+		checkGlErrors();
 
+		// initialize color buffer
+		glBindBuffer(GL_ARRAY_BUFFER, colVBO);    // bind color buffer
+		glBufferData(GL_ARRAY_BUFFER,    // transfer data to GPU
+			3 * num_vertices * sizeof(GLfloat),
+			colors,
+			GL_STATIC_DRAW);
+		checkGlErrors();
 	}
+
+	void GeneratePoints2D() {
+		std::array<GLfloat, 3> coord = {0};
+		int i = 0;
+		for (i; i < num_vertices; ++i) {
+			GenerateRandomPoint2D(coord, -1.0, 1.0);
+			vertices[3 * i] = coord[0];
+			vertices[3 * i + 1] = coord[1];
+			vertices[3 * i + 2] = coord[2];    
+		}
+
+		std::array<GLfloat, 3> color;
+		for (i = 0; i < num_vertices; ++i) {
+			GenerateRandomColor(color);
+			colors[3 * i] = color[0];
+			colors[3 * i + 1] = color[1];
+			colors[3 * i + 2] = color[2];
+		}
+	}
+
+	 void GenerateRandomPoint2D(std::array<GLfloat, 3>& arr, float start, float end) {
+		 // input must be three dimensional
+		 assert(arr.size() == 3);
+
+		 // set random seed and distribution
+		 std::random_device rd;
+		 std::mt19937 gen(rd());
+		 std::uniform_real_distribution<> distribution(start, end);
+
+		 // generate random point
+		 arr[0] = distribution(rd);
+		 arr[1] = distribution(rd);
+		 arr[2] = 0.0;
+	}
+
+	 void GenerateRandomColor(std::array<GLfloat, 3>& arr) {
+		 // input must be three dimensional
+		 assert(arr.size() == 3);
+
+		 // set random seed and distribution
+		 std::random_device rd;
+		 std::mt19937 gen(rd());
+		 std::uniform_real_distribution<> distribution(0.0, 1.0);
+
+		 // generate random point
+		 arr[0] = distribution(rd);
+		 arr[1] = distribution(rd);
+		 arr[2] = distribution(rd);
+	 }
+
+	 virtual void DrawObj(const ShaderState& curSS) final {
+		 safe_glEnableVertexAttribArray(curSS.h_aPos);
+		 safe_glEnableVertexAttribArray(curSS.h_aColor);
+
+		 glBindBuffer(GL_ARRAY_BUFFER, posVBO);
+		 safe_glVertexAttribPointer(curSS.h_aPos,
+			 3, GL_FLOAT, GL_FALSE, 0, 0);
+
+		 glBindBuffer(GL_ARRAY_BUFFER, colVBO);
+		 safe_glVertexAttribPointer(curSS.h_aColor,
+			 3, GL_FLOAT, GL_FALSE, 0, 0);
+
+		 glDrawArrays(GL_TRIANGLES, 0, num_vertices);
+
+		 safe_glDisableVertexAttribArray(curSS.h_aPos);
+		 safe_glDisableVertexAttribArray(curSS.h_aColor);
+	 }
+
+	 void Describe() {
+		 // Print out information about the instance
+
+		 std::cout << "========================\n";
+
+		 std::cout << "Vertices: \n";
+
+		 for (int i = 0; i < 3 * num_vertices; ++i) {
+			 std::cout << vertices[i];
+			 if (i % 3 == 0)
+				 std::cout << "\n";
+		 }
+
+		 std::cout << "========================\n";
+
+		 std::cout << "Colors(RGB): \n";
+		 
+		 for (int i = 0; i < 3 * num_vertices; ++i) {
+			 std::cout << colors[i];
+			 if (i % 3 == 0)
+				 std::cout << "\n";
+		 }
+	 }
+
+	 GLfloat* GetVertices() {
+		 assert(vertices != NULL);
+		 return vertices;
+	 }
+
+	 GLfloat* GetColors() {
+		 assert(colors != NULL);
+		 return colors;
+	 }
+
+private:
+	GlBufferObject posVBO, colVBO;
+	unsigned int num_vertices;
+	GLfloat* vertices;
+	GLfloat* colors;
 };
 
 typedef struct SimpleGeometry {
@@ -161,6 +275,7 @@ typedef struct SimpleGeometry {
 } SimpleGeometry;
 
 static std::shared_ptr<SimpleGeometry> g_simple;
+static std::shared_ptr<RandomTriangles> g_random_triangle;
 
 void initGLUT(int argc, char** argv) {
 
@@ -189,17 +304,21 @@ static void initShaders() {
 }
 
 static void initGeometry() {
-	g_simple.reset(new SimpleGeometry());
+	// g_simple.reset(new SimpleGeometry());
+	g_random_triangle.reset(new RandomTriangles(100));
+
+	// print out result
+	std::cout << "Geometry Initialized!\n";
+	g_random_triangle->Describe();
 }
 
 void display() {
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-
 	const ShaderState& curSS = *g_ShaderStates[0];
 	glUseProgram(curSS.programHandle);
-
-	g_simple->drawObj(curSS);
+	
+	g_random_triangle->DrawObj(curSS);
 
 	glutSwapBuffers();
 	checkGlErrors();
