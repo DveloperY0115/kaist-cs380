@@ -1,6 +1,8 @@
 #include <iostream>
 #include <string>
 #include <array>
+#include <list>
+#include <algorithm>
 #include <memory>
 #include <random>
 #include <cassert>
@@ -13,13 +15,15 @@
 
 // forward declaration
 void initGLUT(int argc, char** argv);
-void keyboardCallback(unsigned char key, int x, int y);;
+void keyboardCallback(unsigned char key, int x, int y);
+void timerCallback(int value);
 void display();
 
 // global variables
 static int winID = 0;
 static int g_width = 512;
 static int g_height = 512;
+const static int LIFE_CNT = 10;
 
 typedef struct ShaderState {
 
@@ -30,6 +34,7 @@ typedef struct ShaderState {
 
 	GLuint h_aPos;
 	GLuint h_aColor;
+	GLuint h_aOpacity;
 
 	//! Constructor
 	//! Initialize shader program with given VS, FS sources
@@ -39,8 +44,12 @@ typedef struct ShaderState {
 		readAndCompileShader(programHandle, vsfn, fsfn);
 		std::cerr << "Built OpenGL shader successfully\n";
 
+		// retrieve handles for vertex attributes
 		h_aPos = safe_glGetAttribLocation(programHandle, "aPos");
 		h_aColor = safe_glGetAttribLocation(programHandle, "aColor");
+		h_aOpacity = safe_glGetAttribLocation(programHandle, "aOpacity");
+
+		// bind output to GLSL variable "FragColor"
 		glBindFragDataLocation(programHandle, 0, "FragColor");
 	}
 
@@ -89,6 +98,7 @@ public:
 		num_vertices = num_verts;
 		vertices = new GLfloat[3 * num_verts];
 		colors = new GLfloat[4 * num_verts];
+		life_cnt = 0;
 		GeneratePoints2D();
 		BindVBOs();
 	}
@@ -214,9 +224,18 @@ public:
 		 return colors;
 	 }
 
+	 unsigned int GetLife() {
+		 return life_cnt;
+	 }
+
+	 void IncreaseLifeCount() {
+		 life_cnt++;
+	 }
+
 private:
 	GlBufferObject posVBO, colVBO;
 	unsigned int num_vertices;
+	GLuint life_cnt;
 	GLfloat* vertices;
 	GLfloat* colors;
 };
@@ -277,7 +296,10 @@ typedef struct SimpleGeometry {
 } SimpleGeometry;
 
 static std::shared_ptr<SimpleGeometry> g_simple;
-static std::shared_ptr<RandomTriangles> g_random_triangle;
+// static std::shared_ptr<RandomTriangles> g_random_triangle;
+
+// queue of pointers of RandomTriangle instance
+static std::list<std::shared_ptr<RandomTriangles>> g_random_triangles;
 
 void initGLUT(int argc, char** argv) {
 
@@ -290,6 +312,7 @@ void initGLUT(int argc, char** argv) {
 	// Register callback functions
 	glutDisplayFunc(display);
 	glutKeyboardFunc(keyboardCallback);
+	// glutTimerFunc(1, timerCallback, 1);    // 1 is dummy a variable
 }
 
 static void initGLState() {
@@ -308,8 +331,7 @@ static void initShaders() {
 
 static void initGeometry() {
 	// g_simple.reset(new SimpleGeometry());
-	g_random_triangle.reset(new RandomTriangles(30));
-
+	std::shared_ptr<RandomTriangles> g_random_triangle; 
 	// print out result
 	// std::cout << "Geometry Initialized!\n";
 	// g_random_triangle->Describe();
@@ -318,18 +340,51 @@ static void initGeometry() {
 void display() {
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-	const ShaderState& curSS = *g_ShaderStates[0];
+	ShaderState& curSS = *g_ShaderStates[0];
 	glUseProgram(curSS.programHandle);
 	
-	g_random_triangle->DrawObj(curSS);
+	// reduce life count by one
+	if (g_random_triangles.size() != 0) {
+		for (auto& curr_geometry : g_random_triangles)
+			curr_geometry->IncreaseLifeCount();
+	}
+	
+	if (g_random_triangles.size() != 0) {
+		if (g_random_triangles.front()->GetLife() == LIFE_CNT)
+			// the behavior of list is similar to queue
+			// the first element is the oldest one
+			g_random_triangles.pop_front();     // if life_cnt became 0, remove it
+	}
+
+	// iterate over the list and make draw calls
+	for (auto& curr_geometry : g_random_triangles)
+		curr_geometry->DrawObj(curSS);
+
+	// create new triangle and append it to the list
+	std::shared_ptr<RandomTriangles> new_triangle;
+	new_triangle.reset(new RandomTriangles(3));
+	g_random_triangles.push_back(new_triangle);
 
 	glutSwapBuffers();
 	checkGlErrors();
 }
 
+// Update screen in every millisecond
+void timerCallback(int value) {
+	glutPostRedisplay();
+	glutTimerFunc(1000, timerCallback, 1);
+}
+
 void keyboardCallback(unsigned char key, int x, int y) {
 
 	switch (key) {
+
+	case 's':
+		// start animation
+		std::cout << "Starting animation... \n";
+		glutTimerFunc(1000, timerCallback, 1);
+		break; 
+
 	case 'q':
 		// quit program
 		std::cout << "Recieved 'q'! Terminating... \n";
