@@ -88,7 +88,7 @@ public:
 	RandomTriangles(unsigned int num_verts) {
 		num_vertices = num_verts;
 		vertices = new GLfloat[3 * num_verts];
-		colors = new GLfloat[3 * num_verts];
+		colors = new GLfloat[4 * num_verts];
 		GeneratePoints2D();
 		BindVBOs();
 	}
@@ -121,12 +121,13 @@ public:
 			vertices[3 * i + 2] = coord[2];    
 		}
 
-		std::array<GLfloat, 3> color;
+		std::array<GLfloat, 4> color;
 		for (i = 0; i < num_vertices; ++i) {
 			GenerateRandomColor(color);
-			colors[3 * i] = color[0];
-			colors[3 * i + 1] = color[1];
-			colors[3 * i + 2] = color[2];
+			colors[4 * i] = color[0];
+			colors[4 * i + 1] = color[1];
+			colors[4 * i + 2] = color[2];
+			colors[4 * i + 3] = color[3];
 		}
 	}
 
@@ -145,9 +146,9 @@ public:
 		 arr[2] = 0.0;
 	}
 
-	 void GenerateRandomColor(std::array<GLfloat, 3>& arr) {
+	 void GenerateRandomColor(std::array<GLfloat, 4>& arr) {
 		 // input must be three dimensional
-		 assert(arr.size() == 3);
+		 assert(arr.size() == 4);
 
 		 // set random seed and distribution
 		 std::random_device rd;
@@ -158,6 +159,7 @@ public:
 		 arr[0] = distribution(rd);
 		 arr[1] = distribution(rd);
 		 arr[2] = distribution(rd);
+		 arr[3] = 1.0;    // initial opacity is 1
 	 }
 
 	 virtual void DrawObj(const ShaderState& curSS) final {
@@ -292,6 +294,7 @@ void initGLUT(int argc, char** argv) {
 
 static void initGLState() {
 	glClearColor(128. / 255, 200. / 255, 1, 0);    // This is why our background color is sky blue!!
+	// glClearColor(1.0, 1.0, 1.0, 0);    // This is why our background color is sky blue!!
 	glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
 	glPixelStorei(GL_PACK_ALIGNMENT, 1);
 }
@@ -305,11 +308,11 @@ static void initShaders() {
 
 static void initGeometry() {
 	// g_simple.reset(new SimpleGeometry());
-	g_random_triangle.reset(new RandomTriangles(100));
+	g_random_triangle.reset(new RandomTriangles(30));
 
 	// print out result
-	std::cout << "Geometry Initialized!\n";
-	g_random_triangle->Describe();
+	// std::cout << "Geometry Initialized!\n";
+	// g_random_triangle->Describe();
 }
 
 void display() {
