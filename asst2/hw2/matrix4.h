@@ -307,8 +307,27 @@ inline Matrix4 transFact(const Matrix4& m) {
 }
 
 inline Matrix4 linFact(const Matrix4& m) {
-  // TODO
-    return m;
+    /* Linear (Rotation + Scaling)
+     * |  0  1  2   3
+     * 0  a  b  c   0
+     * 1  d  e  f   0
+     * 2  g  h  i   0
+     * 3  0  0  0   1
+     */
+
+    Matrix4 factored_m = Matrix4();     // 4x4 matrix of zeros
+
+    // fill upper left with linear elements
+    for (int i = 0; i < 3; ++i) {
+        for (int j = 0; j < 3; ++j) {
+            factored_m(i, j) = m(i, j);
+        }
+    }
+
+    // don't forget to put 1 at the lower right corner
+    factored_m(3, 3) = 1;
+
+    return factored_m;
 }
 
 #endif
