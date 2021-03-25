@@ -194,12 +194,11 @@ static Matrix4 objRbt_2 = Matrix4::makeTranslation(Cvec3(-0.75, 0, 0));
 static Matrix4 g_objectRbt[2] = { objRbt_1, objRbt_2 };
 static Cvec3f g_objectColors[2] = { Cvec3f(1, 0, 0), Cvec3f(0, 0, 1) };
 
-// list of eye matrices
+// list of eye matrices & its index
 static Matrix4 eyes[3] = { g_skyRbt, objRbt_1, objRbt_2 };
+static unsigned int eye_idx = 0;
+
 ///////////////// END OF G L O B A L S //////////////////////////////////////////////////
-
-
-
 
 static void initGround() {
   // A x-z plane at y = g_groundY of dimension [-g_groundSize, g_groundSize]^2
@@ -272,7 +271,7 @@ static void drawStuff() {
   sendProjectionMatrix(curSS, projmat);
 
   // use the skyRbt as the eyeRbt
-  const Matrix4 eyeRbt = g_skyRbt;
+  const Matrix4 eyeRbt = eyes[eye_idx];
   const Matrix4 invEyeRbt = inv(eyeRbt);
 
   const Cvec3 eyeLight1 = Cvec3(invEyeRbt * Cvec4(g_light1, 1)); // g_light1 position in eye coordinates
@@ -345,8 +344,9 @@ static void motion(const int x, const int y) {
   }
 
   if (g_mouseClickDown) {
-    g_objectRbt[0] *= m; // Simply right-multiply is WRONG
-    glutPostRedisplay(); // we always redraw if we changed the scene
+      // TODO: Modify the following callback since pressing 'v' can change the frame of interest
+        g_objectRbt[0] *= m; // Simply right-multiply is WRONG
+        glutPostRedisplay(); // we always redraw if we changed the scene
   }
 
   g_mouseClickX = x;
@@ -399,6 +399,12 @@ static void keyboard(const unsigned char key, const int x, const int y) {
 
     case 'v':
         std::cout << "Pressed 'v'! Switching camera\n";
+        eye_idx++;
+        if (eye_idx > 2)
+            eye_idx = 0;
+
+        std::cout << "Current eye is: " << eye_idx << "\n";
+
         break;
     }
 
