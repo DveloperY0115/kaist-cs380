@@ -184,10 +184,18 @@ static std::vector<shared_ptr<Geometry>> scene;     // (refactor required) later
 // --------- Scene
 
 static const Cvec3 g_light1(2.0, 3.0, 14.0), g_light2(-2, -3.0, -5.0);  // define two lights positions in world space
+
+// Eye, Object matrices
 static Matrix4 g_skyRbt = Matrix4::makeTranslation(Cvec3(0.0, 0.25, 4.0));
-static Matrix4 g_objectRbt[2] = { Matrix4::makeTranslation(Cvec3(0.75,0,0)), Matrix4::makeTranslation(Cvec3(-0.75, 0, 0)) };  // currently only 1 obj is defined
+static Matrix4 objRbt_1 = Matrix4::makeTranslation(Cvec3(0.75, 0, 0));
+static Matrix4 objRbt_2 = Matrix4::makeTranslation(Cvec3(-0.75, 0, 0));
+
+// list of object matrices
+static Matrix4 g_objectRbt[2] = { objRbt_1, objRbt_2 };
 static Cvec3f g_objectColors[2] = { Cvec3f(1, 0, 0), Cvec3f(0, 0, 1) };
 
+// list of eye matrices
+static Matrix4 eyes[3] = { g_skyRbt, objRbt_1, objRbt_2 };
 ///////////////// END OF G L O B A L S //////////////////////////////////////////////////
 
 
@@ -361,7 +369,9 @@ static void mouse(const int button, const int state, const int x, const int y) {
 }
 
 static void keyboard(const unsigned char key, const int x, const int y) {
+
     switch (key) {
+
     case 27:
         exit(0);                                  // ESC
 
