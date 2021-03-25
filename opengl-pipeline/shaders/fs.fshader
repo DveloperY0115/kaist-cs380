@@ -1,9 +1,11 @@
 #version 130
 		
-in vec3 vColor;
+in vec4 vColor;
+in float vOpacity;
+
 out vec4 FragColor;
 
 void main() 
 {
-	FragColor = vec4(vColor.x, vColor.y, vColor.z, 1);
+	FragColor = vec4(vColor.x, vColor.y, vColor.z, vColor.a - (vOpacity));
 }
