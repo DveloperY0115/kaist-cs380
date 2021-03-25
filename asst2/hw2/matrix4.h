@@ -11,6 +11,7 @@ class Matrix4;
 Matrix4 transpose(const Matrix4& m);
 
 // A 4x4 Matrix.
+// This class follows column-major
 // To get the element at ith row and jth column, use a(i,j)
 class Matrix4 {
   double d_[16]; // layout is row-major
@@ -278,8 +279,31 @@ inline Matrix4 normalMatrix(const Matrix4& m) {
 }
 
 inline Matrix4 transFact(const Matrix4& m) {
-  // TODO
-    return m;
+   /* Translation
+    * |  0  1  2   3
+    * 0  1  0  0  t_x
+    * 1  0  1  0  t_y
+    * 2  0  0  1  t_z
+    * 3  0  0  0   1
+    */
+
+    Matrix4 factored_m = Matrix4();     // 4x4 matrix of zeros
+    double t_x = m(0, 3);
+    double t_y = m(1, 3);
+    double t_z = m(2, 3);
+
+    // fill the upper left 3x3 submatrix as identity
+    factored_m(0, 0) = 1;
+    factored_m(1, 1) = 1;
+    factored_m(2, 2) = 1;
+
+    // fill the last column of matrix as translation parts
+    factored_m(0, 3) = t_x;
+    factored_m(1, 3) = t_y;
+    factored_m(2, 3) = t_z;
+    factored_m(3, 3) = 1;
+
+    return factored_m;
 }
 
 inline Matrix4 linFact(const Matrix4& m) {
