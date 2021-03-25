@@ -184,7 +184,7 @@ static shared_ptr<Geometry> g_ground, g_cube;
 
 static const Cvec3 g_light1(2.0, 3.0, 14.0), g_light2(-2, -3.0, -5.0);  // define two lights positions in world space
 static Matrix4 g_skyRbt = Matrix4::makeTranslation(Cvec3(0.0, 0.25, 4.0));
-static Matrix4 g_objectRbt[1] = {Matrix4::makeTranslation(Cvec3(0,0,0))};  // currently only 1 obj is defined
+static Matrix4 g_objectRbt[1] = {Matrix4::makeTranslation(Cvec3(0.5,0,0))};  // currently only 1 obj is defined
 static Cvec3f g_objectColors[1] = {Cvec3f(1, 0, 0)};
 
 ///////////////// END OF G L O B A L S //////////////////////////////////////////////////
