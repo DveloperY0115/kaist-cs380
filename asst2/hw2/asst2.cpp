@@ -361,29 +361,38 @@ static void mouse(const int button, const int state, const int x, const int y) {
 }
 
 static void keyboard(const unsigned char key, const int x, const int y) {
-  switch (key) {
-  case 27:
-    exit(0);                                  // ESC
-  case 'q':
-    exit(0);                                  // Quit on 'q'
-  case 'h':
-    cout << " ============== H E L P ==============\n\n"
-    << "h\t\thelp menu\n"
-    << "s\t\tsave screenshot\n"
-    << "f\t\tToggle flat shading on/off.\n"
-    << "o\t\tCycle object to edit\n"
-    << "v\t\tCycle view\n"
-    << "drag left mouse to rotate\n" << endl;
-    break;
-  case 's':
-    glFlush();
-    writePpmScreenshot(g_windowWidth, g_windowHeight, "out.ppm");
-    break;
-  case 'f':
-    g_activeShader ^= 1;
-    break;
-  }
-  glutPostRedisplay();
+    switch (key) {
+    case 27:
+        exit(0);                                  // ESC
+
+    case 'q':
+        exit(0);                                  // Quit on 'q'
+
+    case 'h':
+        cout << " ============== H E L P ==============\n\n"
+            << "h\t\thelp menu\n"
+            << "s\t\tsave screenshot\n"
+            << "f\t\tToggle flat shading on/off.\n"
+            << "o\t\tCycle object to edit\n"
+            << "v\t\tCycle view\n"
+            << "drag left mouse to rotate\n" << endl;
+        break;
+
+    case 's':
+        glFlush();
+        writePpmScreenshot(g_windowWidth, g_windowHeight, "out.ppm");
+        break;
+
+    case 'f':
+        g_activeShader ^= 1;
+        break;
+
+    case 'v':
+        std::cout << "Pressed 'v'! Switching camera\n";
+        break;
+    }
+
+    glutPostRedisplay();
 }
 
 static void initGlutState(int argc, char * argv[]) {
