@@ -178,14 +178,15 @@ struct Geometry {
 
 
 // Vertex buffer and index buffer associated with the ground and cube geometry
-static shared_ptr<Geometry> g_ground, g_cube;
+static shared_ptr<Geometry> g_ground, g_cube_1, g_cube_2;
+static std::vector<shared_ptr<Geometry>> scene;     // (refactor required) later use this to put all scene geometries in one vector
 
 // --------- Scene
 
 static const Cvec3 g_light1(2.0, 3.0, 14.0), g_light2(-2, -3.0, -5.0);  // define two lights positions in world space
 static Matrix4 g_skyRbt = Matrix4::makeTranslation(Cvec3(0.0, 0.25, 4.0));
-static Matrix4 g_objectRbt[1] = {Matrix4::makeTranslation(Cvec3(0.5,0,0))};  // currently only 1 obj is defined
-static Cvec3f g_objectColors[1] = {Cvec3f(1, 0, 0)};
+static Matrix4 g_objectRbt[2] = { Matrix4::makeTranslation(Cvec3(0.75,0,0)), Matrix4::makeTranslation(Cvec3(-0.75, 0, 0)) };  // currently only 1 obj is defined
+static Cvec3f g_objectColors[2] = { Cvec3f(1, 0, 0), Cvec3f(0, 0, 1) };
 
 ///////////////// END OF G L O B A L S //////////////////////////////////////////////////
 
@@ -212,8 +213,13 @@ static void initCubes() {
   vector<VertexPN> vtx(vbLen);
   vector<unsigned short> idx(ibLen);
 
+  // create the first cube
   makeCube(1, vtx.begin(), idx.begin());
-  g_cube.reset(new Geometry(&vtx[0], &idx[0], vbLen, ibLen));
+  g_cube_1.reset(new Geometry(&vtx[0], &idx[0], vbLen, ibLen));
+
+  // create the second cube
+  makeCube(1, vtx.begin(), idx.begin());
+  g_cube_2.reset(new Geometry(&vtx[0], &idx[0], vbLen, ibLen));
 }
 
 // takes a projection matrix and send to the the shaders
@@ -278,11 +284,21 @@ static void drawStuff() {
 
   // draw cubes
   // ==========
+  // draw the first one
   MVM = invEyeRbt * g_objectRbt[0];
   NMVM = normalMatrix(MVM);
   sendModelViewNormalMatrix(curSS, MVM, NMVM);
+
   safe_glUniform3f(curSS.h_uColor, g_objectColors[0][0], g_objectColors[0][1], g_objectColors[0][2]);
-  g_cube->draw(curSS);
+  g_cube_1->draw(curSS);
+
+  // draw the second one
+  MVM = invEyeRbt * g_objectRbt[1];
+  NMVM = normalMatrix(MVM);
+  sendModelViewNormalMatrix(curSS, MVM, NMVM);
+
+  safe_glUniform3f(curSS.h_uColor, g_objectColors[1][0], g_objectColors[1][1], g_objectColors[1][2]);
+  g_cube_2->draw(curSS);
 }
 
 static void display() {
@@ -329,7 +345,6 @@ static void motion(const int x, const int y) {
   g_mouseClickY = g_windowHeight - y - 1;
 }
 
-
 static void mouse(const int button, const int state, const int x, const int y) {
   g_mouseClickX = x;
   g_mouseClickY = g_windowHeight - y - 1;  // conversion from GLUT window-coordinate-system to OpenGL window-coordinate-system
@@ -344,7 +359,6 @@ static void mouse(const int button, const int state, const int x, const int y) {
 
   g_mouseClickDown = g_mouseLClickButton || g_mouseRClickButton || g_mouseMClickButton;
 }
-
 
 static void keyboard(const unsigned char key, const int x, const int y) {
   switch (key) {
