@@ -350,6 +350,8 @@ static void keyboard(const unsigned char key, const int x, const int y) {
   switch (key) {
   case 27:
     exit(0);                                  // ESC
+  case 'q':
+    exit(0);                                  // Quit on 'q'
   case 'h':
     cout << " ============== H E L P ==============\n\n"
     << "h\t\thelp menu\n"
