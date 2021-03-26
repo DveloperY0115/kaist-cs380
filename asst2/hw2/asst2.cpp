@@ -176,7 +176,6 @@ struct Geometry {
   }
 };
 
-
 // Vertex buffer and index buffer associated with the ground and cube geometry
 static shared_ptr<Geometry> g_ground, g_cube_1, g_cube_2;
 static std::vector<shared_ptr<Geometry>> scene;     // (refactor required) later use this to put all scene geometries in one vector
@@ -197,7 +196,8 @@ static Matrix4 g_objectRbt[2] = { objRbt_1, objRbt_2 };
 static Cvec3f g_objectColors[2] = { Cvec3f(1, 0, 0), Cvec3f(0, 0, 1) };
 
 // list of manipulatable object matrices
-// static Matrix4 manipulatable_obj[3] = { g_skyRbt, objRbt_1, objRbt_2 };
+static Matrix4 manipulatable_obj[3] = { g_skyRbt, objRbt_1, objRbt_2 };
+static unsigned int control_idx = 1;    // initially control cube 1
 
 // list of eye matrices & its index
 static Matrix4 eyes[3] = { g_skyRbt, objRbt_1, objRbt_2 };
@@ -297,7 +297,7 @@ static void drawStuff() {
   // draw cubes
   // ==========
   // draw the first one
-  MVM = invEyeRbt * g_objectRbt[0];
+  MVM = invEyeRbt * manipulatable_obj[1];
   NMVM = normalMatrix(MVM);
   sendModelViewNormalMatrix(curSS, MVM, NMVM);
 
@@ -305,7 +305,7 @@ static void drawStuff() {
   g_cube_1->draw(curSS);
 
   // draw the second one
-  MVM = invEyeRbt * g_objectRbt[1];
+  MVM = invEyeRbt * manipulatable_obj[2];
   NMVM = normalMatrix(MVM);
   sendModelViewNormalMatrix(curSS, MVM, NMVM);
 
@@ -350,8 +350,8 @@ static void motion(const int x, const int y) {
 
   if (g_mouseClickDown) {
       // TODO: Modify the following callback since pressing 'v' can change the frame of interest
-        g_objectRbt[0] *= m; // Simply right-multiply is WRONG
-        glutPostRedisplay(); // we always redraw if we changed the scene
+      manipulatable_obj[control_idx] *= m;
+      glutPostRedisplay(); // we always redraw if we changed the scene
   }
 
   g_mouseClickX = x;
@@ -425,10 +425,31 @@ static void keyboard(const unsigned char key, const int x, const int y) {
 
     case 'o':
         std::cout << "Pressend 'o'! Switching object to be manipulated\n";
+        control_idx++;
+        if (control_idx > 2)
+            control_idx = 0;
 
+        switch (control_idx) {
+        case 0:
+            std::cout << "Controlling [" << control_idx << "] Sky Camera" << "\n";
+            break;
+
+        case 1:
+            std::cout << "Controlling [" << control_idx << "] Cube 1" << "\n";
+            break;
+
+        case 2:
+            std::cout << "Controlling [" << control_idx << "] Cube 2" << "\n";
+            break;
+        }
+        break;
         break;
     }
     glutPostRedisplay();
+}
+
+void show_current_EO() {
+
 }
 
 static void initGlutState(int argc, char * argv[]) {
