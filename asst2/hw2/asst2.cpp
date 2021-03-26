@@ -191,8 +191,13 @@ static Matrix4 objRbt_1 = Matrix4::makeTranslation(Cvec3(0.75, 0, 0));
 static Matrix4 objRbt_2 = Matrix4::makeTranslation(Cvec3(-0.75, 0, 0));
 
 // list of object matrices
+// 1. cube 1
+// 2. cube 2
 static Matrix4 g_objectRbt[2] = { objRbt_1, objRbt_2 };
 static Cvec3f g_objectColors[2] = { Cvec3f(1, 0, 0), Cvec3f(0, 0, 1) };
+
+// list of manipulatable object matrices
+// static Matrix4 manipulatable_obj[3] = { g_skyRbt, objRbt_1, objRbt_2 };
 
 // list of eye matrices & its index
 static Matrix4 eyes[3] = { g_skyRbt, objRbt_1, objRbt_2 };
@@ -403,11 +408,26 @@ static void keyboard(const unsigned char key, const int x, const int y) {
         if (eye_idx > 2)
             eye_idx = 0;
 
-        std::cout << "Current eye is: " << eye_idx << "\n";
+        switch (eye_idx) {
+        case 0:
+            std::cout << "Current eye [" << eye_idx << "] is Sky Camera" << "\n";
+            break;
+
+        case 1:
+            std::cout << "Current eye [" << eye_idx << "] is Cube 1" << "\n";
+            break;
+
+        case 2:
+            std::cout << "Current eye [" << eye_idx << "] is Cube 2" << "\n";
+            break;
+        }
+        break;
+
+    case 'o':
+        std::cout << "Pressend 'o'! Switching object to be manipulated\n";
 
         break;
     }
-
     glutPostRedisplay();
 }
 
