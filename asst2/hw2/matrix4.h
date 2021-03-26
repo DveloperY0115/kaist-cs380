@@ -330,5 +330,10 @@ inline Matrix4 linFact(const Matrix4& m) {
     return factored_m;
 }
 
+// Get transform matrix which perform transform 'M' on object matrix 'O'
+// with respect to auxiliary frame 'A'
+inline Matrix4 doMtoOwrtA(const Matrix4& M, const Matrix4& O, const Matrix4& A) {
+    return A * M * inv(A) * O;
+}
 #endif
 
