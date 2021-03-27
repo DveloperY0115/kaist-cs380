@@ -312,6 +312,14 @@ static void drawStuff() {
   g_cube_2->draw(curSS);
 }
 
+/* Utility function forward declarations */
+void describe_current_eye();
+void describe_current_obj();
+void show_current_status();
+void printMatrix4(const Matrix4& A);
+
+/* GLUT callbacks */
+
 static void display() {
   glUseProgram(g_shaderStates[g_activeShader]->program);
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);                   // clear framebuffer color&depth
@@ -377,143 +385,202 @@ static void keyboard(const unsigned char key, const int x, const int y) {
     switch (key) {
 
     case 27:
+        // quit application
         exit(0);                                  // ESC
 
     case 'q':
+        // quit application
         exit(0);                                  // Quit on 'q'
 
     case 'h':
+        // print out help
         cout << " ============== H E L P ==============\n\n"
             << "h\t\thelp menu\n"
             << "s\t\tsave screenshot\n"
             << "f\t\tToggle flat shading on/off.\n"
             << "o\t\tCycle object to edit\n"
             << "v\t\tCycle view\n"
+            << "d\t\tDescribe current eye, object matrices\n"
+            << "r\t\tReset the position of current object\n"
             << "drag left mouse to rotate\n" << endl;
         break;
 
     case 's':
+        // capture screen
         glFlush();
         writePpmScreenshot(g_windowWidth, g_windowHeight, "out.ppm");
         break;
 
     case 'f':
+        // enable/disenable shader
         g_activeShader ^= 1;
         break;
 
     case 'v':
+        // switch view point
         std::cout << "Pressed 'v'! Switching camera\n";
         eye_idx++;
         if (eye_idx > 2)
             eye_idx = 0;
 
-        switch (eye_idx) {
-        case 0:
-            std::cout << "Current eye [" << eye_idx << "] is Sky Camera" << "\n";
-            break;
-
-        case 1:
-            std::cout << "Current eye [" << eye_idx << "] is Cube 1" << "\n";
-            break;
-
-        case 2:
-            std::cout << "Current eye [" << eye_idx << "] is Cube 2" << "\n";
-            break;
-        }
+        show_current_status();
         break;
 
     case 'o':
-        std::cout << "Pressend 'o'! Switching object to be manipulated\n";
+        // switch object
+        std::cout << "Pressed 'o'! Switching object to be manipulated\n";
         control_idx++;
         if (control_idx > 2)
             control_idx = 0;
 
-        switch (control_idx) {
-        case 0:
-            std::cout << "Controlling [" << control_idx << "] Sky Camera" << "\n";
-            break;
-
-        case 1:
-            std::cout << "Controlling [" << control_idx << "] Cube 1" << "\n";
-            break;
-
-        case 2:
-            std::cout << "Controlling [" << control_idx << "] Cube 2" << "\n";
-            break;
-        }
+        show_current_status();
         break;
+
+    case 'r':
+        // reset object position
+        std::cout << "Pressed 'r'! Resetting the position of current object\n";
+        manipulatable_obj[control_idx] = initial_matrices[control_idx];
+
+        show_current_status();
+        break;
+
+    case 'd':
+        show_current_status();
         break;
     }
     glutPostRedisplay();
 }
 
-void show_current_EO() {
+/* End of GLUT callbacks */
 
+/* Utility functions for debugging */
+
+// print the elements of matrix A
+void printMatrix4(const Matrix4& A) {
+    for (int i = 0; i < 4; ++i) {
+        for (int j = 0; j < 4; ++j) {
+            std::cout << A(i, j) << " ";
+        }
+        std::cout << "\n";
+    }
 }
 
-static void initGlutState(int argc, char * argv[]) {
-  glutInit(&argc, argv);                                  // initialize Glut based on cmd-line args
-  glutInitDisplayMode(GLUT_RGBA|GLUT_DOUBLE|GLUT_DEPTH);  //  RGBA pixel channels and double buffering
-  glutInitWindowSize(g_windowWidth, g_windowHeight);      // create a window
-  glutCreateWindow("Assignment 2");                       // title the window
+void describe_current_eye() {
+    string current_eye_name;
 
-  glutDisplayFunc(display);                               // display rendering callback
-  glutReshapeFunc(reshape);                               // window reshape callback
-  glutMotionFunc(motion);                                 // mouse movement callback
-  glutMouseFunc(mouse);                                   // mouse click callback
-  glutKeyboardFunc(keyboard);
+    switch (eye_idx) {
+    case 0:
+        current_eye_name = "Sky-View";
+        break;
+    case 1:
+        current_eye_name = "Cube 1";
+        break;
+    case 2:
+        current_eye_name = "Cube 2";
+        break;
+    }
+
+    std::cout << "Current eye [" << eye_idx << "] is " << current_eye_name << "\n";
+    std::cout << "Eye matrix for this camera is: \n";
+    printMatrix4(manipulatable_obj[eye_idx]);
+}
+
+void describe_current_obj() {
+    string current_obj_name;
+
+    switch (control_idx) {
+    case 0:
+        current_obj_name = "Sky-View";
+        break;
+    case 1:
+        current_obj_name = "Cube 1";
+        break;
+    case 2:
+        current_obj_name = "Cube 2";
+        break;
+    }
+
+    std::cout << "Controlling [" << control_idx << "] is " << current_obj_name << "\n";
+    std::cout << "Object matrix for this object is: \n";
+    printMatrix4(manipulatable_obj[control_idx]);
+}
+
+void show_current_status() {
+    std::cout << "================================================\n";
+    describe_current_eye();
+    describe_current_obj();
+    std::cout << "================================================\n";
+}
+
+/* End of utility functions */
+
+/* Main program routines */
+
+static void initGlutState(int argc, char* argv[]) {
+    glutInit(&argc, argv);                                  // initialize Glut based on cmd-line args
+    glutInitDisplayMode(GLUT_RGBA | GLUT_DOUBLE | GLUT_DEPTH);  //  RGBA pixel channels and double buffering
+    glutInitWindowSize(g_windowWidth, g_windowHeight);      // create a window
+    glutCreateWindow("Assignment 2");                       // title the window
+
+    glutDisplayFunc(display);                               // display rendering callback
+    glutReshapeFunc(reshape);                               // window reshape callback
+    glutMotionFunc(motion);                                 // mouse movement callback
+    glutMouseFunc(mouse);                                   // mouse click callback
+    glutKeyboardFunc(keyboard);
 }
 
 static void initGLState() {
-  glClearColor(128./255., 200./255., 255./255., 0.);
-  glClearDepth(0.);
-  glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-  glPixelStorei(GL_PACK_ALIGNMENT, 1);
-  glCullFace(GL_BACK);
-  glEnable(GL_CULL_FACE);
-  glEnable(GL_DEPTH_TEST);
-  glDepthFunc(GL_GREATER);
-  glReadBuffer(GL_BACK);
-  if (!g_Gl2Compatible)
-    glEnable(GL_FRAMEBUFFER_SRGB);
+    glClearColor(128. / 255., 200. / 255., 255. / 255., 0.);
+    glClearDepth(0.);
+    glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+    glPixelStorei(GL_PACK_ALIGNMENT, 1);
+    glCullFace(GL_BACK);
+    glEnable(GL_CULL_FACE);
+    glEnable(GL_DEPTH_TEST);
+    glDepthFunc(GL_GREATER);
+    glReadBuffer(GL_BACK);
+    if (!g_Gl2Compatible)
+        glEnable(GL_FRAMEBUFFER_SRGB);
 }
 
 static void initShaders() {
-  g_shaderStates.resize(g_numShaders);
-  for (int i = 0; i < g_numShaders; ++i) {
-    if (g_Gl2Compatible)
-      g_shaderStates[i].reset(new ShaderState(g_shaderFilesGl2[i][0], g_shaderFilesGl2[i][1]));
-    else
-      g_shaderStates[i].reset(new ShaderState(g_shaderFiles[i][0], g_shaderFiles[i][1]));
-  }
+    g_shaderStates.resize(g_numShaders);
+    for (int i = 0; i < g_numShaders; ++i) {
+        if (g_Gl2Compatible)
+            g_shaderStates[i].reset(new ShaderState(g_shaderFilesGl2[i][0], g_shaderFilesGl2[i][1]));
+        else
+            g_shaderStates[i].reset(new ShaderState(g_shaderFiles[i][0], g_shaderFiles[i][1]));
+    }
 }
 
 static void initGeometry() {
-  initGround();
-  initCubes();
+    initGround();
+    initCubes();
 }
 
-int main(int argc, char * argv[]) {
-  try {
-    initGlutState(argc,argv);
+int main(int argc, char* argv[]) {
+    try {
+        initGlutState(argc, argv);
 
-    glewInit(); // load the OpenGL extensions
+        glewInit(); // load the OpenGL extensions
 
-    cout << (g_Gl2Compatible ? "Will use OpenGL 2.x / GLSL 1.0" : "Will use OpenGL 3.x / GLSL 1.3") << endl;
-    if ((!g_Gl2Compatible) && !GLEW_VERSION_3_0)
-      throw runtime_error("Error: card/driver does not support OpenGL Shading Language v1.3");
-    else if (g_Gl2Compatible && !GLEW_VERSION_2_0)
-      throw runtime_error("Error: card/driver does not support OpenGL Shading Language v1.0");
+        cout << (g_Gl2Compatible ? "Will use OpenGL 2.x / GLSL 1.0" : "Will use OpenGL 3.x / GLSL 1.3") << endl;
+        if ((!g_Gl2Compatible) && !GLEW_VERSION_3_0)
+            throw runtime_error("Error: card/driver does not support OpenGL Shading Language v1.3");
+        else if (g_Gl2Compatible && !GLEW_VERSION_2_0)
+            throw runtime_error("Error: card/driver does not support OpenGL Shading Language v1.0");
 
-    initGLState();
-    initShaders();
-    initGeometry();
+        initGLState();
+        initShaders();
+        initGeometry();
 
-    glutMainLoop();
-    return 0;
-  }
-  catch (const runtime_error& e) {
-    cout << "Exception caught: " << e.what() << endl;
-    return -1;
-  }
+        glutMainLoop();
+        return 0;
+    }
+    catch (const runtime_error& e) {
+        cout << "Exception caught: " << e.what() << endl;
+        return -1;
+    }
 }
+
+/* End of main program routine */
