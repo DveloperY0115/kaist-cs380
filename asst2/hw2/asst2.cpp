@@ -198,9 +198,11 @@ static Cvec3f g_objectColors[2] = { Cvec3f(1, 0, 0), Cvec3f(0, 0, 1) };
 // list of manipulatable object matrices
 static Matrix4 manipulatable_obj[3] = { g_skyRbt, objRbt_1, objRbt_2 };
 static unsigned int control_idx = 1;    // initially control cube 1
-
-// list of eye matrices & its index
 static unsigned int eye_idx = 0;        // initial camera is sky camera
+
+// auxiliary frame for object manipulation
+// initially set as cube-sky frame
+static Matrix4 aux_frame = makeMixedFrame(manipulatable_obj[control_idx], manipulatable_obj[eye_idx]);
 
 ///////////////// END OF G L O B A L S //////////////////////////////////////////////////
 
@@ -361,9 +363,9 @@ static void motion(const int x, const int y) {
       
       Matrix4 current_obj = manipulatable_obj[control_idx];
       Matrix4 current_eye = manipulatable_obj[eye_idx];
-      Matrix4 obj_eye_frame = makeMixedFrame(current_obj, current_eye);
-      Matrix4 MtoOwrtE = doMtoOwrtA(m, current_obj, current_eye);
-      current_obj *= MtoOwrtE;
+      aux_frame = makeMixedFrame(current_obj, current_eye);    // auxiliary frame =  (O)_T(E)_R frame
+      Matrix4 MtoOwrtA = doMtoOwrtA(m, current_obj, aux_frame);
+      current_obj *= MtoOwrtA;
       glutPostRedisplay(); // we always redraw if we changed the scene
   }
 
