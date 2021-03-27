@@ -522,6 +522,7 @@ static void keyboard(const unsigned char key, const int x, const int y) {
         // reset object position
         std::cout << "Pressed 'r'! Resetting the position of current object\n";
         manipulatable_obj[control_idx] = initial_matrices[control_idx];
+        current_obj = initial_matrices[control_idx];
 
         show_current_status();
         break;
