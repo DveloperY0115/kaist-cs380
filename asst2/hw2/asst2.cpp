@@ -367,6 +367,8 @@ static void motion(const int x, const int y) {
       Matrix4 current_obj = manipulatable_obj[control_idx];
       manipulatable_obj[control_idx] = doMtoOwrtA(m, current_obj, aux_frame);
       
+      make_aux_frame();    // update aux frame after transform
+
       glutPostRedisplay(); // we always redraw if we changed the scene
   }
 
