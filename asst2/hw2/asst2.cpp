@@ -558,11 +558,18 @@ void describe_current_obj() {
     printMatrix4(manipulatable_obj[control_idx]);
 }
 
+void describe_current_aux() {
+    std::cout << "Current auxiliary frame is: \n";
+    printMatrix4(aux_frame);
+}
+
 void show_current_status() {
     std::cout << "================================================\n";
     describe_current_eye();
     describe_current_obj();
+    describe_current_aux();
     std::cout << "================================================\n";
+    
 }
 
 bool is_skysky_frame() {
