@@ -358,6 +358,12 @@ static void motion(const int x, const int y) {
   if (g_mouseClickDown) {
       // TODO: Modify the following callback since pressing 'v' can change the frame of interest
       manipulatable_obj[control_idx] *= m;
+      
+      Matrix4 current_obj = manipulatable_obj[control_idx];
+      Matrix4 current_eye = manipulatable_obj[eye_idx];
+      Matrix4 obj_eye_frame = makeMixedFrame(current_obj, current_eye);
+      Matrix4 MtoOwrtE = doMtoOwrtA(m, current_obj, current_eye);
+      current_obj *= MtoOwrtE;
       glutPostRedisplay(); // we always redraw if we changed the scene
   }
 
