@@ -322,6 +322,7 @@ void describe_current_eye();
 void describe_current_obj();
 void show_current_status();
 void printMatrix4(const Matrix4& A);
+bool is_skysky_frame();
 
 /* GLUT callbacks */
 
@@ -558,6 +559,12 @@ void show_current_status() {
     std::cout << "================================================\n";
 }
 
+bool is_skysky_frame() {
+    
+    if (eye_idx == 0 && control_idx == 0)
+        return true;
+    return false;
+}
 /* End of utility functions */
 
 /* Main program routines */
