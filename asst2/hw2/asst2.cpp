@@ -191,6 +191,7 @@ static Matrix4 objRbt_2 = Matrix4::makeTranslation(Cvec3(-0.75, 0, 0));
 
 // World matrix
 static Matrix4 g_worldRbt = Matrix4::makeTranslation(Cvec3(0.0, 0.0, 0.0));
+static bool is_worldsky_frame = false;
 
 // list of object matrices
 // 1. cube 1
@@ -205,7 +206,9 @@ static unsigned int eye_idx = 0;        // initial camera is sky camera
 
 // auxiliary frame for object manipulation
 // initially set as cube-sky frame
-static Matrix4 aux_frame = makeMixedFrame(manipulatable_obj[control_idx], manipulatable_obj[eye_idx]);
+static Matrix4 current_obj = manipulatable_obj[control_idx];
+static Matrix4 current_eye = manipulatable_obj[eye_idx];
+static Matrix4 aux_frame = makeMixedFrame(current_obj, current_eye);
 
 ///////////////// END OF G L O B A L S //////////////////////////////////////////////////
 
@@ -364,9 +367,10 @@ static void motion(const int x, const int y) {
 
   if (g_mouseClickDown) {      
       // modify object matrix with respect to object-eye frame
-      Matrix4 current_obj = manipulatable_obj[control_idx];
       manipulatable_obj[control_idx] = doMtoOwrtA(m, current_obj, aux_frame);
       
+      current_obj = manipulatable_obj[control_idx];
+      current_eye = manipulatable_obj[eye_idx];
       make_aux_frame();    // update aux frame after transform
 
       glutPostRedisplay(); // we always redraw if we changed the scene
@@ -440,10 +444,14 @@ static void keyboard(const unsigned char key, const int x, const int y) {
             control_idx = 1;
         }
 
+        current_obj = manipulatable_obj[control_idx];
+        current_eye = manipulatable_obj[eye_idx];
+
         if (is_skysky_frame()) {
             // if current frame is sky-sky frame
             // give a user an option 'm'
             std::cout << "You're now in sky-sky frame\n";
+            is_worldsky_frame = false;
             std::cout << "Press 'm' to switch between world-sky frame and sky-sky frame\n";
         }
 
@@ -466,10 +474,14 @@ static void keyboard(const unsigned char key, const int x, const int y) {
             control_idx = 1;
         }
 
+        current_obj = manipulatable_obj[control_idx];
+        current_eye = manipulatable_obj[eye_idx];
+
         if (is_skysky_frame()) {
             // if current frame is sky-sky frame
             // give a user an option 'm'
             std::cout << "You're now in sky-sky frame\n";
+            is_worldsky_frame = false;
             std::cout << "Press 'm' to switch between world-sky frame and sky-sky frame\n";
         }
 
@@ -485,8 +497,23 @@ static void keyboard(const unsigned char key, const int x, const int y) {
             std::cout << "You can use this option ONLY when you're in sky-sky frame\n";
         }
         else {
-            // current frame IS a sky-sky frame
-
+            // current frame is a sky-sky frame
+            if (!is_worldsky_frame) {
+                // current frame is a sky-sky frame -> switching to world-sky frame
+                std::cout << "Switching to World-Sky frame\n";
+                is_worldsky_frame = true;
+                current_obj = g_worldRbt;
+                current_eye = manipulatable_obj[0];
+                make_aux_frame();
+            }
+            else {
+                // current frame is a world-sky frame -> switching to sky-sky frame
+                std::cout << "Switching to Sky-Sky frame\n";
+                is_worldsky_frame = false;
+                current_obj = manipulatable_obj[0];
+                current_eye = manipulatable_obj[0];
+                make_aux_frame();
+            }
         }
 
         break;
@@ -581,10 +608,9 @@ bool is_skysky_frame() {
 }
 
 void make_aux_frame() {
-    Matrix4 current_obj = manipulatable_obj[control_idx];
-    Matrix4 current_eye = manipulatable_obj[eye_idx];
     aux_frame = makeMixedFrame(current_obj, current_eye);    // auxiliary frame = (O)_T(E)_R frame
 }
+
 /* End of utility functions */
 
 /* Main program routines */
