@@ -363,7 +363,7 @@ static void motion(const int x, const int y) {
       
       Matrix4 current_obj = manipulatable_obj[control_idx];
       Matrix4 current_eye = manipulatable_obj[eye_idx];
-      aux_frame = makeMixedFrame(current_obj, current_eye);    // auxiliary frame =  (O)_T(E)_R frame
+      aux_frame = makeMixedFrame(current_obj, current_eye);    // auxiliary frame = (O)_T(E)_R frame
       Matrix4 MtoOwrtA = doMtoOwrtA(m, current_obj, aux_frame);
       current_obj *= MtoOwrtA;
       glutPostRedisplay(); // we always redraw if we changed the scene
@@ -431,6 +431,19 @@ static void keyboard(const unsigned char key, const int x, const int y) {
         if (eye_idx > 2)
             eye_idx = 0;
 
+        if (eye_idx != 0 && control_idx == 0) {
+            // if current eye is a cube and user tries to transform sky camera
+            std::cout << "You CANNOT control sky camera with respect to cube! \n";
+            control_idx = 1;
+        }
+
+        if (eye_idx == 0 && control_idx == 0) {
+            // if current frame is sky-sky frame
+            // give a user an option 'm'
+            std::cout << "You're now in sky-sky frame\n";
+            std::cout << "Press 'm' to switch between world-sky frame and sky-sky frame\n";
+        }
+
         show_current_status();
         break;
 
@@ -447,7 +460,23 @@ static void keyboard(const unsigned char key, const int x, const int y) {
             control_idx = 1;
         }
 
+        if (eye_idx == 0 && control_idx == 0) {
+            // if current frame is sky-sky frame
+            // give a user an option 'm'
+            std::cout << "You're now in sky-sky frame\n";
+            std::cout << "Press 'm' to switch between world-sky frame and sky-sky frame\n";
+        }
+
         show_current_status();
+        break;
+
+    case 'm':
+        if (eye_idx != 0 || control_idx != 0) {
+            // current frame is not a sky-sky frame
+            std::cout << "You can use this option ONLY when you're in sky-sky frame\n";
+        }
+
+
         break;
 
     case 'r':
