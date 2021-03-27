@@ -192,7 +192,7 @@ static Matrix4 objRbt_2 = Matrix4::makeTranslation(Cvec3(-0.75, 0, 0));
 // list of object matrices
 // 1. cube 1
 // 2. cube 2
-static Matrix4 g_objectRbt[2] = { objRbt_1, objRbt_2 };
+static Matrix4 initial_matrices[3] = { g_skyRbt, objRbt_1, objRbt_2 };
 static Cvec3f g_objectColors[2] = { Cvec3f(1, 0, 0), Cvec3f(0, 0, 1) };
 
 // list of manipulatable object matrices
@@ -200,7 +200,6 @@ static Matrix4 manipulatable_obj[3] = { g_skyRbt, objRbt_1, objRbt_2 };
 static unsigned int control_idx = 1;    // initially control cube 1
 
 // list of eye matrices & its index
-static Matrix4 eyes[3] = { g_skyRbt, objRbt_1, objRbt_2 };
 static unsigned int eye_idx = 0;
 
 ///////////////// END OF G L O B A L S //////////////////////////////////////////////////
@@ -276,7 +275,7 @@ static void drawStuff() {
   sendProjectionMatrix(curSS, projmat);
 
   // use the skyRbt as the eyeRbt
-  const Matrix4 eyeRbt = eyes[eye_idx];
+  const Matrix4 eyeRbt = manipulatable_obj[eye_idx];
   const Matrix4 invEyeRbt = inv(eyeRbt);
 
   const Cvec3 eyeLight1 = Cvec3(invEyeRbt * Cvec4(g_light1, 1)); // g_light1 position in eye coordinates
