@@ -362,14 +362,15 @@ static void motion(const int x, const int y) {
   }
 
   if (g_mouseClickDown) {
-      // TODO: Modify the following callback since pressing 'v' can change the frame of interest
-      manipulatable_obj[control_idx] *= m;
+      // TODO: Modify the following callback since pressing 'v' can change the frame of interest            
       
+      // modify object matrix with respect to object-eye frame
       Matrix4 current_obj = manipulatable_obj[control_idx];
       Matrix4 current_eye = manipulatable_obj[eye_idx];
       aux_frame = makeMixedFrame(current_obj, current_eye);    // auxiliary frame = (O)_T(E)_R frame
       Matrix4 MtoOwrtA = doMtoOwrtA(m, current_obj, aux_frame);
-      current_obj *= MtoOwrtA;
+      manipulatable_obj[control_idx] = MtoOwrtA;
+      
       glutPostRedisplay(); // we always redraw if we changed the scene
   }
 
