@@ -441,7 +441,7 @@ static void keyboard(const unsigned char key, const int x, const int y) {
             control_idx = 1;
         }
 
-        if (eye_idx == 0 && control_idx == 0) {
+        if (is_skysky_frame()) {
             // if current frame is sky-sky frame
             // give a user an option 'm'
             std::cout << "You're now in sky-sky frame\n";
@@ -464,7 +464,7 @@ static void keyboard(const unsigned char key, const int x, const int y) {
             control_idx = 1;
         }
 
-        if (eye_idx == 0 && control_idx == 0) {
+        if (is_skysky_frame()) {
             // if current frame is sky-sky frame
             // give a user an option 'm'
             std::cout << "You're now in sky-sky frame\n";
@@ -475,11 +475,14 @@ static void keyboard(const unsigned char key, const int x, const int y) {
         break;
 
     case 'm':
-        if (eye_idx != 0 || control_idx != 0) {
+        if (!is_skysky_frame()) {
             // current frame is not a sky-sky frame
             std::cout << "You can use this option ONLY when you're in sky-sky frame\n";
         }
+        else {
+            // current frame IS a sky-sky frame
 
+        }
 
         break;
 
@@ -560,7 +563,6 @@ void show_current_status() {
 }
 
 bool is_skysky_frame() {
-    
     if (eye_idx == 0 && control_idx == 0)
         return true;
     return false;
