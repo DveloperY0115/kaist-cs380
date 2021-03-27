@@ -200,7 +200,7 @@ static Matrix4 manipulatable_obj[3] = { g_skyRbt, objRbt_1, objRbt_2 };
 static unsigned int control_idx = 1;    // initially control cube 1
 
 // list of eye matrices & its index
-static unsigned int eye_idx = 0;
+static unsigned int eye_idx = 0;        // initial camera is sky camera
 
 ///////////////// END OF G L O B A L S //////////////////////////////////////////////////
 
@@ -438,6 +438,12 @@ static void keyboard(const unsigned char key, const int x, const int y) {
         control_idx++;
         if (control_idx > 2)
             control_idx = 0;
+        
+        if (eye_idx != 0 && control_idx == 0) {
+            // if current eye is a cube and user tries to transform sky camera
+            std::cout << "You CANNOT control sky camera with respect to cube! \n";
+            control_idx = 1;
+        }
 
         show_current_status();
         break;
