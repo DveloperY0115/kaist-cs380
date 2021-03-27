@@ -207,6 +207,7 @@ static unsigned int eye_idx = 0;        // initial camera is sky camera
 // auxiliary frame for object manipulation
 // initially set as cube-sky frame
 static Matrix4 current_obj = manipulatable_obj[control_idx];
+static Matrix4 current_aux_trans = manipulatable_obj[control_idx];
 static Matrix4 current_eye = manipulatable_obj[eye_idx];
 static Matrix4 aux_frame = makeMixedFrame(current_obj, current_eye);
 
@@ -354,24 +355,96 @@ static void motion(const int x, const int y) {
   const double dx = x - g_mouseClickX;
   const double dy = g_windowHeight - y - 1 - g_mouseClickY;
 
+  unsigned int which_case = 0;
+
+  /* Three cases
+  * Case 1 - Manipulate cubes
+  * Case 2 - Manipulate sky view w.r.t world origin and sky view axes
+  * Case 3 - Manipulate sky view w.r.t its origin and axes
+  */
+  if (is_worldsky_frame) {
+      // case 2
+      which_case = 2;
+  }
+  else if (is_skysky_frame()) {
+      // case 3
+      which_case = 3;
+  }
+  else {
+      // case 1
+      which_case = 1;
+  }
   Matrix4 m;
   if (g_mouseLClickButton && !g_mouseRClickButton) { // left button down?
-    m = Matrix4::makeXRotation(-dy) * Matrix4::makeYRotation(dx);
+      switch (which_case) {
+      case 1:
+          // default behavior
+          m = Matrix4::makeXRotation(-dy) * Matrix4::makeYRotation(dx);
+          break;
+
+      case 2:
+          // invert sign of rotation and translation
+          m = Matrix4::makeXRotation(dy) * Matrix4::makeYRotation(-dx);
+          break;
+
+      case 3:
+          // invert sign of rotation only
+          m = Matrix4::makeXRotation(dy) * Matrix4::makeYRotation(-dx);
+          break;
+      }
   }
   else if (g_mouseRClickButton && !g_mouseLClickButton) { // right button down?
-    m = Matrix4::makeTranslation(Cvec3(dx, dy, 0) * 0.01);
+      switch (which_case) {
+      case 1:
+          // default behavior
+          m = Matrix4::makeTranslation(Cvec3(dx, dy, 0) * 0.01);
+          break;
+      case 2:
+          // invert sign of rotation and translation
+          m = Matrix4::makeTranslation(-Cvec3(dx, dy, 0) * 0.01);
+          break;
+
+      case 3:
+          // invert sign of rotation only
+          m = Matrix4::makeTranslation(Cvec3(dx, dy, 0) * 0.01);
+          break;
+      }
   }
   else if (g_mouseMClickButton || (g_mouseLClickButton && g_mouseRClickButton)) {  // middle or (left and right) button down?
-    m = Matrix4::makeTranslation(Cvec3(0, 0, -dy) * 0.01);
+      switch (which_case) {
+      case 1:
+          // default behavior
+          m = Matrix4::makeTranslation(Cvec3(0, 0, -dy) * 0.01);
+          break;
+      case 2:
+          // invert sign of rotation and translation
+          m = Matrix4::makeTranslation(-Cvec3(0, 0, -dy) * 0.01);
+          break;
+      case 3:
+          // invert sign of rotation only
+          m = Matrix4::makeTranslation(Cvec3(0, 0, -dy) * 0.01);
+          break;
+      }
   }
 
-  if (g_mouseClickDown) {      
-      // modify object matrix with respect to object-eye frame
-      manipulatable_obj[control_idx] = doMtoOwrtA(m, current_obj, aux_frame);
-      
-      current_obj = manipulatable_obj[control_idx];
-      current_eye = manipulatable_obj[eye_idx];
-      make_aux_frame();    // update aux frame after transform
+  if (g_mouseClickDown) {
+
+      if (is_worldsky_frame) {
+         // case 2
+          manipulatable_obj[control_idx] = doMtoOwrtA(m, current_obj, aux_frame);
+          current_obj = manipulatable_obj[control_idx];
+          current_eye = manipulatable_obj[eye_idx];
+
+          aux_frame = makeMixedFrame(g_worldRbt, current_eye);
+      }
+      else {
+          // case 1 & 3
+          manipulatable_obj[control_idx] = doMtoOwrtA(m, current_obj, aux_frame);
+          current_obj = manipulatable_obj[control_idx];
+          current_eye = manipulatable_obj[eye_idx];
+
+          make_aux_frame();    // update aux frame after transform
+      }
 
       glutPostRedisplay(); // we always redraw if we changed the scene
   }
@@ -445,6 +518,7 @@ static void keyboard(const unsigned char key, const int x, const int y) {
         }
 
         current_obj = manipulatable_obj[control_idx];
+        current_aux_trans = current_obj;
         current_eye = manipulatable_obj[eye_idx];
 
         if (is_skysky_frame()) {
@@ -459,6 +533,7 @@ static void keyboard(const unsigned char key, const int x, const int y) {
         make_aux_frame();
 
         show_current_status();
+
         break;
 
     case 'o':
@@ -475,6 +550,7 @@ static void keyboard(const unsigned char key, const int x, const int y) {
         }
 
         current_obj = manipulatable_obj[control_idx];
+        current_aux_trans = current_obj;
         current_eye = manipulatable_obj[eye_idx];
 
         if (is_skysky_frame()) {
@@ -502,16 +578,14 @@ static void keyboard(const unsigned char key, const int x, const int y) {
                 // current frame is a sky-sky frame -> switching to world-sky frame
                 std::cout << "Switching to World-Sky frame\n";
                 is_worldsky_frame = true;
-                current_obj = g_worldRbt;
-                current_eye = manipulatable_obj[0];
+                current_aux_trans = g_worldRbt;
                 make_aux_frame();
             }
             else {
                 // current frame is a world-sky frame -> switching to sky-sky frame
                 std::cout << "Switching to Sky-Sky frame\n";
                 is_worldsky_frame = false;
-                current_obj = manipulatable_obj[0];
-                current_eye = manipulatable_obj[0];
+                current_aux_trans = current_obj;
                 make_aux_frame();
             }
         }
@@ -522,7 +596,8 @@ static void keyboard(const unsigned char key, const int x, const int y) {
         // reset object position
         std::cout << "Pressed 'r'! Resetting the position of current object\n";
         manipulatable_obj[control_idx] = initial_matrices[control_idx];
-        current_obj = initial_matrices[control_idx];
+        current_obj = manipulatable_obj[control_idx];
+        current_eye = manipulatable_obj[eye_idx];
         make_aux_frame();
 
         show_current_status();
@@ -590,6 +665,10 @@ void describe_current_obj() {
 }
 
 void describe_current_aux() {
+    std::cout << "Current trans-factor of auxiliary frame is: \n";
+    printMatrix4(current_aux_trans);
+    std::cout << "Current eye-factor of auxiliary frame is: \n";
+    printMatrix4(current_eye);
     std::cout << "Current auxiliary frame is: \n";
     printMatrix4(aux_frame);
 }
@@ -610,7 +689,7 @@ bool is_skysky_frame() {
 }
 
 void make_aux_frame() {
-    aux_frame = makeMixedFrame(current_obj, current_eye);    // auxiliary frame = (O)_T(E)_R frame
+    aux_frame = makeMixedFrame(current_aux_trans, current_eye);    // auxiliary frame = (O)_T(E)_R frame
 }
 
 /* End of utility functions */
