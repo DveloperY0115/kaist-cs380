@@ -323,6 +323,7 @@ void describe_current_obj();
 void show_current_status();
 void printMatrix4(const Matrix4& A);
 bool is_skysky_frame();
+void make_aux_frame();
 
 /* GLUT callbacks */
 
@@ -361,15 +362,10 @@ static void motion(const int x, const int y) {
     m = Matrix4::makeTranslation(Cvec3(0, 0, -dy) * 0.01);
   }
 
-  if (g_mouseClickDown) {
-      // TODO: Modify the following callback since pressing 'v' can change the frame of interest            
-      
+  if (g_mouseClickDown) {      
       // modify object matrix with respect to object-eye frame
       Matrix4 current_obj = manipulatable_obj[control_idx];
-      Matrix4 current_eye = manipulatable_obj[eye_idx];
-      aux_frame = makeMixedFrame(current_obj, current_eye);    // auxiliary frame = (O)_T(E)_R frame
-      Matrix4 MtoOwrtA = doMtoOwrtA(m, current_obj, aux_frame);
-      manipulatable_obj[control_idx] = MtoOwrtA;
+      manipulatable_obj[control_idx] = doMtoOwrtA(m, current_obj, aux_frame);
       
       glutPostRedisplay(); // we always redraw if we changed the scene
   }
@@ -449,6 +445,9 @@ static void keyboard(const unsigned char key, const int x, const int y) {
             std::cout << "Press 'm' to switch between world-sky frame and sky-sky frame\n";
         }
 
+        // create auxiliary frame (O-E) for current state
+        make_aux_frame();
+
         show_current_status();
         break;
 
@@ -471,6 +470,9 @@ static void keyboard(const unsigned char key, const int x, const int y) {
             std::cout << "You're now in sky-sky frame\n";
             std::cout << "Press 'm' to switch between world-sky frame and sky-sky frame\n";
         }
+
+        // create auxiliary frame (O-E) for current state
+        make_aux_frame();
 
         show_current_status();
         break;
@@ -567,6 +569,12 @@ bool is_skysky_frame() {
     if (eye_idx == 0 && control_idx == 0)
         return true;
     return false;
+}
+
+void make_aux_frame() {
+    Matrix4 current_obj = manipulatable_obj[control_idx];
+    Matrix4 current_eye = manipulatable_obj[eye_idx];
+    aux_frame = makeMixedFrame(current_obj, current_eye);    // auxiliary frame = (O)_T(E)_R frame
 }
 /* End of utility functions */
 
