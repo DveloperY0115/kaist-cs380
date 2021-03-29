@@ -591,22 +591,8 @@ static void motion(const int x, const int y) {
 
   if (g_mouseClickDown) {
 
-      if (is_worldsky_frame) {
-         // case 2
-          manipulatable_obj[control_idx] = doMtoOwrtA(m, current_obj, aux_frame);
-          current_obj = manipulatable_obj[control_idx];
-          current_eye = manipulatable_obj[eye_idx];
-
-          aux_frame = makeMixedFrame(g_worldRbt, current_eye);
-      }
-      else {
-          // case 1 & 3
-          manipulatable_obj[control_idx] = doMtoOwrtA(m, current_obj, aux_frame);
-          current_obj = manipulatable_obj[control_idx];
-          current_eye = manipulatable_obj[eye_idx];
-
-          make_aux_frame();    // update aux frame after transform
-      }
+      g_VPState.transform_obj_wrt_A(m);
+      g_VPState.update_aux_frame();
 
       glutPostRedisplay(); // we always redraw if we changed the scene
   }
