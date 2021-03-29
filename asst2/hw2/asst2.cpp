@@ -540,28 +540,9 @@ static void motion(const int x, const int y) {
   const double dx = x - g_mouseClickX;
   const double dy = g_windowHeight - y - 1 - g_mouseClickY;
 
-  unsigned int which_case = 0;
-
-  /* Three cases
-  * Case 1 - Manipulate cubes
-  * Case 2 - Manipulate sky view w.r.t world origin and sky view axes
-  * Case 3 - Manipulate sky view w.r.t its origin and axes
-  */
-  if (g_VPState.is_world_sky_frame()) {
-      // case 2
-      which_case = 2;
-  }
-  else if (g_VPState.is_sky_sky_frame()) {
-      // case 3
-      which_case = 3;
-  }
-  else {
-      // case 1
-      which_case = 1;
-  }
   Matrix4 m;
   if (g_mouseLClickButton && !g_mouseRClickButton) { // left button down?
-      switch (which_case) {
+      switch (g_VPState.get_aux_frame_descriptor()) {
       case 1:
           // default behavior
           m = Matrix4::makeXRotation(-dy) * Matrix4::makeYRotation(dx);
