@@ -277,7 +277,14 @@ public:
     }
 
     void update_aux_frame() {
-        aux_frame = makeMixedFrame(get_current_obj_matrix(), get_current_eye_matrix());
+        if (is_world_sky_frame()) {
+            // if current frame is world-eye frame
+            update_world_eye_frame();
+            aux_frame = world_eye_frame;
+        }
+        else {
+            aux_frame = makeMixedFrame(get_current_obj_matrix(), get_current_eye_matrix());
+        }
     }
 
     void update_world_eye_frame() {
