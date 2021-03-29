@@ -211,6 +211,185 @@ static Matrix4 current_aux_trans = manipulatable_obj[control_idx];
 static Matrix4 current_eye = manipulatable_obj[eye_idx];
 static Matrix4 aux_frame = makeMixedFrame(current_obj, current_eye);
 
+class ViewpointState {
+public:
+    // Constructor
+    ViewpointState() {
+        current_obj_idx = 1;    // initially cube 1
+        current_eye_idx = 0;    // initially cube 2
+        update_aux_frame();     // initial calculation of auxiliary frame
+        update_world_eye_frame();    // initial calculation of world-eye frame
+        is_world_sky_frame_ = false;    // later!
+    }
+
+    void transform_obj_wrt_A(const Matrix4& M) {
+        manipulatable_obj[current_obj_idx] = doMtoOwrtA(M, manipulatable_obj[current_obj_idx], get_aux_frame());
+    }
+
+    /* setters */
+    void switch_eye() {
+        if (is_world_sky_frame()) {
+            set_is_world_sky_frame(false);
+        }
+
+        current_eye_idx++;
+        if (current_eye_idx > 2)
+            current_eye_idx = 0;
+
+        if (current_eye_idx != 0 && current_obj_idx == 0) {
+            // if current eye is a cube and user tries to transform sky camera
+            std::cout << "You CANNOT control sky camera with respect to cube! \n";
+            current_obj_idx = 1;
+        }
+
+        if (is_sky_sky_frame()) {
+            // if current frame is sky-sky frame
+            // give a user an option 'm'
+            std::cout << "You're now in sky-sky frame\n";
+            std::cout << "Press 'm' to switch between world-sky frame and sky-sky frame\n";
+        }
+
+        // update auxiliary frame for new viewpoint
+        update_aux_frame();
+    }
+
+    void switch_obj() {
+
+        if (is_world_sky_frame()) {
+            set_is_world_sky_frame(false);
+        }
+
+        current_obj_idx++;
+        if (current_obj_idx > 2)
+            current_obj_idx = 0;
+
+        if (current_eye_idx != 0 && current_obj_idx == 0) {
+            // if current eye is a cube and user tries to transform sky camera
+            std::cout << "You CANNOT control sky camera with respect to cube! \n";
+            current_obj_idx = 1;
+        }
+
+        if (is_sky_sky_frame()) {
+            // if current frame is sky-sky frame
+            // give a user an option 'm'
+            std::cout << "You're now in sky-sky frame\n";
+            std::cout << "Press 'm' to switch between world-sky frame and sky-sky frame\n";
+        }
+
+        // update auxiliary frame for new object
+        update_aux_frame();
+    }
+
+    void set_is_world_sky_frame(const bool v) {
+        // warning you should check input type
+        is_world_sky_frame_ = v;
+    }
+
+    void update_aux_frame() {
+        if (is_world_sky_frame()) {
+            // if current frame is world-eye frame
+            update_world_eye_frame();
+            aux_frame = world_eye_frame;
+        }
+        else {
+            aux_frame = makeMixedFrame(get_current_obj_matrix(), get_current_eye_matrix());
+        }
+    }
+
+    void update_world_eye_frame() {
+        world_eye_frame = makeMixedFrame(g_worldRbt, get_current_eye_matrix());
+    }
+
+    /* getters */
+    Matrix4 get_current_obj_matrix() {
+        return manipulatable_obj[current_obj_idx];
+    }
+
+    Matrix4 get_current_eye_matrix() {
+        return manipulatable_obj[current_eye_idx];
+    }
+
+    Matrix4 get_aux_frame() {
+        return aux_frame;
+    }
+
+    /* utilities */
+    bool is_sky_sky_frame() {
+        return current_eye_idx == 0 && current_obj_idx == 0;
+    }
+    
+    bool is_world_sky_frame() {
+        return is_world_sky_frame_;
+    }
+    
+    void describe_current_eye() {
+        string current_eye_name;
+
+        switch (current_eye_idx) {
+        case 0:
+            current_eye_name = "Sky-View";
+            break;
+        case 1:
+            current_eye_name = "Cube 1";
+            break;
+        case 2:
+            current_eye_name = "Cube 2";
+            break;
+        }
+
+        std::cout << "Current eye is " << current_eye_name << "\n";
+        std::cout << "Eye matrix for this camera is: \n";
+        printMatrix4(manipulatable_obj[current_eye_idx]);
+    }
+
+    void describe_current_obj() {
+        string current_obj_name;
+
+        switch (current_obj_idx) {
+        case 0:
+            current_obj_name = "Sky-View";
+            break;
+        case 1:
+            current_obj_name = "Cube 1";
+            break;
+        case 2:
+            current_obj_name = "Cube 2";
+            break;
+        }
+
+        std::cout << "Controlling " << current_obj_name << "\n";
+        std::cout << "Object matrix for this object is: \n";
+        printMatrix4(manipulatable_obj[current_obj_idx]);
+    }
+
+    void describe_current_aux() {
+        if (is_world_sky_frame()) {
+            std::cout << "Currently in World-Sky frame\n";
+        }
+        std::cout << "Current auxiliary frame is: \n";
+        printMatrix4(get_aux_frame());
+    }
+
+    void describe_current_status() {
+        std::cout << "================================================\n";
+        describe_current_eye();
+        describe_current_obj();
+        describe_current_aux();
+        std::cout << "================================================\n";
+
+    }
+
+private:
+    bool is_world_sky_frame_;
+    unsigned int current_obj_idx;    // initially cube 1
+    unsigned int current_eye_idx;    // initially cube 2
+    Matrix4 aux_frame;    // auxiliary frame used to transform objects
+    Matrix4 world_eye_frame;
+};
+
+// Refactoring --> All view-obj information will be incapsulated in here!
+static ViewpointState g_VPState = ViewpointState();
+
 ///////////////// END OF G L O B A L S //////////////////////////////////////////////////
 
 static void initGround() {
@@ -284,7 +463,7 @@ static void drawStuff() {
   sendProjectionMatrix(curSS, projmat);
 
   // use the skyRbt as the eyeRbt
-  const Matrix4 eyeRbt = manipulatable_obj[eye_idx];
+  const Matrix4 eyeRbt = g_VPState.get_current_eye_matrix();
   const Matrix4 invEyeRbt = inv(eyeRbt);
 
   const Cvec3 eyeLight1 = Cvec3(invEyeRbt * Cvec4(g_light1, 1)); // g_light1 position in eye coordinates
@@ -321,14 +500,6 @@ static void drawStuff() {
   g_cube_2->draw(curSS);
 }
 
-/* Utility function forward declarations */
-void describe_current_eye();
-void describe_current_obj();
-void show_current_status();
-void printMatrix4(const Matrix4& A);
-bool is_skysky_frame();
-void make_aux_frame();
-
 /* GLUT callbacks */
 
 static void display() {
@@ -362,11 +533,11 @@ static void motion(const int x, const int y) {
   * Case 2 - Manipulate sky view w.r.t world origin and sky view axes
   * Case 3 - Manipulate sky view w.r.t its origin and axes
   */
-  if (is_worldsky_frame) {
+  if (g_VPState.is_world_sky_frame()) {
       // case 2
       which_case = 2;
   }
-  else if (is_skysky_frame()) {
+  else if (g_VPState.is_sky_sky_frame()) {
       // case 3
       which_case = 3;
   }
@@ -429,22 +600,8 @@ static void motion(const int x, const int y) {
 
   if (g_mouseClickDown) {
 
-      if (is_worldsky_frame) {
-         // case 2
-          manipulatable_obj[control_idx] = doMtoOwrtA(m, current_obj, aux_frame);
-          current_obj = manipulatable_obj[control_idx];
-          current_eye = manipulatable_obj[eye_idx];
-
-          aux_frame = makeMixedFrame(g_worldRbt, current_eye);
-      }
-      else {
-          // case 1 & 3
-          manipulatable_obj[control_idx] = doMtoOwrtA(m, current_obj, aux_frame);
-          current_obj = manipulatable_obj[control_idx];
-          current_eye = manipulatable_obj[eye_idx];
-
-          make_aux_frame();    // update aux frame after transform
-      }
+      g_VPState.transform_obj_wrt_A(m);
+      g_VPState.update_aux_frame();
 
       glutPostRedisplay(); // we always redraw if we changed the scene
   }
@@ -505,88 +662,45 @@ static void keyboard(const unsigned char key, const int x, const int y) {
         break;
 
     case 'v':
-        // switch view point
         std::cout << "Pressed 'v'! Switching camera\n";
-        eye_idx++;
-        if (eye_idx > 2)
-            eye_idx = 0;
+        
+        // switch view point
+        g_VPState.switch_eye();
 
-        if (eye_idx != 0 && control_idx == 0) {
-            // if current eye is a cube and user tries to transform sky camera
-            std::cout << "You CANNOT control sky camera with respect to cube! \n";
-            control_idx = 1;
-        }
-
-        current_obj = manipulatable_obj[control_idx];
-        current_aux_trans = current_obj;
-        current_eye = manipulatable_obj[eye_idx];
-
-        if (is_skysky_frame()) {
-            // if current frame is sky-sky frame
-            // give a user an option 'm'
-            std::cout << "You're now in sky-sky frame\n";
-            is_worldsky_frame = false;
-            std::cout << "Press 'm' to switch between world-sky frame and sky-sky frame\n";
-        }
-
-        // create auxiliary frame (O-E) for current state
-        make_aux_frame();
-
-        show_current_status();
-
+        // describe current state
+        g_VPState.describe_current_status();
         break;
 
     case 'o':
+        std::cout << "Pressed 'o'! Switching object\n";
+
         // switch object
-        std::cout << "Pressed 'o'! Switching object to be manipulated\n";
-        control_idx++;
-        if (control_idx > 2)
-            control_idx = 0;
-        
-        if (eye_idx != 0 && control_idx == 0) {
-            // if current eye is a cube and user tries to transform sky camera
-            std::cout << "You CANNOT control sky camera with respect to cube! \n";
-            control_idx = 1;
-        }
+        g_VPState.switch_obj();
 
-        current_obj = manipulatable_obj[control_idx];
-        current_aux_trans = current_obj;
-        current_eye = manipulatable_obj[eye_idx];
-
-        if (is_skysky_frame()) {
-            // if current frame is sky-sky frame
-            // give a user an option 'm'
-            std::cout << "You're now in sky-sky frame\n";
-            is_worldsky_frame = false;
-            std::cout << "Press 'm' to switch between world-sky frame and sky-sky frame\n";
-        }
-
-        // create auxiliary frame (O-E) for current state
-        make_aux_frame();
-
-        show_current_status();
+        // describe current state
+        g_VPState.describe_current_status();
         break;
 
     case 'm':
-        if (!is_skysky_frame()) {
+        if (!g_VPState.is_sky_sky_frame()) {
             // current frame is not a sky-sky frame
             std::cout << "You can use this option ONLY when you're in sky-sky frame\n";
         }
         else {
             // current frame is a sky-sky frame
-            if (!is_worldsky_frame) {
+            if (!g_VPState.is_world_sky_frame()) {
                 // current frame is a sky-sky frame -> switching to world-sky frame
                 std::cout << "Switching to World-Sky frame\n";
-                is_worldsky_frame = true;
-                current_aux_trans = g_worldRbt;
-                make_aux_frame();
+                g_VPState.set_is_world_sky_frame(true);
+                g_VPState.update_aux_frame();
+                g_VPState.describe_current_status();
             }
             else {
                 // current frame is a world-sky frame -> switching to sky-sky frame
                 std::cout << "Switching to Sky-Sky frame\n";
-                is_worldsky_frame = false;
-                current_aux_trans = current_obj;
-                make_aux_frame();
+                g_VPState.set_is_world_sky_frame(false);
+                g_VPState.update_aux_frame();
+                g_VPState.describe_current_status();
             }
         }
 
@@ -594,105 +708,24 @@ static void keyboard(const unsigned char key, const int x, const int y) {
 
     case 'r':
         // reset object position
-        std::cout << "Pressed 'r'! Resetting the position of current object\n";
-        manipulatable_obj[control_idx] = initial_matrices[control_idx];
-        current_obj = manipulatable_obj[control_idx];
-        current_eye = manipulatable_obj[eye_idx];
-        make_aux_frame();
+        std::cout << "Pressed 'r'! Resetting all object & eye position\n";
+        
+        for (int i = 0; i < 3; ++i) {
+            manipulatable_obj[i] = initial_matrices[i];
+        }
+        g_VPState.update_aux_frame();
 
-        show_current_status();
+        g_VPState.describe_current_status();
         break;
 
     case 'd':
-        show_current_status();
+        g_VPState.describe_current_status();
         break;
     }
     glutPostRedisplay();
 }
 
 /* End of GLUT callbacks */
-
-/* Utility functions for debugging */
-
-// print the elements of matrix A
-void printMatrix4(const Matrix4& A) {
-    for (int i = 0; i < 4; ++i) {
-        for (int j = 0; j < 4; ++j) {
-            std::cout << A(i, j) << " ";
-        }
-        std::cout << "\n";
-    }
-}
-
-void describe_current_eye() {
-    string current_eye_name;
-
-    switch (eye_idx) {
-    case 0:
-        current_eye_name = "Sky-View";
-        break;
-    case 1:
-        current_eye_name = "Cube 1";
-        break;
-    case 2:
-        current_eye_name = "Cube 2";
-        break;
-    }
-
-    std::cout << "Current eye [" << eye_idx << "] is " << current_eye_name << "\n";
-    std::cout << "Eye matrix for this camera is: \n";
-    printMatrix4(manipulatable_obj[eye_idx]);
-}
-
-void describe_current_obj() {
-    string current_obj_name;
-
-    switch (control_idx) {
-    case 0:
-        current_obj_name = "Sky-View";
-        break;
-    case 1:
-        current_obj_name = "Cube 1";
-        break;
-    case 2:
-        current_obj_name = "Cube 2";
-        break;
-    }
-
-    std::cout << "Controlling [" << control_idx << "] is " << current_obj_name << "\n";
-    std::cout << "Object matrix for this object is: \n";
-    printMatrix4(manipulatable_obj[control_idx]);
-}
-
-void describe_current_aux() {
-    std::cout << "Current trans-factor of auxiliary frame is: \n";
-    printMatrix4(current_aux_trans);
-    std::cout << "Current eye-factor of auxiliary frame is: \n";
-    printMatrix4(current_eye);
-    std::cout << "Current auxiliary frame is: \n";
-    printMatrix4(aux_frame);
-}
-
-void show_current_status() {
-    std::cout << "================================================\n";
-    describe_current_eye();
-    describe_current_obj();
-    describe_current_aux();
-    std::cout << "================================================\n";
-    
-}
-
-bool is_skysky_frame() {
-    if (eye_idx == 0 && control_idx == 0)
-        return true;
-    return false;
-}
-
-void make_aux_frame() {
-    aux_frame = makeMixedFrame(current_aux_trans, current_eye);    // auxiliary frame = (O)_T(E)_R frame
-}
-
-/* End of utility functions */
 
 /* Main program routines */
 

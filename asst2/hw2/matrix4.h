@@ -1,6 +1,7 @@
 #ifndef MATRIX4_H
 #define MATRIX4_H
 
+#include <iostream>
 #include <cassert>
 #include <cmath>
 
@@ -342,5 +343,13 @@ inline Matrix4 makeMixedFrame(const Matrix4& O, const Matrix4& E) {
     return transFact(O) * linFact(E);
 }
 
+inline void printMatrix4(const Matrix4& A) {
+    for (int i = 0; i < 4; ++i) {
+        for (int j = 0; j < 4; ++j) {
+            std::cout << A(i, j) << " ";
+        }
+        std::cout << "\n";
+    }
+}
 #endif
 
