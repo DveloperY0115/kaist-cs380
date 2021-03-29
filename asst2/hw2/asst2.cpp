@@ -750,7 +750,7 @@ static void keyboard(const unsigned char key, const int x, const int y) {
         break;
 
     case 'd':
-        show_current_status();
+        g_VPState.describe_current_status();
         break;
     }
     glutPostRedisplay();
