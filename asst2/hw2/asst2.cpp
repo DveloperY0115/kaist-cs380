@@ -228,6 +228,10 @@ public:
 
     /* setters */
     void switch_eye() {
+        if (is_world_sky_frame()) {
+            set_is_world_sky_frame(false);
+        }
+
         current_eye_idx++;
         if (current_eye_idx > 2)
             current_eye_idx = 0;
@@ -250,6 +254,11 @@ public:
     }
 
     void switch_obj() {
+
+        if (is_world_sky_frame()) {
+            set_is_world_sky_frame(false);
+        }
+
         current_obj_idx++;
         if (current_obj_idx > 2)
             current_obj_idx = 0;
