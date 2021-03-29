@@ -651,66 +651,23 @@ static void keyboard(const unsigned char key, const int x, const int y) {
         break;
 
     case 'v':
-        // switch view point
         std::cout << "Pressed 'v'! Switching camera\n";
-        eye_idx++;
-        if (eye_idx > 2)
-            eye_idx = 0;
+        
+        // switch view point
+        g_VPState.switch_eye();
 
-        if (eye_idx != 0 && control_idx == 0) {
-            // if current eye is a cube and user tries to transform sky camera
-            std::cout << "You CANNOT control sky camera with respect to cube! \n";
-            control_idx = 1;
-        }
-
-        current_obj = manipulatable_obj[control_idx];
-        current_aux_trans = current_obj;
-        current_eye = manipulatable_obj[eye_idx];
-
-        if (is_skysky_frame()) {
-            // if current frame is sky-sky frame
-            // give a user an option 'm'
-            std::cout << "You're now in sky-sky frame\n";
-            is_worldsky_frame = false;
-            std::cout << "Press 'm' to switch between world-sky frame and sky-sky frame\n";
-        }
-
-        // create auxiliary frame (O-E) for current state
-        make_aux_frame();
-
-        show_current_status();
-
+        // describe current state
+        g_VPState.describe_current_status();
         break;
 
     case 'o':
+        std::cout << "Pressed 'o'! Switching object\n";
+
         // switch object
-        std::cout << "Pressed 'o'! Switching object to be manipulated\n";
-        control_idx++;
-        if (control_idx > 2)
-            control_idx = 0;
-        
-        if (eye_idx != 0 && control_idx == 0) {
-            // if current eye is a cube and user tries to transform sky camera
-            std::cout << "You CANNOT control sky camera with respect to cube! \n";
-            control_idx = 1;
-        }
+        g_VPState.switch_obj();
 
-        current_obj = manipulatable_obj[control_idx];
-        current_aux_trans = current_obj;
-        current_eye = manipulatable_obj[eye_idx];
-
-        if (is_skysky_frame()) {
-            // if current frame is sky-sky frame
-            // give a user an option 'm'
-            std::cout << "You're now in sky-sky frame\n";
-            is_worldsky_frame = false;
-            std::cout << "Press 'm' to switch between world-sky frame and sky-sky frame\n";
-        }
-
-        // create auxiliary frame (O-E) for current state
-        make_aux_frame();
-
-        show_current_status();
+        // describe current state
+        g_VPState.describe_current_status();
         break;
 
     case 'm':
