@@ -699,13 +699,14 @@ static void keyboard(const unsigned char key, const int x, const int y) {
 
     case 'r':
         // reset object position
-        std::cout << "Pressed 'r'! Resetting the position of current object\n";
-        manipulatable_obj[control_idx] = initial_matrices[control_idx];
-        current_obj = manipulatable_obj[control_idx];
-        current_eye = manipulatable_obj[eye_idx];
-        make_aux_frame();
+        std::cout << "Pressed 'r'! Resetting all object & eye position\n";
+        
+        for (int i = 0; i < 3; ++i) {
+            manipulatable_obj[i] = initial_matrices[i];
+        }
+        g_VPState.update_aux_frame();
 
-        show_current_status();
+        g_VPState.describe_current_status();
         break;
 
     case 'd':
