@@ -201,15 +201,6 @@ static Cvec3f g_objectColors[2] = { Cvec3f(1, 0, 0), Cvec3f(0, 0, 1) };
 
 // list of manipulatable object matrices
 static Matrix4 manipulatable_obj[3] = { g_skyRbt, objRbt_1, objRbt_2 };
-static unsigned int control_idx = 1;    // initially control cube 1
-static unsigned int eye_idx = 0;        // initial camera is sky camera
-
-// auxiliary frame for object manipulation
-// initially set as cube-sky frame
-static Matrix4 current_obj = manipulatable_obj[control_idx];
-static Matrix4 current_aux_trans = manipulatable_obj[control_idx];
-static Matrix4 current_eye = manipulatable_obj[eye_idx];
-static Matrix4 aux_frame = makeMixedFrame(current_obj, current_eye);
 
 class ViewpointState {
 public:
