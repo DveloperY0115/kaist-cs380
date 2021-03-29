@@ -210,11 +210,33 @@ public:
         current_eye_idx = 0;    // initially cube 2
         update_aux_frame();     // initial calculation of auxiliary frame
         update_world_eye_frame();    // initial calculation of world-eye frame
-        is_world_sky_frame_ = false;    // later!
+        is_world_sky_frame_ = false;    
     }
 
     void transform_obj_wrt_A(const Matrix4& M) {
+
         manipulatable_obj[current_obj_idx] = doMtoOwrtA(M, manipulatable_obj[current_obj_idx], get_aux_frame());
+    }
+
+    /* modify transform according to current auxiliary frame */
+    unsigned int get_aux_frame_descriptor() {
+        /* Three cases
+         * Case 1 - Manipulate cubes
+         * Case 2 - Manipulate sky view w.r.t world origin and sky view axes
+         * Case 3 - Manipulate sky view w.r.t its origin and axes
+         */
+        if (is_world_sky_frame()) {
+            // case 2
+            return static_cast<unsigned int>(aux_frame_descriptor::world_sky);
+        }
+        else if (is_sky_sky_frame()) {
+            // case 3
+            return static_cast<unsigned int>(aux_frame_descriptor::sky_sky);
+        }
+        else {
+            // case 1
+            return static_cast<unsigned int>(aux_frame_descriptor::cube_other);
+        }
     }
 
     /* setters */
