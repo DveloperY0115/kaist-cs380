@@ -747,15 +747,6 @@ static void keyboard(const unsigned char key, const int x, const int y) {
 /* Utility functions for debugging */
 
 // print the elements of matrix A
-void printMatrix4(const Matrix4& A) {
-    for (int i = 0; i < 4; ++i) {
-        for (int j = 0; j < 4; ++j) {
-            std::cout << A(i, j) << " ";
-        }
-        std::cout << "\n";
-    }
-}
-
 void describe_current_eye() {
     string current_eye_name;
 
