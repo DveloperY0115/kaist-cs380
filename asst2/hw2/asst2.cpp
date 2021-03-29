@@ -234,6 +234,13 @@ public:
             current_obj_idx = 1;
         }
 
+        if (current_obj_idx == 0 && current_eye_idx == 0) {
+            // if current frame is sky-sky frame
+            // give a user an option 'm'
+            std::cout << "You're now in sky-sky frame\n";
+            std::cout << "Press 'm' to switch between world-sky frame and sky-sky frame\n";
+        }
+
         // update auxiliary frame for new viewpoint
         update_aux_frame();
     }
@@ -247,6 +254,13 @@ public:
             // if current eye is a cube and user tries to transform sky camera
             std::cout << "You CANNOT control sky camera with respect to cube! \n";
             current_obj_idx = 1;
+        }
+
+        if (current_obj_idx == 0 && current_eye_idx == 0) {
+            // if current frame is sky-sky frame
+            // give a user an option 'm'
+            std::cout << "You're now in sky-sky frame\n";
+            std::cout << "Press 'm' to switch between world-sky frame and sky-sky frame\n";
         }
 
         // update auxiliary frame for new object
@@ -323,7 +337,7 @@ public:
         printMatrix4(get_aux_frame());
     }
 
-    void show_current_status() {
+    void describe_current_status() {
         std::cout << "================================================\n";
         describe_current_eye();
         describe_current_obj();
