@@ -560,7 +560,7 @@ static void motion(const int x, const int y) {
       }
   }
   else if (g_mouseRClickButton && !g_mouseLClickButton) { // right button down?
-      switch (which_case) {
+      switch (g_VPState.get_aux_frame_descriptor()) {
       case 1:
           // default behavior
           m = Matrix4::makeTranslation(Cvec3(dx, dy, 0) * 0.01);
@@ -577,7 +577,7 @@ static void motion(const int x, const int y) {
       }
   }
   else if (g_mouseMClickButton || (g_mouseLClickButton && g_mouseRClickButton)) {  // middle or (left and right) button down?
-      switch (which_case) {
+      switch (g_VPState.get_aux_frame_descriptor()) {
       case 1:
           // default behavior
           m = Matrix4::makeTranslation(Cvec3(0, 0, -dy) * 0.01);
