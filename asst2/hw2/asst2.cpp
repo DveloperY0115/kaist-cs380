@@ -211,6 +211,138 @@ static Matrix4 current_aux_trans = manipulatable_obj[control_idx];
 static Matrix4 current_eye = manipulatable_obj[eye_idx];
 static Matrix4 aux_frame = makeMixedFrame(current_obj, current_eye);
 
+class ViewpointState {
+public:
+    // Constructor
+    ViewpointState() {
+        current_obj_idx = 1;    // initially cube 1
+        current_eye_idx = 0;    // initially cube 2
+        update_aux_frame();     // initial calculation of auxiliary frame
+        update_world_eye_frame();    // initial calculation of world-eye frame
+        is_world_sky_frame = false;    // later!
+    }
+
+    /* setters */
+    void switch_eye() {
+        current_eye_idx++;
+        if (current_eye_idx > 2)
+            current_eye_idx = 0;
+
+        if (current_eye_idx != 0 && current_obj_idx == 0) {
+            // if current eye is a cube and user tries to transform sky camera
+            std::cout << "You CANNOT control sky camera with respect to cube! \n";
+            current_obj_idx = 1;
+        }
+
+        // update auxiliary frame for new viewpoint
+        update_aux_frame();
+    }
+
+    void switch_obj() {
+        current_obj_idx++;
+        if (current_obj_idx > 2)
+            current_obj_idx = 0;
+
+        if (current_eye_idx != 0 && current_obj_idx == 0) {
+            // if current eye is a cube and user tries to transform sky camera
+            std::cout << "You CANNOT control sky camera with respect to cube! \n";
+            current_obj_idx = 1;
+        }
+
+        // update auxiliary frame for new object
+        update_aux_frame();
+    }
+
+    void update_aux_frame() {
+        aux_frame = makeMixedFrame(get_current_obj_matrix(), get_current_eye_matrix());
+    }
+
+    void update_world_eye_frame() {
+        world_eye_frame = makeMixedFrame(g_worldRbt, get_current_eye_matrix());
+    }
+
+    /* getters */
+    Matrix4 get_current_obj_matrix() {
+        return manipulatable_obj[current_obj_idx];
+    }
+
+    Matrix4 get_current_eye_matrix() {
+        return manipulatable_obj[current_eye_idx];
+    }
+
+    Matrix4 get_aux_frame() {
+        return aux_frame;
+    }
+
+    /* utilities */
+    void describe_current_eye() {
+        string current_eye_name;
+
+        switch (current_eye_idx) {
+        case 0:
+            current_eye_name = "Sky-View";
+            break;
+        case 1:
+            current_eye_name = "Cube 1";
+            break;
+        case 2:
+            current_eye_name = "Cube 2";
+            break;
+        }
+
+        std::cout << "Current eye is " << current_eye_name << "\n";
+        std::cout << "Eye matrix for this camera is: \n";
+        printMatrix4(manipulatable_obj[current_eye_idx]);
+    }
+
+    void describe_current_obj() {
+        string current_obj_name;
+
+        switch (current_obj_idx) {
+        case 0:
+            current_obj_name = "Sky-View";
+            break;
+        case 1:
+            current_obj_name = "Cube 1";
+            break;
+        case 2:
+            current_obj_name = "Cube 2";
+            break;
+        }
+
+        std::cout << "Controlling " << current_obj_name << "\n";
+        std::cout << "Object matrix for this object is: \n";
+        printMatrix4(manipulatable_obj[current_obj_idx]);
+    }
+
+    void describe_current_aux() {
+        if (is_world_sky_frame) {
+            std::cout << "Currently in World-Sky frame\n";
+        }
+        std::cout << "Current auxiliary frame is: \n";
+        printMatrix4(get_aux_frame());
+    }
+
+    void show_current_status() {
+        std::cout << "================================================\n";
+        describe_current_eye();
+        describe_current_obj();
+        describe_current_aux();
+        std::cout << "================================================\n";
+
+    }
+
+private:
+    bool is_world_sky_frame;
+    unsigned int current_obj_idx;    // initially cube 1
+    unsigned int current_eye_idx;    // initially cube 2
+    Matrix4 aux_frame;    // auxiliary frame used to transform objects
+    Matrix4 world_eye_frame;
+};
+
+// Refactoring --> All view-obj information will be incapsulated in here!
+static ViewpointState g_VPState = ViewpointState();
+
 ///////////////// END OF G L O B A L S //////////////////////////////////////////////////
 
 static void initGround() {
