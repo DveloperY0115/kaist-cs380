@@ -480,14 +480,6 @@ static void drawStuff() {
   g_cube_2->draw(curSS);
 }
 
-/* Utility function forward declarations */
-void describe_current_eye();
-void describe_current_obj();
-void show_current_status();
-void printMatrix4(const Matrix4& A);
-bool is_skysky_frame();
-void make_aux_frame();
-
 /* GLUT callbacks */
 
 static void display() {
