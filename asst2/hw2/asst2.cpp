@@ -219,7 +219,7 @@ public:
         current_eye_idx = 0;    // initially cube 2
         update_aux_frame();     // initial calculation of auxiliary frame
         update_world_eye_frame();    // initial calculation of world-eye frame
-        is_world_sky_frame = false;    // later!
+        is_world_sky_frame_ = false;    // later!
     }
 
     /* setters */
@@ -234,7 +234,7 @@ public:
             current_obj_idx = 1;
         }
 
-        if (current_obj_idx == 0 && current_eye_idx == 0) {
+        if (is_sky_sky_frame()) {
             // if current frame is sky-sky frame
             // give a user an option 'm'
             std::cout << "You're now in sky-sky frame\n";
@@ -256,7 +256,7 @@ public:
             current_obj_idx = 1;
         }
 
-        if (current_obj_idx == 0 && current_eye_idx == 0) {
+        if (is_sky_sky_frame()) {
             // if current frame is sky-sky frame
             // give a user an option 'm'
             std::cout << "You're now in sky-sky frame\n";
@@ -265,6 +265,11 @@ public:
 
         // update auxiliary frame for new object
         update_aux_frame();
+    }
+
+    void set_is_world_sky_frame(const bool v) {
+        // warning you should check input type
+        is_world_sky_frame_ = v;
     }
 
     void update_aux_frame() {
@@ -289,6 +294,14 @@ public:
     }
 
     /* utilities */
+    bool is_sky_sky_frame() {
+        return current_eye_idx == 0 && current_obj_idx == 0;
+    }
+    
+    bool is_world_sky_frame() {
+        return is_world_sky_frame_;
+    }
+    
     void describe_current_eye() {
         string current_eye_name;
 
@@ -330,7 +343,7 @@ public:
     }
 
     void describe_current_aux() {
-        if (is_world_sky_frame) {
+        if (is_world_sky_frame()) {
             std::cout << "Currently in World-Sky frame\n";
         }
         std::cout << "Current auxiliary frame is: \n";
@@ -347,7 +360,7 @@ public:
     }
 
 private:
-    bool is_world_sky_frame;
+    bool is_world_sky_frame_;
     unsigned int current_obj_idx;    // initially cube 1
     unsigned int current_eye_idx;    // initially cube 2
     Matrix4 aux_frame;    // auxiliary frame used to transform objects
@@ -508,11 +521,11 @@ static void motion(const int x, const int y) {
   * Case 2 - Manipulate sky view w.r.t world origin and sky view axes
   * Case 3 - Manipulate sky view w.r.t its origin and axes
   */
-  if (is_worldsky_frame) {
+  if (g_VPState.is_world_sky_frame()) {
       // case 2
       which_case = 2;
   }
-  else if (is_skysky_frame()) {
+  else if (g_VPState.is_sky_sky_frame()) {
       // case 3
       which_case = 3;
   }
