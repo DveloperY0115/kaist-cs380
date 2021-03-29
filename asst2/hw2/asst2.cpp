@@ -673,25 +673,25 @@ static void keyboard(const unsigned char key, const int x, const int y) {
         break;
 
     case 'm':
-        if (!is_skysky_frame()) {
+        if (!g_VPState.is_sky_sky_frame()) {
             // current frame is not a sky-sky frame
             std::cout << "You can use this option ONLY when you're in sky-sky frame\n";
         }
         else {
             // current frame is a sky-sky frame
-            if (!is_worldsky_frame) {
+            if (!g_VPState.is_world_sky_frame()) {
                 // current frame is a sky-sky frame -> switching to world-sky frame
                 std::cout << "Switching to World-Sky frame\n";
-                is_worldsky_frame = true;
-                current_aux_trans = g_worldRbt;
-                make_aux_frame();
+                g_VPState.set_is_world_sky_frame(true);
+                g_VPState.update_aux_frame();
+                g_VPState.describe_current_status();
             }
             else {
                 // current frame is a world-sky frame -> switching to sky-sky frame
                 std::cout << "Switching to Sky-Sky frame\n";
-                is_worldsky_frame = false;
-                current_aux_trans = current_obj;
-                make_aux_frame();
+                g_VPState.set_is_world_sky_frame(false);
+                g_VPState.update_aux_frame();
+                g_VPState.describe_current_status();
             }
         }
 
