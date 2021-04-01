@@ -18,17 +18,18 @@ public:
 
   // Constructor
   RigTForm(const Cvec3& t, const Quat& r) {
-      assert(norm2(Quat(1, 0, 0, 0) - r_) < CS175_EPS2);
       t_ = t;
       r_ = r;
   }
 
   explicit RigTForm(const Cvec3& t) {
-    // TODO
+      t_ = t;
+      assert(norm2(Quat(1, 0, 0, 0) - r_) < CS175_EPS2);
   }
 
   explicit RigTForm(const Quat& r) {
-    // TODO
+      t_ = Cvec3();    // zero vector in 3D
+      r_ = r;
   }
 
   Cvec3 getTranslation() const {
