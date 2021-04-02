@@ -106,6 +106,22 @@ public:
 
       return RigTForm(t_, r_);
   }
+
+  static RigTForm makeXRotation(const double& ang) {
+      return RigTForm(Quat::makeXRotation(ang));
+  }
+
+  static RigTForm makeYRotation(const double& ang) {
+      return RigTForm(Quat::makeYRotation(ang));
+  }
+
+  static RigTForm makeZRotation(const double& ang) {
+      return RigTForm(Quat::makeZRotation(ang));
+  }
+
+  static RigTForm makeTranslation(const Cvec3& t) {
+      return RigTForm(t);
+  }
 };
 
 /*
