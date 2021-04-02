@@ -156,4 +156,7 @@ inline Matrix4 rigTFormToMatrix(const RigTForm& tform) {
     return RBT_mat;
 }
 
+inline RigTForm doMtoOwrtA(RigTForm M, RigTForm O, RigTForm A) {
+    return A * M * inv(A) * O;
+}
 #endif
