@@ -52,25 +52,90 @@ public:
     return *this;
   }
 
+  /* 
+  * Apply RBT represented by this object to vector 'a'
+  * 
+  * Input: Cvec4 object (either representing a coordinate or a vector)
+  * Output: Cvec4 object (RBT applied)
+  * 
+  * Note:
+  * - If input is a vector, translation is not applied since it's an undefined behavior
+  * 
+  * Exception:
+  * - Throws exception when Cvec4 doesn't represent neither coordinate nor vector in Affine frame
+  */
   Cvec4 operator * (const Cvec4& a) const {
-      // TODO -> What's the behavior of this operation?
-    
+      assert(a[3] == 0 || a[3] == 1);
+
+      // if 'a' is a coordinate, translate it
+      // otherwise, do nothing
+      Cvec4 t_a = (*this).getRotation() * a;
+
+      if (a[3] == 1) {
+          // 'a' represents a coordinate in Affine form
+          Cvec3 t_ = (*this).getTranslation();
+          Cvec4 t = Cvec4(t_[0], t_[1], t_[2], 0);
+          t_a += t;
+      }
+
+      return t_a;
   }
 
+  // Calculate RigTForm object representing the compound RBT of two RBTs
   RigTForm operator * (const RigTForm& a) const {
-      // TODO -> What's the behavior of this operation?
+      // get t_1 and t_2 
+      Cvec3 t_1_ = (*this).getTranslation();
+      Cvec4 t_1 = Cvec4(t_1_[0], t_1_[1], t_1_[2], 0);
+      Cvec3 t_2_ = a.getTranslation();
+      Cvec4 t_2 = Cvec4(t_2_[0], t_2_[1], t_2_[2], 0);
+
+      // get r_1 and r_2
+      Quat r_1 = (*this).getRotation();
+      Quat r_2 = a.getRotation();
+
+      // calculate translation part
+      Cvec4 trans = t_1 + r_1 * t_2;
+      assert(trans[3] == 0);
+
+      Cvec3 t_ = Cvec3(trans[0], trans[1], trans[2]);
+
+      // calculate rotation part
+      Quat r_ = r_1 * r_2;    
+
+      return RigTForm(t_, r_);
+  }
+
+  static RigTForm makeXRotation(const double& ang) {
+      return RigTForm(Quat::makeXRotation(ang));
+  }
+
+  static RigTForm makeYRotation(const double& ang) {
+      return RigTForm(Quat::makeYRotation(ang));
+  }
+
+  static RigTForm makeZRotation(const double& ang) {
+      return RigTForm(Quat::makeZRotation(ang));
+  }
+
+  static RigTForm makeTranslation(const Cvec3& t) {
+      return RigTForm(t);
   }
 };
 
+// Calculate the inverse of the given RBT in RigTForm form
 inline RigTForm inv(const RigTForm& tform) {
-    // get translation and rotation factors
-    Cvec3 t_= tform.getTranslation();
-    Quat r_ = tform.getRotation();
+    // get t_1
+    Cvec3 t__ = tform.getTranslation();
+    Cvec4 t = Cvec4(t__[0], t__[1], t__[2], 0);
 
-    Cvec3 inv_t_ = -t_;    // inverse of the translation, simply negate it
-    Quat inv_r_ = inv(r_);    // inverse of the rotation
+    // calculate rotation part
+    Quat r_inv = inv(tform.getRotation());
 
-    return RigTForm(inv_t_, inv_r_);
+    // calculate transform part
+    Cvec4 trans = -(r_inv * t);
+    Cvec3 t_ = Cvec3(trans[0], trans[1], trans[2]);
+
+    return RigTForm(t_, r_inv);
 }
 
 inline RigTForm transFact(const RigTForm& tform) {
@@ -81,7 +146,11 @@ inline RigTForm linFact(const RigTForm& tform) {
   return RigTForm(tform.getRotation());
 }
 
-inline Matrix4 rigTFormToMatrix(const RigTForm& tform) {
+inline RigTForm makeMixedFrame(const RigTForm& O, const RigTForm& E) {
+    return transFact(O) * linFact(E);
+}
+
+inline Matrix4 RigTFormToMatrix(const RigTForm& tform) {
     // get translation, rotation factors
     Cvec3 t_ = tform.getTranslation();    // T (vector)
     Matrix4 r_mat = quatToMatrix(tform.getRotation());    // R
@@ -101,6 +170,18 @@ inline Matrix4 rigTFormToMatrix(const RigTForm& tform) {
     Matrix4 RBT_mat = t_mat * r_mat;    // TR
     assert(isAffine(RBT_mat));
     return RBT_mat;
+}
+
+inline RigTForm doMtoOwrtA(RigTForm M, RigTForm O, RigTForm A) {
+    return A * M * inv(A) * O;
+}
+
+// Utility for debugging
+inline void printRigTForm(const RigTForm& A) {
+    Cvec3 t_ = A.getTranslation();
+    std::cout << "Translation: " << t_[0] << " " << t_[1] << " " << t_[2] << "\n";
+    Quat r_ = A.getRotation();
+    std::cout << "Quaternion: " << r_[0] << " " << r_[1] << " " << r_[2] << " "<< r_[3] << "\n";
 }
 
 #endif
