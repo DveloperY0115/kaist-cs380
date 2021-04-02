@@ -396,8 +396,10 @@ private:
     bool is_world_sky_frame_;
     unsigned int current_obj_idx;    // initially cube 1
     unsigned int current_eye_idx;    // initially cube 2
-    Matrix4 aux_frame;    // auxiliary frame used to transform objects
-    Matrix4 world_eye_frame;
+
+    // RigTForm representation of aux_frame and world_eye_frame
+    RigTForm aux_frame;
+    RigTForm world_eye_frame;
     enum class aux_frame_descriptor { cube_other = 1, world_sky, sky_sky };
 };
 
