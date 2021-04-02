@@ -51,12 +51,12 @@ public:
   }
 
   Cvec4 operator * (const Cvec4& a) const {
-    // TODO -> What's the behavior of this operation?
+      // TODO -> What's the behavior of this operation?
     
   }
 
   RigTForm operator * (const RigTForm& a) const {
-    // TODO
+      // TODO -> What's the behavior of this operation?
   }
 };
 
@@ -66,7 +66,7 @@ inline RigTForm inv(const RigTForm& tform) {
     Quat r_ = tform.getRotation();
 
     Cvec3 inv_t_ = -t_;    // inverse of the translation, simply negate it
-    Quat inv_r_ = Quat(r_[0], -r_[1], -r_[2], -r_[3]);    // inverse of the rotation, negate the axis
+    Quat inv_r_ = inv(r_);    // inverse of the rotation
 
     return RigTForm(inv_t_, inv_r_);
 }
