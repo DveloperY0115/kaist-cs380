@@ -80,8 +80,25 @@ inline RigTForm linFact(const RigTForm& tform) {
 }
 
 inline Matrix4 rigTFormToMatrix(const RigTForm& tform) {
-  // TODO
-  return Matrix4();
+    // get translation, rotation factors
+    Cvec3 t_ = tform.getTranslation();    // T (vector)
+    Matrix4 r_mat = quatToMatrix(tform.getRotation());    // R
+
+    Matrix4 t_mat = Matrix4();
+
+    // fill diagonal elements with 1
+    t_mat(0, 0) = 1;
+    t_mat(1, 1) = 1;
+    t_mat(2, 2) = 1;
+    t_mat(3, 3) = 1;
+
+    t_mat(0, 3) = t_[0];    // t_x
+    t_mat(1, 3) = t_[1];    // t_y
+    t_mat(2, 3) = t_[2];    // t_z
+    
+    Matrix4 RBT_mat = t_mat * r_mat;    // TR
+    assert(isAffine(RBT_mat));
+    return RBT_mat;
 }
 
 #endif
