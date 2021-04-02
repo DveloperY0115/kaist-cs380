@@ -95,33 +95,35 @@ public:
       Quat r_1 = (*this).getRotation();
       Quat r_2 = a.getRotation();
 
-      // Calculate translation part
+      // calculate translation part
       Cvec4 trans = t_1 + r_1 * t_2;
       assert(trans[3] == 0);
 
       Cvec3 t_ = Cvec3(trans[0], trans[1], trans[2]);
 
-      /* 
-      * Calculate rotation part
-      * multiplication of two quaternion is equal to 
-      * the matrix multiplication of two rotation matrices represented by these two
-      */
+      // calculate rotation part
       Quat r_ = r_1 * r_2;    
 
       return RigTForm(t_, r_);
   }
 };
 
+/*
+* Calculate the inverse of the given RBT in RigTForm form
+*/
 inline RigTForm inv(const RigTForm& tform) {
-    // NOTE! You need to work again on this one. Refer to page 71 of textbook
-    // get translation and rotation factors
-    Cvec3 t_= tform.getTranslation();
-    Quat r_ = tform.getRotation();
+    // get t_1
+    Cvec3 t__ = tform.getTranslation();
+    Cvec4 t = Cvec4(t__[0], t__[1], t__[2], 0);
 
-    Cvec3 inv_t_ = -t_;    // inverse of the translation, simply negate it
-    Quat inv_r_ = inv(r_);    // inverse of the rotation
+    // calculate rotation part
+    Quat r_inv = inv(tform.getRotation());
 
-    return RigTForm(inv_t_, inv_r_);
+    // calculate transform part
+    Cvec4 trans = -(r_inv * t);
+    Cvec3 t_ = Cvec3(trans[0], trans[1], trans[2]);
+
+    return RigTForm(t_, r_inv);
 }
 
 inline RigTForm transFact(const RigTForm& tform) {
