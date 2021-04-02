@@ -52,7 +52,8 @@ public:
     return *this;
   }
 
-  /* Apply RBT represented by this object to vector 'a'
+  /* 
+  * Apply RBT represented by this object to vector 'a'
   * 
   * Input: Cvec4 object (either representing a coordinate or a vector)
   * Output: Cvec4 object (RBT applied)
@@ -80,12 +81,39 @@ public:
       return t_a;
   }
 
+  /*
+  * Calculate RigTForm object representing the compound RBT of two RBTs
+  */
   RigTForm operator * (const RigTForm& a) const {
-    
+      // get t_1 and t_2 
+      Cvec3 t_1_ = (*this).getTranslation();
+      Cvec4 t_1 = Cvec4(t_1_[0], t_1_[1], t_1_[2], 0);
+      Cvec3 t_2_ = a.getTranslation();
+      Cvec4 t_2 = Cvec4(t_2_[0], t_2_[1], t_2_[2], 0);
+
+      // get r_1 and r_2
+      Quat r_1 = (*this).getRotation();
+      Quat r_2 = a.getRotation();
+
+      // Calculate translation part
+      Cvec4 trans = t_1 + r_1 * t_2;
+      assert(trans[3] == 0);
+
+      Cvec3 t_ = Cvec3(trans[0], trans[1], trans[2]);
+
+      /* 
+      * Calculate rotation part
+      * multiplication of two quaternion is equal to 
+      * the matrix multiplication of two rotation matrices represented by these two
+      */
+      Quat r_ = r_1 * r_2;    
+
+      return RigTForm(t_, r_);
   }
 };
 
 inline RigTForm inv(const RigTForm& tform) {
+    // NOTE! You need to work again on this one. Refer to page 71 of textbook
     // get translation and rotation factors
     Cvec3 t_= tform.getTranslation();
     Quat r_ = tform.getRotation();
