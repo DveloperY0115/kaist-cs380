@@ -89,7 +89,7 @@ public:
   */
   Cvec4 operator * (const Cvec4& a) const {
     const Quat r = *this * (Quat(0, a[0], a[1], a[2]) * inv(*this));
-    return Cvec4(r[1], r[2], r[3], a[3]);    // note that 'a' can be either coordinate or vector
+    return Cvec4(r[1], r[2], r[3], a[3]);
   }
 
   static Quat makeXRotation(const double ang) {
