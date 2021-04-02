@@ -179,7 +179,7 @@ struct Geometry {
 };
 
 // Vertex buffer and index buffer associated with the ground and cube geometry
-static shared_ptr<Geometry> g_ground, g_cube_1, g_cube_2;
+static shared_ptr<Geometry> g_ground, g_cube_1, g_cube_2, g_sphere;
 static std::vector<shared_ptr<Geometry>> scene;     // (refactor required) later use this to put all scene geometries in one vector
 
 // --------- Scene
@@ -199,7 +199,7 @@ static bool is_worldsky_frame = false;
 // 1. cube 1
 // 2. cube 2
 static RigTForm initial_rigs[3] = { g_skyRbt, objRbt_1, objRbt_2 };
-static Cvec3f g_objectColors[2] = { Cvec3f(1, 0, 0), Cvec3f(0, 0, 1) };
+static Cvec3f g_objectColors[3] = { Cvec3f(1, 0, 0), Cvec3f(0, 0, 1), Cvec3f(0, 1, 0) };
 
 // list of manipulatable object matrices
 static RigTForm manipulatable_obj[3] = { g_skyRbt, objRbt_1, objRbt_2 };
@@ -328,7 +328,7 @@ public:
     }
 
     bool is_arcball_visible() {
-        if (is_world_sky_frame_ || ((current_obj_idx == 1 || current_obj_idx == 2) && (current_obj_idx != current_eye_idx))) {
+        if (is_world_sky_frame() || ((current_obj_idx == 1 || current_obj_idx == 2) && (current_obj_idx != current_eye_idx))) {
             // two cases
             // (1) Current auxiliary frame is world-sky frame
             // (2) User is controlling one of the cubes and the current eye is not equal to it
@@ -450,6 +450,21 @@ static void initCubes() {
   g_cube_2.reset(new Geometry(&vtx[0], &idx[0], vbLen, ibLen));
 }
 
+static void initSpheres() {
+    int slices = 20;
+    int stacks = 20;
+    int ibLen, vbLen;
+    getSphereVbIbLen(slices, stacks, vbLen, ibLen);
+
+    // Temporary storage for sphere geometry
+    std::vector<VertexPN> vtx(vbLen);
+    std::vector<unsigned short> idx(ibLen);
+
+    // create a sphere for arcball visualization
+    makeSphere(1.0, slices, stacks, vtx.begin(), idx.begin());
+    g_sphere.reset(new Geometry(&vtx[0], &idx[0], vbLen, ibLen));
+}
+
 // takes a projection matrix and send to the the shaders
 static void sendProjectionMatrix(const ShaderState& curSS, const Matrix4& projMatrix) {
   GLfloat glmatrix[16];
@@ -529,6 +544,23 @@ static void drawStuff() {
 
   safe_glUniform3f(curSS.h_uColor, g_objectColors[1][0], g_objectColors[1][1], g_objectColors[1][2]);
   g_cube_2->draw(curSS);
+
+  if (g_VPState.is_arcball_visible()) {
+      glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);  // draw wireframe
+
+      MVM = RigTFormToMatrix(invEyeRbt * g_VPState.get_current_obj());
+      if (g_VPState.is_world_sky_frame()) {
+          // if the user is in world-sky frame, draw arcball at world center
+          MVM = RigTFormToMatrix(invEyeRbt * g_worldRbt);
+      } 
+      NMVM = normalMatrix(MVM);
+      sendModelViewNormalMatrix(curSS, MVM, NMVM);
+
+      safe_glUniform3f(curSS.h_uColor, g_objectColors[2][0], g_objectColors[2][1], g_objectColors[2][2]);
+      g_sphere->draw(curSS);
+
+      glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);  // end wireframe mode
+  }
 }
 
 /* GLUT callbacks */
@@ -781,6 +813,7 @@ static void initShaders() {
 static void initGeometry() {
     initGround();
     initCubes();
+    initSpheres();
 }
 
 int main(int argc, char* argv[]) {
