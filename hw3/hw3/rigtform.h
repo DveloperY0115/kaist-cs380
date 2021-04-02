@@ -81,9 +81,7 @@ public:
       return t_a;
   }
 
-  /*
-  * Calculate RigTForm object representing the compound RBT of two RBTs
-  */
+  // Calculate RigTForm object representing the compound RBT of two RBTs
   RigTForm operator * (const RigTForm& a) const {
       // get t_1 and t_2 
       Cvec3 t_1_ = (*this).getTranslation();
@@ -124,9 +122,7 @@ public:
   }
 };
 
-/*
-* Calculate the inverse of the given RBT in RigTForm form
-*/
+// Calculate the inverse of the given RBT in RigTForm form
 inline RigTForm inv(const RigTForm& tform) {
     // get t_1
     Cvec3 t__ = tform.getTranslation();
@@ -179,4 +175,13 @@ inline Matrix4 RigTFormToMatrix(const RigTForm& tform) {
 inline RigTForm doMtoOwrtA(RigTForm M, RigTForm O, RigTForm A) {
     return A * M * inv(A) * O;
 }
+
+// Utility for debugging
+inline void printRigTForm(const RigTForm& A) {
+    Cvec3 t_ = A.getTranslation();
+    std::cout << "Translation: " << t_[0] << " " << t_[1] << " " << t_[2] << "\n";
+    Quat r_ = A.getRotation();
+    std::cout << "Quaternion: " << r_[0] << " " << r_[1] << " " << r_[2] << " "<< r_[3] << "\n";
+}
+
 #endif

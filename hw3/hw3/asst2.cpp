@@ -352,7 +352,7 @@ public:
 
         std::cout << "Current eye is " << current_eye_name << "\n";
         std::cout << "Eye matrix for this camera is: \n";
-        // printMatrix4(manipulatable_obj[current_eye_idx]);
+        printRigTForm(manipulatable_obj[current_eye_idx]);
     }
 
     void describe_current_obj() {
@@ -372,7 +372,7 @@ public:
 
         std::cout << "Controlling " << current_obj_name << "\n";
         std::cout << "Object matrix for this object is: \n";
-        // printMatrix4(manipulatable_obj[current_obj_idx]);
+        printRigTForm(manipulatable_obj[current_obj_idx]);
     }
 
     void describe_current_aux() {
@@ -380,13 +380,15 @@ public:
             std::cout << "Currently in World-Sky frame\n";
         }
         std::cout << "Current auxiliary frame is: \n";
-        // printMatrix4(get_aux_frame());
+        printRigTForm(get_aux_frame());
     }
 
     void describe_current_status() {
         std::cout << "================================================\n";
         describe_current_eye();
+        std::cout << "\n";
         describe_current_obj();
+        std::cout << "\n";
         describe_current_aux();
         std::cout << "================================================\n";
 
