@@ -21,6 +21,7 @@
 #include "cvec.h"
 #include "matrix4.h"
 #include "geometrymaker.h"
+#include "rigtform.h"
 #include "ppm.h"
 #include "glsupport.h"
 
@@ -185,22 +186,22 @@ static std::vector<shared_ptr<Geometry>> scene;     // (refactor required) later
 static const Cvec3 g_light1(2.0, 3.0, 14.0), g_light2(-2, -3.0, -5.0);  // define two lights positions in world space
 
 // Eye, Object matrices
-static Matrix4 g_skyRbt = Matrix4::makeTranslation(Cvec3(0.0, 0.25, 4.0));
-static Matrix4 objRbt_1 = Matrix4::makeTranslation(Cvec3(0.75, 0, 0));
-static Matrix4 objRbt_2 = Matrix4::makeTranslation(Cvec3(-0.75, 0, 0));
+static RigTForm g_skyRbt = RigTForm(Cvec3(0.0, 0.25, 4.0));
+static RigTForm objRbt_1 = RigTForm(Cvec3(0.75, 0, 0));
+static RigTForm objRbt_2 = RigTForm(Cvec3(-0.75, 0, 0));
 
 // World matrix
-static Matrix4 g_worldRbt = Matrix4::makeTranslation(Cvec3(0.0, 0.0, 0.0));
+static RigTForm g_worldRbt = RigTForm(Cvec3(0.0, 0.0, 0.0));
 static bool is_worldsky_frame = false;
 
 // list of object matrices
 // 1. cube 1
 // 2. cube 2
-static Matrix4 initial_matrices[3] = { g_skyRbt, objRbt_1, objRbt_2 };
+static RigTForm initial_rigs[3] = { g_skyRbt, objRbt_1, objRbt_2 };
 static Cvec3f g_objectColors[2] = { Cvec3f(1, 0, 0), Cvec3f(0, 0, 1) };
 
 // list of manipulatable object matrices
-static Matrix4 manipulatable_obj[3] = { g_skyRbt, objRbt_1, objRbt_2 };
+static RigTForm manipulatable_obj[3] = { g_skyRbt, objRbt_1, objRbt_2 };
 
 class ViewpointState {
 public:
@@ -213,8 +214,7 @@ public:
         is_world_sky_frame_ = false;    
     }
 
-    void transform_obj_wrt_A(const Matrix4& M) {
-
+    void transform_obj_wrt_A(const RigTForm& M) {
         manipulatable_obj[current_obj_idx] = doMtoOwrtA(M, manipulatable_obj[current_obj_idx], get_aux_frame());
     }
 
@@ -305,24 +305,24 @@ public:
             aux_frame = world_eye_frame;
         }
         else {
-            aux_frame = makeMixedFrame(get_current_obj_matrix(), get_current_eye_matrix());
+            aux_frame = makeMixedFrame(get_current_obj(), get_current_eye());
         }
     }
 
     void update_world_eye_frame() {
-        world_eye_frame = makeMixedFrame(g_worldRbt, get_current_eye_matrix());
+        world_eye_frame = makeMixedFrame(g_worldRbt, get_current_eye());
     }
 
     /* getters */
-    Matrix4 get_current_obj_matrix() {
+    RigTForm get_current_obj() {
         return manipulatable_obj[current_obj_idx];
     }
 
-    Matrix4 get_current_eye_matrix() {
+    RigTForm get_current_eye() {
         return manipulatable_obj[current_eye_idx];
     }
 
-    Matrix4 get_aux_frame() {
+    RigTForm get_aux_frame() {
         return aux_frame;
     }
 
@@ -352,7 +352,7 @@ public:
 
         std::cout << "Current eye is " << current_eye_name << "\n";
         std::cout << "Eye matrix for this camera is: \n";
-        printMatrix4(manipulatable_obj[current_eye_idx]);
+        printRigTForm(manipulatable_obj[current_eye_idx]);
     }
 
     void describe_current_obj() {
@@ -372,7 +372,7 @@ public:
 
         std::cout << "Controlling " << current_obj_name << "\n";
         std::cout << "Object matrix for this object is: \n";
-        printMatrix4(manipulatable_obj[current_obj_idx]);
+        printRigTForm(manipulatable_obj[current_obj_idx]);
     }
 
     void describe_current_aux() {
@@ -380,13 +380,15 @@ public:
             std::cout << "Currently in World-Sky frame\n";
         }
         std::cout << "Current auxiliary frame is: \n";
-        printMatrix4(get_aux_frame());
+        printRigTForm(get_aux_frame());
     }
 
     void describe_current_status() {
         std::cout << "================================================\n";
         describe_current_eye();
+        std::cout << "\n";
         describe_current_obj();
+        std::cout << "\n";
         describe_current_aux();
         std::cout << "================================================\n";
 
@@ -396,8 +398,10 @@ private:
     bool is_world_sky_frame_;
     unsigned int current_obj_idx;    // initially cube 1
     unsigned int current_eye_idx;    // initially cube 2
-    Matrix4 aux_frame;    // auxiliary frame used to transform objects
-    Matrix4 world_eye_frame;
+
+    // RigTForm representation of aux_frame and world_eye_frame
+    RigTForm aux_frame;
+    RigTForm world_eye_frame;
     enum class aux_frame_descriptor { cube_other = 1, world_sky, sky_sky };
 };
 
@@ -477,8 +481,8 @@ static void drawStuff() {
   sendProjectionMatrix(curSS, projmat);
 
   // use the skyRbt as the eyeRbt
-  const Matrix4 eyeRbt = g_VPState.get_current_eye_matrix();
-  const Matrix4 invEyeRbt = inv(eyeRbt);
+  const RigTForm eyeRbt = g_VPState.get_current_eye();
+  const RigTForm invEyeRbt = inv(eyeRbt);
 
   const Cvec3 eyeLight1 = Cvec3(invEyeRbt * Cvec4(g_light1, 1)); // g_light1 position in eye coordinates
   const Cvec3 eyeLight2 = Cvec3(invEyeRbt * Cvec4(g_light2, 1)); // g_light2 position in eye coordinates
@@ -488,8 +492,8 @@ static void drawStuff() {
   // draw ground
   // ===========
   //
-  const Matrix4 groundRbt = Matrix4();  // identity
-  Matrix4 MVM = invEyeRbt * groundRbt;
+  const Matrix4 groundRbt = Matrix4();  // identity -> find a way to replace it with RigTForm!
+  Matrix4 MVM = RigTFormToMatrix(invEyeRbt) * groundRbt;
   Matrix4 NMVM = normalMatrix(MVM);
   sendModelViewNormalMatrix(curSS, MVM, NMVM);
   safe_glUniform3f(curSS.h_uColor, 0.1, 0.95, 0.1); // set color
@@ -498,7 +502,7 @@ static void drawStuff() {
   // draw cubes
   // ==========
   // draw the first one
-  MVM = invEyeRbt * manipulatable_obj[1];
+  MVM = RigTFormToMatrix(invEyeRbt * manipulatable_obj[1]);
   NMVM = normalMatrix(MVM);
   sendModelViewNormalMatrix(curSS, MVM, NMVM);
 
@@ -506,7 +510,7 @@ static void drawStuff() {
   g_cube_1->draw(curSS);
 
   // draw the second one
-  MVM = invEyeRbt * manipulatable_obj[2];
+  MVM = RigTFormToMatrix(invEyeRbt * manipulatable_obj[2]);
   NMVM = normalMatrix(MVM);
   sendModelViewNormalMatrix(curSS, MVM, NMVM);
 
@@ -540,22 +544,22 @@ static void motion(const int x, const int y) {
   const double dx = x - g_mouseClickX;
   const double dy = g_windowHeight - y - 1 - g_mouseClickY;
 
-  Matrix4 m;
+  RigTForm m;
   if (g_mouseLClickButton && !g_mouseRClickButton) { // left button down?
       switch (g_VPState.get_aux_frame_descriptor()) {
       case 1:
           // default behavior
-          m = Matrix4::makeXRotation(-dy) * Matrix4::makeYRotation(dx);
+          m = RigTForm::makeXRotation(-dy) * RigTForm::makeYRotation(dx);
           break;
 
       case 2:
           // invert sign of rotation and translation
-          m = Matrix4::makeXRotation(dy) * Matrix4::makeYRotation(-dx);
+          m = RigTForm::makeXRotation(dy) * RigTForm::makeYRotation(-dx);
           break;
 
       case 3:
           // invert sign of rotation only
-          m = Matrix4::makeXRotation(dy) * Matrix4::makeYRotation(-dx);
+          m = RigTForm::makeXRotation(dy) * RigTForm::makeYRotation(-dx);
           break;
       }
   }
@@ -563,16 +567,16 @@ static void motion(const int x, const int y) {
       switch (g_VPState.get_aux_frame_descriptor()) {
       case 1:
           // default behavior
-          m = Matrix4::makeTranslation(Cvec3(dx, dy, 0) * 0.01);
+          m = RigTForm::makeTranslation(Cvec3(dx, dy, 0) * 0.01);
           break;
       case 2:
           // invert sign of rotation and translation
-          m = Matrix4::makeTranslation(-Cvec3(dx, dy, 0) * 0.01);
+          m = RigTForm::makeTranslation(-Cvec3(dx, dy, 0) * 0.01);
           break;
 
       case 3:
           // invert sign of rotation only
-          m = Matrix4::makeTranslation(Cvec3(dx, dy, 0) * 0.01);
+          m = RigTForm::makeTranslation(Cvec3(dx, dy, 0) * 0.01);
           break;
       }
   }
@@ -580,15 +584,15 @@ static void motion(const int x, const int y) {
       switch (g_VPState.get_aux_frame_descriptor()) {
       case 1:
           // default behavior
-          m = Matrix4::makeTranslation(Cvec3(0, 0, -dy) * 0.01);
+          m = RigTForm::makeTranslation(Cvec3(0, 0, -dy) * 0.01);
           break;
       case 2:
           // invert sign of rotation and translation
-          m = Matrix4::makeTranslation(-Cvec3(0, 0, -dy) * 0.01);
+          m = RigTForm::makeTranslation(-Cvec3(0, 0, -dy) * 0.01);
           break;
       case 3:
           // invert sign of rotation only
-          m = Matrix4::makeTranslation(Cvec3(0, 0, -dy) * 0.01);
+          m = RigTForm::makeTranslation(Cvec3(0, 0, -dy) * 0.01);
           break;
       }
   }
@@ -706,7 +710,7 @@ static void keyboard(const unsigned char key, const int x, const int y) {
         std::cout << "Pressed 'r'! Resetting all object & eye position\n";
         
         for (int i = 0; i < 3; ++i) {
-            manipulatable_obj[i] = initial_matrices[i];
+            manipulatable_obj[i] = initial_rigs[i];
         }
         g_VPState.update_aux_frame();
 

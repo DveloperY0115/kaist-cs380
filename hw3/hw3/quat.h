@@ -81,6 +81,12 @@ public:
     return Quat(q_[0]*a.q_[0] - dot(u, v), (v*q_[0] + u*a.q_[0]) + cross(u, v));
   }
 
+  /*
+  * Apply rotation expressed in quaternion to a 4-vector
+  * 
+  * Input: Cvec4 object (either coordinate or vector)
+  * Output: Cvec4 object (rotated by quaternion)
+  */
   Cvec4 operator * (const Cvec4& a) const {
     const Quat r = *this * (Quat(0, a[0], a[1], a[2]) * inv(*this));
     return Cvec4(r[1], r[2], r[3], a[3]);
