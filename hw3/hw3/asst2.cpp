@@ -21,6 +21,7 @@
 #include "cvec.h"
 #include "matrix4.h"
 #include "geometrymaker.h"
+#include "rigtform.h"
 #include "ppm.h"
 #include "glsupport.h"
 
@@ -189,18 +190,26 @@ static Matrix4 g_skyRbt = Matrix4::makeTranslation(Cvec3(0.0, 0.25, 4.0));
 static Matrix4 objRbt_1 = Matrix4::makeTranslation(Cvec3(0.75, 0, 0));
 static Matrix4 objRbt_2 = Matrix4::makeTranslation(Cvec3(-0.75, 0, 0));
 
+static RigTForm g_skyRbt_rig = RigTForm(Cvec3(0.0, 0.25, 4.0));
+static RigTForm objRbt_1_rig = RigTForm(Cvec3(0.75, 0, 0));
+static RigTForm objRbt_2_rig = RigTForm(Cvec3(-0.75, 0, 0));
+
 // World matrix
 static Matrix4 g_worldRbt = Matrix4::makeTranslation(Cvec3(0.0, 0.0, 0.0));
+
+static RigTForm g_worldRbt_rig = RigTForm(Cvec3(0.0, 0.0, 0.0));
 static bool is_worldsky_frame = false;
 
 // list of object matrices
 // 1. cube 1
 // 2. cube 2
 static Matrix4 initial_matrices[3] = { g_skyRbt, objRbt_1, objRbt_2 };
+static RigTForm initial_rigs[3] = { g_skyRbt_rig, objRbt_1_rig, objRbt_2_rig };
 static Cvec3f g_objectColors[2] = { Cvec3f(1, 0, 0), Cvec3f(0, 0, 1) };
 
 // list of manipulatable object matrices
 static Matrix4 manipulatable_obj[3] = { g_skyRbt, objRbt_1, objRbt_2 };
+static RigTForm manipulatable_obj_rig[3] = { g_skyRbt_rig, objRbt_1_rig, objRbt_2_rig };
 
 class ViewpointState {
 public:
