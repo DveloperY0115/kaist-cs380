@@ -52,7 +52,17 @@ public:
     return *this;
   }
 
-  // Apply RBT represented by this object to vector 'a'
+  /* Apply RBT represented by this object to vector 'a'
+  * 
+  * Input: Cvec4 object (either representing a coordinate or a vector)
+  * Output: Cvec4 object (RBT applied)
+  * 
+  * Note:
+  * - If input is a vector, translation is not applied since it's an undefined behavior
+  * 
+  * Exception:
+  * - Throws exception when Cvec4 doesn't represent neither coordinate nor vector in Affine frame
+  */
   Cvec4 operator * (const Cvec4& a) const {
       assert(a[3] == 0 || a[3] == 1);
 
@@ -71,8 +81,7 @@ public:
   }
 
   RigTForm operator * (const RigTForm& a) const {
-      // TODO -> What's the behavior of this operation?
-
+    
   }
 };
 
