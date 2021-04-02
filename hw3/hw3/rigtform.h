@@ -54,7 +54,9 @@ public:
 
   Cvec4 operator * (const Cvec4& a) const {
       // TODO -> What's the behavior of this operation?
-    
+      Cvec3 t_ = (*this).getTranslation();
+      Cvec4 t = Cvec4(t_[0], t_[1], t_[2], 0);
+      return (*this).getRotation() * a + t;
   }
 
   RigTForm operator * (const RigTForm& a) const {
