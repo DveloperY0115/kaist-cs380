@@ -52,15 +52,27 @@ public:
     return *this;
   }
 
+  // Apply RBT represented by this object to vector 'a'
   Cvec4 operator * (const Cvec4& a) const {
-      // TODO -> What's the behavior of this operation?
-      Cvec3 t_ = (*this).getTranslation();
-      Cvec4 t = Cvec4(t_[0], t_[1], t_[2], 0);
-      return (*this).getRotation() * a + t;
+      assert(a[3] == 0 || a[3] == 1);
+
+      // if 'a' is a coordinate, translate it
+      // otherwise, do nothing
+      Cvec4 t_a = (*this).getRotation() * a;
+
+      if (a[3] == 1) {
+          // 'a' represents a coordinate in Affine form
+          Cvec3 t_ = (*this).getTranslation();
+          Cvec4 t = Cvec4(t_[0], t_[1], t_[2], 0);
+          t_a += t;
+      }
+
+      return t_a;
   }
 
   RigTForm operator * (const RigTForm& a) const {
       // TODO -> What's the behavior of this operation?
+
   }
 };
 
