@@ -5,13 +5,6 @@ VisualStudioVersion = 16.0.31019.35
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "asst2", "asst2.vcxproj", "{F83AB71F-D4B0-4B9E-86F5-DC77C0D89D8D}"
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{1858792C-7998-4854-BD9D-A6A43118B1AD}"
-	ProjectSection(SolutionItems) = preProject
-		arcball.h = arcball.h
-		quat.h = quat.h
-		rigtform.h = rigtform.h
-	EndProjectSection
-EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Win32 = Debug|Win32
