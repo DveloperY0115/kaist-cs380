@@ -13,7 +13,8 @@ class RigTForm {
 
 public:
   RigTForm() : t_(0) {
-    assert(norm2(Quat(1,0,0,0) - r_) < CS175_EPS2);
+      // Note that a unit norm quaternion of form (1, 0, 0, 0) represents identity rotation in 3D
+        assert(norm2(Quat(1,0,0,0) - r_) < CS175_EPS2);
   }
 
   // Constructor
@@ -24,6 +25,7 @@ public:
 
   explicit RigTForm(const Cvec3& t) {
       t_ = t;
+      // Note that a unit norm quaternion of form (1, 0, 0, 0) represents identity rotation in 3D
       assert(norm2(Quat(1, 0, 0, 0) - r_) < CS175_EPS2);
   }
 
