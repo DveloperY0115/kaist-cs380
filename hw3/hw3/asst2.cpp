@@ -214,8 +214,7 @@ public:
         is_world_sky_frame_ = false;    
     }
 
-    void transform_obj_wrt_A(const Matrix4& M) {
-
+    void transform_obj_wrt_A(const RigTForm& M) {
         manipulatable_obj[current_obj_idx] = doMtoOwrtA(M, manipulatable_obj[current_obj_idx], get_aux_frame());
     }
 
