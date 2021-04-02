@@ -479,8 +479,8 @@ static void drawStuff() {
   sendProjectionMatrix(curSS, projmat);
 
   // use the skyRbt as the eyeRbt
-  const Matrix4 eyeRbt = g_VPState.get_current_eye_matrix();
-  const Matrix4 invEyeRbt = inv(eyeRbt);
+  const RigTForm eyeRbt = g_VPState.get_current_eye();
+  const RigTForm invEyeRbt = inv(eyeRbt);
 
   const Cvec3 eyeLight1 = Cvec3(invEyeRbt * Cvec4(g_light1, 1)); // g_light1 position in eye coordinates
   const Cvec3 eyeLight2 = Cvec3(invEyeRbt * Cvec4(g_light2, 1)); // g_light2 position in eye coordinates
@@ -490,8 +490,8 @@ static void drawStuff() {
   // draw ground
   // ===========
   //
-  const Matrix4 groundRbt = Matrix4();  // identity
-  Matrix4 MVM = invEyeRbt * groundRbt;
+  const Matrix4 groundRbt = Matrix4();  // identity -> find a way to replace it with RigTForm!
+  Matrix4 MVM = RigTFormToMatrix(invEyeRbt) * groundRbt;
   Matrix4 NMVM = normalMatrix(MVM);
   sendModelViewNormalMatrix(curSS, MVM, NMVM);
   safe_glUniform3f(curSS.h_uColor, 0.1, 0.95, 0.1); // set color
@@ -500,7 +500,7 @@ static void drawStuff() {
   // draw cubes
   // ==========
   // draw the first one
-  MVM = invEyeRbt * manipulatable_obj[1];
+  MVM = RigTFormToMatrix(invEyeRbt * manipulatable_obj[1]);
   NMVM = normalMatrix(MVM);
   sendModelViewNormalMatrix(curSS, MVM, NMVM);
 
@@ -508,7 +508,7 @@ static void drawStuff() {
   g_cube_1->draw(curSS);
 
   // draw the second one
-  MVM = invEyeRbt * manipulatable_obj[2];
+  MVM = RigTFormToMatrix(invEyeRbt * manipulatable_obj[2]);
   NMVM = normalMatrix(MVM);
   sendModelViewNormalMatrix(curSS, MVM, NMVM);
 
@@ -542,22 +542,22 @@ static void motion(const int x, const int y) {
   const double dx = x - g_mouseClickX;
   const double dy = g_windowHeight - y - 1 - g_mouseClickY;
 
-  Matrix4 m;
+  RigTForm m;
   if (g_mouseLClickButton && !g_mouseRClickButton) { // left button down?
       switch (g_VPState.get_aux_frame_descriptor()) {
       case 1:
           // default behavior
-          m = Matrix4::makeXRotation(-dy) * Matrix4::makeYRotation(dx);
+          m = RigTForm::makeXRotation(-dy) * RigTForm::makeYRotation(dx);
           break;
 
       case 2:
           // invert sign of rotation and translation
-          m = Matrix4::makeXRotation(dy) * Matrix4::makeYRotation(-dx);
+          m = RigTForm::makeXRotation(dy) * RigTForm::makeYRotation(-dx);
           break;
 
       case 3:
           // invert sign of rotation only
-          m = Matrix4::makeXRotation(dy) * Matrix4::makeYRotation(-dx);
+          m = RigTForm::makeXRotation(dy) * RigTForm::makeYRotation(-dx);
           break;
       }
   }
@@ -565,16 +565,16 @@ static void motion(const int x, const int y) {
       switch (g_VPState.get_aux_frame_descriptor()) {
       case 1:
           // default behavior
-          m = Matrix4::makeTranslation(Cvec3(dx, dy, 0) * 0.01);
+          m = RigTForm::makeTranslation(Cvec3(dx, dy, 0) * 0.01);
           break;
       case 2:
           // invert sign of rotation and translation
-          m = Matrix4::makeTranslation(-Cvec3(dx, dy, 0) * 0.01);
+          m = RigTForm::makeTranslation(-Cvec3(dx, dy, 0) * 0.01);
           break;
 
       case 3:
           // invert sign of rotation only
-          m = Matrix4::makeTranslation(Cvec3(dx, dy, 0) * 0.01);
+          m = RigTForm::makeTranslation(Cvec3(dx, dy, 0) * 0.01);
           break;
       }
   }
@@ -582,15 +582,15 @@ static void motion(const int x, const int y) {
       switch (g_VPState.get_aux_frame_descriptor()) {
       case 1:
           // default behavior
-          m = Matrix4::makeTranslation(Cvec3(0, 0, -dy) * 0.01);
+          m = RigTForm::makeTranslation(Cvec3(0, 0, -dy) * 0.01);
           break;
       case 2:
           // invert sign of rotation and translation
-          m = Matrix4::makeTranslation(-Cvec3(0, 0, -dy) * 0.01);
+          m = RigTForm::makeTranslation(-Cvec3(0, 0, -dy) * 0.01);
           break;
       case 3:
           // invert sign of rotation only
-          m = Matrix4::makeTranslation(Cvec3(0, 0, -dy) * 0.01);
+          m = RigTForm::makeTranslation(Cvec3(0, 0, -dy) * 0.01);
           break;
       }
   }
