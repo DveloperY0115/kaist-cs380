@@ -708,7 +708,7 @@ static void keyboard(const unsigned char key, const int x, const int y) {
         std::cout << "Pressed 'r'! Resetting all object & eye position\n";
         
         for (int i = 0; i < 3; ++i) {
-            manipulatable_obj[i] = initial_matrices[i];
+            manipulatable_obj[i] = initial_rigs[i];
         }
         g_VPState.update_aux_frame();
 
