@@ -327,6 +327,16 @@ public:
         return aux_frame;
     }
 
+    bool is_arcball_visible() {
+        if (is_world_sky_frame_ || ((current_obj_idx == 1 || current_obj_idx == 2) && (current_obj_idx != current_eye_idx))) {
+            // two cases
+            // (1) Current auxiliary frame is world-sky frame
+            // (2) User is controlling one of the cubes and the current eye is not equal to it
+            return true;
+        } 
+        return false;
+    }
+
     /* utilities */
     bool is_sky_sky_frame() {
         return current_eye_idx == 0 && current_obj_idx == 0;
