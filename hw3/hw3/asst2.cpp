@@ -493,8 +493,10 @@ static void drawStuff() {
   // draw ground
   // ===========
   //
-  const Matrix4 groundRbt = Matrix4();  // identity -> find a way to replace it with RigTForm!
-  Matrix4 MVM = RigTFormToMatrix(invEyeRbt) * groundRbt;
+
+  // TODO: Find way to replace 'normalMatrix'
+  const RigTForm groundRbt = RigTForm();  // identity -> find a way to replace it with RigTForm!
+  Matrix4 MVM = RigTFormToMatrix(invEyeRbt * groundRbt);
   Matrix4 NMVM = normalMatrix(MVM);
   sendModelViewNormalMatrix(curSS, MVM, NMVM);
   safe_glUniform3f(curSS.h_uColor, 0.1, 0.95, 0.1); // set color
