@@ -137,7 +137,8 @@ inline RigTForm linFact(const RigTForm& tform) {
 inline RigTForm makeMixedFrame(const RigTForm& O, const RigTForm& E) {
     return transFact(O) * linFact(E);
 }
-inline Matrix4 rigTFormToMatrix(const RigTForm& tform) {
+
+inline Matrix4 RigTFormToMatrix(const RigTForm& tform) {
     // get translation, rotation factors
     Cvec3 t_ = tform.getTranslation();    // T (vector)
     Matrix4 r_mat = quatToMatrix(tform.getRotation());    // R
