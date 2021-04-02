@@ -305,24 +305,24 @@ public:
             aux_frame = world_eye_frame;
         }
         else {
-            aux_frame = makeMixedFrame(get_current_obj_matrix(), get_current_eye_matrix());
+            aux_frame = makeMixedFrame(get_current_obj(), get_current_eye());
         }
     }
 
     void update_world_eye_frame() {
-        world_eye_frame = makeMixedFrame(g_worldRbt, get_current_eye_matrix());
+        world_eye_frame = makeMixedFrame(g_worldRbt, get_current_eye());
     }
 
     /* getters */
-    Matrix4 get_current_obj_matrix() {
+    RigTForm get_current_obj() {
         return manipulatable_obj[current_obj_idx];
     }
 
-    Matrix4 get_current_eye_matrix() {
+    RigTForm get_current_eye() {
         return manipulatable_obj[current_eye_idx];
     }
 
-    Matrix4 get_aux_frame() {
+    RigTForm get_aux_frame() {
         return aux_frame;
     }
 
