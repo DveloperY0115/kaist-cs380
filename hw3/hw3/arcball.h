@@ -57,8 +57,8 @@ inline double calculateScreenZ(double ScreenRadius, int x, int y, Cvec3 center_c
         double z = std::sqrt(std::pow(ScreenRadius, 2) -
             std::pow(x - center_coord[0], 2)
             - std::pow((y - center_coord[1]), 2));
-        if (y < center_coord[1])
-            z = -z;
+        // if (y < center_coord[1])
+        //    z = -z;
         return z;
     }
 }
