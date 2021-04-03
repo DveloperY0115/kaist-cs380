@@ -454,8 +454,8 @@ static void initCubes() {
 }
 
 static void initSpheres() {
-    int slices = 20;
-    int stacks = 20;
+    int slices = 10;
+    int stacks = 10;
     int ibLen, vbLen;
     getSphereVbIbLen(slices, stacks, vbLen, ibLen);
 
@@ -593,13 +593,13 @@ static void reshape(const int w, const int h) {
 
 static void motion(const int x, const int y) {
 
-  /*
-  * TODO Replace below with arcball interaction
-  */
+    /*
+    * TODO Replace below with arcball interaction
+    */
 
     RigTForm m;
 
-    if (g_VPState.is_arcball_visible()) {
+    if (g_VPState.is_arcball_visible() && (g_mouseLClickButton && !g_mouseRClickButton)) {
         // enable arcball interface only in two cases
 
         // calculate screen space coordinate of sphere center
@@ -612,13 +612,8 @@ static void motion(const int x, const int y) {
         // calculate z coordinate of clicked points in screen coordinate
 
         // you might have to clamp it..?
-        double z_0 = std::sqrt(g_arcballScreenRadius * g_arcballScreenRadius -
-            (g_mouseClickX - center_screen_coord[0]) * (g_mouseClickX - center_screen_coord[0])
-            - (g_mouseClickY - center_screen_coord[1]) * (g_mouseClickY - center_screen_coord[1]));
-
-        double z_1 = std::sqrt(g_arcballScreenRadius * g_arcballScreenRadius -
-            (x - center_screen_coord[0]) * (x - center_screen_coord[0])
-            - (y - center_screen_coord[1]) * (y - center_screen_coord[1]));
+        double z_0 = calculateScreenZ(g_arcballScreenRadius, g_mouseClickX, g_mouseClickY, center_screen_coord);
+        double z_1 = calculateScreenZ(g_arcballScreenRadius, x, y, center_screen_coord);
 
         Cvec3 v_1 = normalize(Cvec3(g_mouseClickX, g_mouseClickY, z_0) - center_screen_coord);
         Cvec3 v_2 = normalize(Cvec3(x, y, z_1) - center_screen_coord);

@@ -46,16 +46,20 @@ inline double getScreenToEyeScale(double z, double frustFovY, int screenHeight) 
 
 // Calculate the z coordinate of the point of interaction in screen coordinate system
 // Clamp the z value if necessary
-inline double calculateScreenZ(double ScreenRadius, int mouseClickX, int mouseClickY, Cvec3 center_coord) {
+inline double calculateScreenZ(double ScreenRadius, int x, int y, Cvec3 center_coord) {
     
-    if (std::pow(ScreenRadius, 2) < std::pow(mouseClickX - center_coord[0], 2) + std::pow(mouseClickY - center_coord[1], 2)) {
+    if (std::pow(ScreenRadius, 2) < std::pow(x - center_coord[0], 2) + std::pow(y - center_coord[1], 2)) {
         // clamp if necessary
-        return 0;
+        std::cout << "You're trying to move the ball without even touching it!\n";
+        exit(-1);
     }
     else {
-        return std::sqrt(ScreenRadius * ScreenRadius -
-            (mouseClickX - center_coord[0]) * (mouseClickX - center_coord[0])
-            - (mouseClickY - center_coord[1]) * (mouseClickY - center_coord[1]));
+        double z = std::sqrt(std::pow(ScreenRadius, 2) -
+            std::pow(x - center_coord[0], 2)
+            - std::pow((y - center_coord[1]), 2));
+        if (y < center_coord[1])
+            z = -z;
+        return z;
     }
 }
 #endif
