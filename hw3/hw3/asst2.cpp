@@ -10,6 +10,7 @@
 #include <string>
 #include <memory>
 #include <stdexcept>
+#include <cmath>
 
 #include <GL/glew.h>
 #ifdef __APPLE__
@@ -589,76 +590,94 @@ static void reshape(const int w, const int h) {
 
 static void motion(const int x, const int y) {
 
-  const double dx = x - g_mouseClickX;
-  const double dy = g_windowHeight - y - 1 - g_mouseClickY;
-
   /*
   * TODO Replace below with arcball interaction
   */
 
-  if (g_VPState.is_arcball_visible()) {
-      // enable arcball interface only in two cases
+    RigTForm m;
 
-      // calculate screen space coordinate of sphere center
-      const RigTForm eyeRbt = g_VPState.get_current_eye();
-      const RigTForm invEyeRbt = inv(eyeRbt);
-      Cvec3 center_eye_coord = (invEyeRbt * g_VPState.get_current_obj()).getTranslation();
-      Cvec2 center_screen_coord = getScreenSpaceCoord(center_eye_coord, makeProjectionMatrix(), 
-          g_frustNear, g_frustFovY, g_windowWidth, g_windowHeight);
+    if (g_VPState.is_arcball_visible()) {
+        // enable arcball interface only in two cases
 
-  }
+        // calculate screen space coordinate of sphere center
+        const RigTForm eyeRbt = g_VPState.get_current_eye();
+        const RigTForm invEyeRbt = inv(eyeRbt);
+        Cvec3 center_eye_coord = (invEyeRbt * g_VPState.get_current_obj()).getTranslation();
+        Cvec2 center_screen_coord = getScreenSpaceCoord(center_eye_coord, makeProjectionMatrix(),
+            g_frustNear, g_frustFovY, g_windowWidth, g_windowHeight);
+
+        // calculate z coordinate of clicked points in screen coordinate
+
+        // is it okay to use r = 1.0 directly? --> Nope!!
+        // nan(ind) for 
+        double z_0 = std::sqrt(1.0 * 1.0 -
+            (g_mouseClickX - center_screen_coord[0]) * (g_mouseClickX - center_screen_coord[0])
+            - (g_mouseClickY - center_screen_coord[1]) * (g_mouseClickY - center_screen_coord[1]));
+        double z_1 = std::sqrt(1.0 * 1.0 -
+            (x - center_screen_coord[0]) * (x - center_screen_coord[0])
+            - (y - center_screen_coord[1]) * (y - center_screen_coord[1]));
+
+        Cvec3 v_1 = Cvec3(g_mouseClickX, g_mouseClickY, z_0) - Cvec3(center_screen_coord[0], center_screen_coord[1], 0);
+        Cvec3 v_2 = Cvec3(x, y, z_1) - Cvec3(center_screen_coord[0], center_screen_coord[1], 0);
+
+        Quat rotation = Quat(dot(v_1, v_2), cross(v_1, v_2));
+        m = RigTForm(rotation);
+    }
   
+    else {
+        const double dx = x - g_mouseClickX;
+        const double dy = g_windowHeight - y - 1 - g_mouseClickY;
 
-  RigTForm m;
-  if (g_mouseLClickButton && !g_mouseRClickButton) { // left button down?
-      switch (g_VPState.get_aux_frame_descriptor()) {
-      case 1:
-          // default behavior
-          m = RigTForm::makeXRotation(-dy) * RigTForm::makeYRotation(dx);
-          break;
+      if (g_mouseLClickButton && !g_mouseRClickButton) { // left button down?
+          switch (g_VPState.get_aux_frame_descriptor()) {
+          case 1:
+              // default behavior
+              m = RigTForm::makeXRotation(-dy) * RigTForm::makeYRotation(dx);
+              break;
 
-      case 2:
-          // invert sign of rotation and translation
-          m = RigTForm::makeXRotation(dy) * RigTForm::makeYRotation(-dx);
-          break;
+          case 2:
+              // invert sign of rotation and translation
+              m = RigTForm::makeXRotation(dy) * RigTForm::makeYRotation(-dx);
+              break;
 
-      case 3:
-          // invert sign of rotation only
-          m = RigTForm::makeXRotation(dy) * RigTForm::makeYRotation(-dx);
-          break;
+          case 3:
+              // invert sign of rotation only
+              m = RigTForm::makeXRotation(dy) * RigTForm::makeYRotation(-dx);
+              break;
+          }
       }
-  }
-  else if (g_mouseRClickButton && !g_mouseLClickButton) { // right button down?
-      switch (g_VPState.get_aux_frame_descriptor()) {
-      case 1:
-          // default behavior
-          m = RigTForm::makeTranslation(Cvec3(dx, dy, 0) * 0.01);
-          break;
-      case 2:
-          // invert sign of rotation and translation
-          m = RigTForm::makeTranslation(-Cvec3(dx, dy, 0) * 0.01);
-          break;
+      else if (g_mouseRClickButton && !g_mouseLClickButton) { // right button down?
+          switch (g_VPState.get_aux_frame_descriptor()) {
+          case 1:
+              // default behavior
+              m = RigTForm::makeTranslation(Cvec3(dx, dy, 0) * 0.01);
+              break;
+          case 2:
+              // invert sign of rotation and translation
+              m = RigTForm::makeTranslation(-Cvec3(dx, dy, 0) * 0.01);
+              break;
 
-      case 3:
-          // invert sign of rotation only
-          m = RigTForm::makeTranslation(Cvec3(dx, dy, 0) * 0.01);
-          break;
+          case 3:
+              // invert sign of rotation only
+              m = RigTForm::makeTranslation(Cvec3(dx, dy, 0) * 0.01);
+              break;
+          }
       }
-  }
-  else if (g_mouseMClickButton || (g_mouseLClickButton && g_mouseRClickButton)) {  // middle or (left and right) button down?
-      switch (g_VPState.get_aux_frame_descriptor()) {
-      case 1:
-          // default behavior
-          m = RigTForm::makeTranslation(Cvec3(0, 0, -dy) * 0.01);
-          break;
-      case 2:
-          // invert sign of rotation and translation
-          m = RigTForm::makeTranslation(-Cvec3(0, 0, -dy) * 0.01);
-          break;
-      case 3:
-          // invert sign of rotation only
-          m = RigTForm::makeTranslation(Cvec3(0, 0, -dy) * 0.01);
-          break;
+      else if (g_mouseMClickButton || (g_mouseLClickButton && g_mouseRClickButton)) {  // middle or (left and right) button down?
+          switch (g_VPState.get_aux_frame_descriptor()) {
+          case 1:
+              // default behavior
+              m = RigTForm::makeTranslation(Cvec3(0, 0, -dy) * 0.01);
+              break;
+          case 2:
+              // invert sign of rotation and translation
+              m = RigTForm::makeTranslation(-Cvec3(0, 0, -dy) * 0.01);
+              break;
+          case 3:
+              // invert sign of rotation only
+              m = RigTForm::makeTranslation(Cvec3(0, 0, -dy) * 0.01);
+              break;
+          }
       }
   }
 
