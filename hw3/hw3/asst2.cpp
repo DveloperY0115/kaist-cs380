@@ -18,6 +18,7 @@
 #   include <GL/glut.h>
 #endif
 
+#include "arcball.h"
 #include "cvec.h"
 #include "matrix4.h"
 #include "rigtform.h"
@@ -545,6 +546,7 @@ static void drawStuff() {
   safe_glUniform3f(curSS.h_uColor, g_objectColors[1][0], g_objectColors[1][1], g_objectColors[1][2]);
   g_cube_2->draw(curSS);
 
+  // draw the arcball
   if (g_VPState.is_arcball_visible()) {
       glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);  // draw wireframe
 
@@ -586,8 +588,26 @@ static void reshape(const int w, const int h) {
 }
 
 static void motion(const int x, const int y) {
+
   const double dx = x - g_mouseClickX;
   const double dy = g_windowHeight - y - 1 - g_mouseClickY;
+
+  /*
+  * TODO Replace below with arcball interaction
+  */
+
+  if (g_VPState.is_arcball_visible()) {
+      // enable arcball interface only in two cases
+
+      // calculate screen space coordinate of sphere center
+      const RigTForm eyeRbt = g_VPState.get_current_eye();
+      const RigTForm invEyeRbt = inv(eyeRbt);
+      Cvec3 center_eye_coord = (invEyeRbt * g_VPState.get_current_obj()).getTranslation();
+      Cvec2 center_screen_coord = getScreenSpaceCoord(center_eye_coord, makeProjectionMatrix(), 
+          g_frustNear, g_frustFovY, g_windowWidth, g_windowHeight);
+
+  }
+  
 
   RigTForm m;
   if (g_mouseLClickButton && !g_mouseRClickButton) { // left button down?

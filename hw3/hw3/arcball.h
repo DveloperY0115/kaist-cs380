@@ -44,5 +44,6 @@ inline double getScreenToEyeScale(double z, double frustFovY, int screenHeight) 
   return -(z * tan(frustFovY * CS175_PI/360.0)) * 2 / screenHeight;
 }
 
+
 #endif
 
