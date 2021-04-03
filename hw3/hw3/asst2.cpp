@@ -418,8 +418,9 @@ private:
     enum class aux_frame_descriptor { cube_other = 1, world_sky, sky_sky };
 };
 
-// Refactoring --> All view-obj information will be incapsulated in here!
 static ViewpointState g_VPState = ViewpointState();
+
+static double g_arcballScreenRadius = 0.25 * std::min(g_windowWidth, g_windowHeight);
 
 ///////////////// END OF G L O B A L S //////////////////////////////////////////////////
 
@@ -583,6 +584,8 @@ static void reshape(const int w, const int h) {
   g_windowWidth = w;
   g_windowHeight = h;
   glViewport(0, 0, w, h);
+  // update the size of the arcball
+  g_arcballScreenRadius = 0.25 * std::min(g_windowWidth, g_windowHeight);
   cerr << "Size of window is now " << w << "x" << h << endl;
   updateFrustFovY();
   glutPostRedisplay();
@@ -603,24 +606,25 @@ static void motion(const int x, const int y) {
         const RigTForm eyeRbt = g_VPState.get_current_eye();
         const RigTForm invEyeRbt = inv(eyeRbt);
         Cvec3 center_eye_coord = (invEyeRbt * g_VPState.get_current_obj()).getTranslation();
-        Cvec2 center_screen_coord = getScreenSpaceCoord(center_eye_coord, makeProjectionMatrix(),
-            g_frustNear, g_frustFovY, g_windowWidth, g_windowHeight);
+        Cvec3 center_screen_coord = Cvec3(getScreenSpaceCoord(center_eye_coord, makeProjectionMatrix(),
+            g_frustNear, g_frustFovY, g_windowWidth, g_windowHeight), 0);
 
         // calculate z coordinate of clicked points in screen coordinate
 
-        // is it okay to use r = 1.0 directly? --> Nope!!
-        // nan(ind) for 
-        double z_0 = std::sqrt(1.0 * 1.0 -
+        // you might have to clamp it..?
+        double z_0 = std::sqrt(g_arcballScreenRadius * g_arcballScreenRadius -
             (g_mouseClickX - center_screen_coord[0]) * (g_mouseClickX - center_screen_coord[0])
             - (g_mouseClickY - center_screen_coord[1]) * (g_mouseClickY - center_screen_coord[1]));
-        double z_1 = std::sqrt(1.0 * 1.0 -
+
+        double z_1 = std::sqrt(g_arcballScreenRadius * g_arcballScreenRadius -
             (x - center_screen_coord[0]) * (x - center_screen_coord[0])
             - (y - center_screen_coord[1]) * (y - center_screen_coord[1]));
 
-        Cvec3 v_1 = Cvec3(g_mouseClickX, g_mouseClickY, z_0) - Cvec3(center_screen_coord[0], center_screen_coord[1], 0);
-        Cvec3 v_2 = Cvec3(x, y, z_1) - Cvec3(center_screen_coord[0], center_screen_coord[1], 0);
+        Cvec3 v_1 = normalize(Cvec3(g_mouseClickX, g_mouseClickY, z_0) - center_screen_coord);
+        Cvec3 v_2 = normalize(Cvec3(x, y, z_1) - center_screen_coord);
 
         Quat rotation = Quat(dot(v_1, v_2), cross(v_1, v_2));
+
         m = RigTForm(rotation);
     }
   
@@ -682,7 +686,6 @@ static void motion(const int x, const int y) {
   }
 
   if (g_mouseClickDown) {
-
       g_VPState.transform_obj_wrt_A(m);
       g_VPState.update_aux_frame();
 
