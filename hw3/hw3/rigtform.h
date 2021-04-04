@@ -85,9 +85,9 @@ public:
   RigTForm operator * (const RigTForm& a) const {
       // get t_1 and t_2 
       Cvec3 t_1_ = (*this).getTranslation();
-      Cvec4 t_1 = Cvec4(t_1_[0], t_1_[1], t_1_[2], 0);
+      Cvec4 t_1 = Cvec4(t_1_, 0);
       Cvec3 t_2_ = a.getTranslation();
-      Cvec4 t_2 = Cvec4(t_2_[0], t_2_[1], t_2_[2], 0);
+      Cvec4 t_2 = Cvec4(t_2_, 0);
 
       // get r_1 and r_2
       Quat r_1 = (*this).getRotation();
@@ -97,7 +97,7 @@ public:
       Cvec4 trans = t_1 + r_1 * t_2;
       assert(trans[3] == 0);
 
-      Cvec3 t_ = Cvec3(trans[0], trans[1], trans[2]);
+      Cvec3 t_ = Cvec3(trans);
 
       // calculate rotation part
       Quat r_ = r_1 * r_2;    
@@ -126,14 +126,14 @@ public:
 inline RigTForm inv(const RigTForm& tform) {
     // get t_1
     Cvec3 t__ = tform.getTranslation();
-    Cvec4 t = Cvec4(t__[0], t__[1], t__[2], 0);
+    Cvec4 t = Cvec4(t__, 0);
 
     // calculate rotation part
     Quat r_inv = inv(tform.getRotation());
 
     // calculate transform part
     Cvec4 trans = -(r_inv * t);
-    Cvec3 t_ = Cvec3(trans[0], trans[1], trans[2]);
+    Cvec3 t_ = Cvec3(trans);
 
     return RigTForm(t_, r_inv);
 }

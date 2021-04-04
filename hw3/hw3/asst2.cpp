@@ -599,6 +599,7 @@ static void motion(const int x, const int y) {
 
     RigTForm m;
 
+    /*
     if (g_VPState.is_arcball_visible() && (g_mouseLClickButton && !g_mouseRClickButton)) {
         // enable arcball interface only in two cases
 
@@ -622,8 +623,8 @@ static void motion(const int x, const int y) {
 
         m = RigTForm(rotation);
     }
-  
-    else {
+    */
+    // else {
         const double dx = x - g_mouseClickX;
         const double dy = g_windowHeight - y - 1 - g_mouseClickY;
 
@@ -678,7 +679,7 @@ static void motion(const int x, const int y) {
               break;
           }
       }
-  }
+  // }
 
   if (g_mouseClickDown) {
       g_VPState.transform_obj_wrt_A(m);
