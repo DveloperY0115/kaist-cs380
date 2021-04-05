@@ -421,6 +421,7 @@ private:
 static ViewpointState g_VPState = ViewpointState();
 
 static double g_arcballScreenRadius = 0.25 * std::min(g_windowWidth, g_windowHeight);
+static double g_arcballScale;
 
 ///////////////// END OF G L O B A L S //////////////////////////////////////////////////
 
@@ -557,6 +558,15 @@ static void drawStuff() {
           // if the user is in world-sky frame, draw arcball at world center
           MVM = RigTFormToMatrix(invEyeRbt * g_worldRbt);
       } 
+
+      g_arcballScale = getScreenToEyeScale((invEyeRbt * g_VPState.get_current_obj()).getTranslation()[2],
+          g_frustFovY, g_windowHeight);
+
+      double scale = g_arcballScale * g_arcballScreenRadius;
+      Matrix4 scale_mat = Matrix4::makeScale(Cvec3(scale, scale, scale));
+
+      MVM *= scale_mat;
+
       NMVM = normalMatrix(MVM);
       sendModelViewNormalMatrix(curSS, MVM, NMVM);
 
@@ -599,7 +609,6 @@ static void motion(const int x, const int y) {
 
     RigTForm m;
 
-    /*
     if (g_VPState.is_arcball_visible() && (g_mouseLClickButton && !g_mouseRClickButton)) {
         // enable arcball interface only in two cases
 
@@ -607,8 +616,8 @@ static void motion(const int x, const int y) {
         const RigTForm eyeRbt = g_VPState.get_current_eye();
         const RigTForm invEyeRbt = inv(eyeRbt);
         Cvec3 center_eye_coord = (invEyeRbt * g_VPState.get_current_obj()).getTranslation();
-        Cvec3 center_screen_coord = Cvec3(getScreenSpaceCoord(center_eye_coord, makeProjectionMatrix(),
-            g_frustNear, g_frustFovY, g_windowWidth, g_windowHeight), 0);
+        Cvec2 center_screen_coord = getScreenSpaceCoord(center_eye_coord, makeProjectionMatrix(),
+            g_frustNear, g_frustFovY, g_windowWidth, g_windowHeight);
 
         // calculate z coordinate of clicked points in screen coordinate
 
@@ -616,15 +625,15 @@ static void motion(const int x, const int y) {
         double z_0 = calculateScreenZ(g_arcballScreenRadius, g_mouseClickX, g_mouseClickY, center_screen_coord);
         double z_1 = calculateScreenZ(g_arcballScreenRadius, x, y, center_screen_coord);
 
-        Cvec3 v_1 = normalize(Cvec3(g_mouseClickX, g_mouseClickY, z_0) - center_screen_coord);
-        Cvec3 v_2 = normalize(Cvec3(x, y, z_1) - center_screen_coord);
+        Cvec3 v_1 = normalize(Cvec3(g_mouseClickX, g_mouseClickY, z_0) - Cvec3(center_screen_coord, 0));
+        Cvec3 v_2 = normalize(Cvec3(x, y, z_1) - Cvec3(center_screen_coord, 0));
 
         Quat rotation = Quat(dot(v_1, v_2), cross(v_1, v_2));
 
         m = RigTForm(rotation);
     }
-    */
-    // else {
+    
+    else {
         const double dx = x - g_mouseClickX;
         const double dy = g_windowHeight - y - 1 - g_mouseClickY;
 
@@ -679,7 +688,7 @@ static void motion(const int x, const int y) {
               break;
           }
       }
-  // }
+   }
 
   if (g_mouseClickDown) {
       g_VPState.transform_obj_wrt_A(m);
