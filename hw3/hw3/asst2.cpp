@@ -619,11 +619,6 @@ static void reshape(const int w, const int h) {
 }
 
 static void motion(const int x, const int y) {
-
-    /*
-    * TODO Replace below with arcball interaction
-    */
-
     RigTForm m;
 
     if (g_VPState.is_arcball_visible()) {
