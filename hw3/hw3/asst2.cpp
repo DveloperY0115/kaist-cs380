@@ -621,10 +621,21 @@ static void motion(const int x, const int y) {
     if (g_VPState.is_arcball_visible() && (g_mouseLClickButton && !g_mouseRClickButton)) {
         // enable arcball interface only in two cases
 
-        // calculate screen space coordinate of sphere center
-        const RigTForm eyeRbt = g_VPState.get_current_eye();
-        const RigTForm invEyeRbt = inv(eyeRbt);
-        Cvec3 center_eye_coord = (invEyeRbt * g_VPState.get_current_obj()).getTranslation();
+        Quat rotation = Quat();
+
+        RigTForm eyeRbt = g_VPState.get_current_eye();
+        RigTForm invEyeRbt = inv(eyeRbt);
+        Cvec3 center_eye_coord = Cvec3();
+
+        if (!g_VPState.is_world_sky_frame()) {
+            // in cube-eye frame
+            center_eye_coord = (invEyeRbt * g_VPState.get_current_obj()).getTranslation();
+        }
+        else {
+            // in world-eye frames
+            center_eye_coord = (invEyeRbt * g_worldRbt).getTranslation();
+        }
+
         Cvec2 center_screen_coord = getScreenSpaceCoord(center_eye_coord, makeProjectionMatrix(),
             g_frustNear, g_frustFovY, g_windowWidth, g_windowHeight);
 
@@ -643,7 +654,11 @@ static void motion(const int x, const int y) {
         Cvec3 v2 = normalize(Cvec3(v2_x, v2_y, v2_z));
         Cvec3 k = cross(v1, v2);
 
-        Quat rotation = Quat(dot(v1, v2), k);
+        rotation = Quat(dot(v1, v2), k);
+
+        if (g_VPState.is_world_sky_frame()) {
+            rotation = inv(rotation);
+        }
 
         m = RigTForm(rotation);
     }
