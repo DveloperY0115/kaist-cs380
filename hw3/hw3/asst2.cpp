@@ -626,7 +626,7 @@ static void motion(const int x, const int y) {
 
     RigTForm m;
 
-    if (g_VPState.is_arcball_visible() && (g_mouseLClickButton && !g_mouseRClickButton)) {
+    if (g_VPState.is_arcball_visible()) {
         // enable arcball interface only in two cases
 
         // rotation when arcball is visible
