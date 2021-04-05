@@ -190,8 +190,8 @@ static const Cvec3 g_light1(2.0, 3.0, 14.0), g_light2(-2, -3.0, -5.0);  // defin
 
 // Eye, Object matrices
 static RigTForm g_skyRbt = RigTForm(Cvec3(0.0, 0.25, 4.0));
-static RigTForm objRbt_1 = RigTForm(Cvec3(0.75, 0, 0));
-static RigTForm objRbt_2 = RigTForm(Cvec3(-0.75, 0, 0));
+static RigTForm objRbt_1 = RigTForm(Cvec3(0.75, 0, 0.0));
+static RigTForm objRbt_2 = RigTForm(Cvec3(-0.75, 0, 0.0));
 
 // World matrix
 static RigTForm g_worldRbt = RigTForm(Cvec3(0.0, 0.0, 0.0));
@@ -554,15 +554,23 @@ static void drawStuff() {
   if (g_VPState.is_arcball_visible()) {
       glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);  // draw wireframe
 
-      MVM = RigTFormToMatrix(invEyeRbt * g_VPState.get_current_obj());
       if (g_VPState.is_world_sky_frame()) {
           // if the user is in world-sky frame, draw arcball at world center
-          MVM = RigTFormToMatrix(invEyeRbt * g_worldRbt);
+          RigTForm MVRigTForm = invEyeRbt * g_worldRbt;
+          MVM = RigTFormToMatrix(MVRigTForm);
+          g_arcballScale = getScreenToEyeScale(MVRigTForm.getTranslation()[2],
+              g_frustFovY, g_windowHeight);
       } 
 
-      g_arcballScale = getScreenToEyeScale((invEyeRbt * g_VPState.get_current_obj()).getTranslation()[2],
-          g_frustFovY, g_windowHeight);
-
+      else {
+          // otherwise, sync its position with current object
+          RigTForm MVRigTForm = invEyeRbt * g_VPState.get_current_obj();
+          MVM = RigTFormToMatrix(MVRigTForm);
+          g_arcballScale = getScreenToEyeScale(MVRigTForm.getTranslation()[2],
+              g_frustFovY, g_windowHeight);
+      }
+      
+      // scale arcball properly
       double scale = g_arcballScale * g_arcballScreenRadius;
       Matrix4 scale_mat = Matrix4::makeScale(Cvec3(scale, scale, scale));
 
@@ -610,36 +618,34 @@ static void motion(const int x, const int y) {
 
     RigTForm m;
 
-    if (g_VPState.is_arcball_visible()) {
+    if (g_VPState.is_arcball_visible() && (g_mouseLClickButton && !g_mouseRClickButton)) {
         // enable arcball interface only in two cases
 
-        if (g_mouseLClickButton && !g_mouseRClickButton) {
-            // calculate screen space coordinate of sphere center
-            const RigTForm eyeRbt = g_VPState.get_current_eye();
-            const RigTForm invEyeRbt = inv(eyeRbt);
-            Cvec3 center_eye_coord = (invEyeRbt * g_VPState.get_current_obj()).getTranslation();
-            Cvec2 center_screen_coord = getScreenSpaceCoord(center_eye_coord, makeProjectionMatrix(),
-                g_frustNear, g_frustFovY, g_windowWidth, g_windowHeight);
+        // calculate screen space coordinate of sphere center
+        const RigTForm eyeRbt = g_VPState.get_current_eye();
+        const RigTForm invEyeRbt = inv(eyeRbt);
+        Cvec3 center_eye_coord = (invEyeRbt * g_VPState.get_current_obj()).getTranslation();
+        Cvec2 center_screen_coord = getScreenSpaceCoord(center_eye_coord, makeProjectionMatrix(),
+            g_frustNear, g_frustFovY, g_windowWidth, g_windowHeight);
 
-            // calculate z coordinate of clicked points in screen coordinate
+        // calculate z coordinate of clicked points in screen coordinate
 
-            int v1_x = (int)(g_mouseClickX - center_screen_coord(0));
-            int v1_y = (int)(g_mouseClickY - center_screen_coord(1));
-            int v1_z = calculateScreenZ(g_arcballScreenRadius, g_mouseClickX, g_mouseClickY, center_screen_coord);
+        int v1_x = (int)(g_mouseClickX - center_screen_coord(0));
+        int v1_y = (int)(g_mouseClickY - center_screen_coord(1));
+        int v1_z = calculateScreenZ(g_arcballScreenRadius, g_mouseClickX, g_mouseClickY, center_screen_coord);
 
-            // !!!!! Caution: Flip y before using it !!!!!
-            int v2_x = (int)(x - center_screen_coord(0));
-            int v2_y = (int)(g_windowHeight - y - 1 - center_screen_coord(1));
-            int v2_z = calculateScreenZ(g_arcballScreenRadius, x, g_windowHeight - y - 1, center_screen_coord);
+        // !!!!! Caution: Flip y before using it !!!!!
+        int v2_x = (int)(x - center_screen_coord(0));
+        int v2_y = (int)(g_windowHeight - y - 1 - center_screen_coord(1));
+        int v2_z = calculateScreenZ(g_arcballScreenRadius, x, g_windowHeight - y - 1, center_screen_coord);
 
-            Cvec3 v1 = normalize(Cvec3(v1_x, v1_y, v1_z));
-            Cvec3 v2 = normalize(Cvec3(v2_x, v2_y, v2_z));
-            Cvec3 k = cross(v1, v2);
+        Cvec3 v1 = normalize(Cvec3(v1_x, v1_y, v1_z));
+        Cvec3 v2 = normalize(Cvec3(v2_x, v2_y, v2_z));
+        Cvec3 k = cross(v1, v2);
 
-            Quat rotation = Quat(dot(v1, v2), k);
+        Quat rotation = Quat(dot(v1, v2), k);
 
-            m = RigTForm(rotation);
-        }
+        m = RigTForm(rotation);
     }
     
     else {

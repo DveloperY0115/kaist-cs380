@@ -17,13 +17,15 @@ inline Cvec2 getScreenSpaceCoord(const Cvec3& p,
                                  const Matrix4& projection,
                                  double frustNear, double frustFovY,
                                  int screenWidth, int screenHeight) {
-  if (p[2] > -CS175_EPS) {
-    std::cerr << "WARNING: getScreenSpaceCoord of a point near or behind Z=0 plane. Returning screen-center instead." << std::endl;
-    return Cvec2((screenWidth-1)/2.0, (screenHeight-1)/2.0);
-  }
-  Cvec4 q = projection * Cvec4(p, 1);
-  Cvec3 clipCoord = Cvec3(q) / q[3];
-  return Cvec2(clipCoord[0] * screenWidth / 2.0 + (screenWidth - 1)/2.0,
+    // warning shouldn't be ignored...
+    if (p[2] > -CS175_EPS) {
+        std::cerr << "WARNING: getScreenSpaceCoord of a point near or behind Z=0 plane. Returning screen-center instead." << std::endl;
+        return Cvec2((screenWidth-1)/2.0, (screenHeight-1)/2.0);
+    }
+    
+    Cvec4 q = projection * Cvec4(p, 1);
+    Cvec3 clipCoord = Cvec3(q) / q[3];
+    return Cvec2(clipCoord[0] * screenWidth / 2.0 + (screenWidth - 1)/2.0,
                clipCoord[1] * screenHeight / 2.0 + (screenHeight - 1)/2.0);
 }
 
@@ -37,10 +39,12 @@ inline Cvec2 getScreenSpaceCoord(const Cvec3& p,
 // But if you do pass in a point behind Z=0 plane, we'll just
 // print a warning, and return 1
 inline double getScreenToEyeScale(double z, double frustFovY, int screenHeight) {
-  if (z > -CS175_EPS) {
+  
+    if (z > -CS175_EPS) {
     std::cerr << "WARNING: getScreenToEyeScale on z near or behind Z=0 plane. Returning 1 instead." << std::endl;
     return 1;
   }
+
   return -(z * tan(frustFovY * CS175_PI/360.0)) * 2 / screenHeight;
 }
 
