@@ -423,6 +423,7 @@ static ViewpointState g_VPState = ViewpointState();
 // values related to arcball appearance
 static double g_arcballScreenRadius = 0.25 * std::min(g_windowWidth, g_windowHeight);
 static double g_arcballScale;
+static bool is_z_translation = false;
 
 ///////////////// END OF G L O B A L S //////////////////////////////////////////////////
 
@@ -558,21 +559,28 @@ static void drawStuff() {
           // if the user is in world-sky frame, draw arcball at world center
           RigTForm MVRigTForm = invEyeRbt * g_worldRbt;
           MVM = RigTFormToMatrix(MVRigTForm);
-          g_arcballScale = getScreenToEyeScale(MVRigTForm.getTranslation()[2],
-              g_frustFovY, g_windowHeight);
+
+          if (!((g_mouseLClickButton && g_mouseRClickButton) || g_mouseMClickButton)) {
+              g_arcballScale = getScreenToEyeScale(MVRigTForm.getTranslation()[2],
+                  g_frustFovY, g_windowHeight);
+          }
       } 
 
       else {
           // otherwise, sync its position with current object
           RigTForm MVRigTForm = invEyeRbt * g_VPState.get_current_obj();
           MVM = RigTFormToMatrix(MVRigTForm);
-          g_arcballScale = getScreenToEyeScale(MVRigTForm.getTranslation()[2],
-              g_frustFovY, g_windowHeight);
+
+          if (!((g_mouseLClickButton && g_mouseRClickButton) || g_mouseMClickButton)) {
+              g_arcballScale = getScreenToEyeScale(MVRigTForm.getTranslation()[2],
+                  g_frustFovY, g_windowHeight);
+          }
       }
       
       // scale arcball properly
       double scale = g_arcballScale * g_arcballScreenRadius;
       Matrix4 scale_mat = Matrix4::makeScale(Cvec3(scale, scale, scale));
+
 
       MVM *= scale_mat;
 
@@ -621,46 +629,90 @@ static void motion(const int x, const int y) {
     if (g_VPState.is_arcball_visible() && (g_mouseLClickButton && !g_mouseRClickButton)) {
         // enable arcball interface only in two cases
 
-        Quat rotation = Quat();
+        // rotation when arcball is visible
+        if (g_mouseLClickButton && !g_mouseRClickButton) {    
+            Quat rotation = Quat();
 
-        RigTForm eyeRbt = g_VPState.get_current_eye();
-        RigTForm invEyeRbt = inv(eyeRbt);
-        Cvec3 center_eye_coord = Cvec3();
+            RigTForm eyeRbt = g_VPState.get_current_eye();
+            RigTForm invEyeRbt = inv(eyeRbt);
+            Cvec3 center_eye_coord = Cvec3();
 
-        if (!g_VPState.is_world_sky_frame()) {
-            // in cube-eye frame
-            center_eye_coord = (invEyeRbt * g_VPState.get_current_obj()).getTranslation();
+            if (!g_VPState.is_world_sky_frame()) {
+                // in cube-eye frame
+                center_eye_coord = (invEyeRbt * g_VPState.get_current_obj()).getTranslation();
+            }
+            else {
+                // in world-eye frames
+                center_eye_coord = (invEyeRbt * g_worldRbt).getTranslation();
+            }
+
+            Cvec2 center_screen_coord = getScreenSpaceCoord(center_eye_coord, makeProjectionMatrix(),
+                g_frustNear, g_frustFovY, g_windowWidth, g_windowHeight);
+
+            // calculate z coordinate of clicked points in screen coordinate
+
+            int v1_x = (int)(g_mouseClickX - center_screen_coord(0));
+            int v1_y = (int)(g_mouseClickY - center_screen_coord(1));
+            int v1_z = calculateScreenZ(g_arcballScreenRadius, g_mouseClickX, g_mouseClickY, center_screen_coord);
+
+            // !!!!! Caution: Flip y before using it !!!!!
+            int v2_x = (int)(x - center_screen_coord(0));
+            int v2_y = (int)(g_windowHeight - y - 1 - center_screen_coord(1));
+            int v2_z = calculateScreenZ(g_arcballScreenRadius, x, g_windowHeight - y - 1, center_screen_coord);
+
+            Cvec3 v1 = normalize(Cvec3(v1_x, v1_y, v1_z));
+            Cvec3 v2 = normalize(Cvec3(v2_x, v2_y, v2_z));
+            Cvec3 k = cross(v1, v2);
+
+            rotation = Quat(dot(v1, v2), k);
+
+            if (g_VPState.is_world_sky_frame()) {
+                rotation = inv(rotation);
+            }
+
+            m = RigTForm(rotation);
         }
+        
+        // translation when arcball is visible
         else {
-            // in world-eye frames
-            center_eye_coord = (invEyeRbt * g_worldRbt).getTranslation();
+            
+            const double dx = x - g_mouseClickX;
+            const double dy = g_windowHeight - y - 1 - g_mouseClickY;
+
+            if (g_mouseRClickButton && !g_mouseLClickButton) { // right button down?
+                switch (g_VPState.get_aux_frame_descriptor()) {
+                case 1:
+                    // default behavior
+                    m = RigTForm::makeTranslation(Cvec3(dx, dy, 0) * g_arcballScale);
+                    break;
+                case 2:
+                    // invert sign of rotation and translation
+                    m = RigTForm::makeTranslation(-Cvec3(dx, dy, 0) * g_arcballScale);
+                    break;
+
+                case 3:
+                    // invert sign of rotation only
+                    m = RigTForm::makeTranslation(Cvec3(dx, dy, 0) * g_arcballScale);
+                    break;
+                }
+            }
+            else if (g_mouseMClickButton || (g_mouseLClickButton && g_mouseRClickButton)) {  // middle or (left and right) button down?
+                switch (g_VPState.get_aux_frame_descriptor()) {
+                case 1:
+                    // default behavior
+                    m = RigTForm::makeTranslation(Cvec3(0, 0, -dy) * g_arcballScale);
+                    break;
+                case 2:
+                    // invert sign of rotation and translation
+                    m = RigTForm::makeTranslation(-Cvec3(0, 0, -dy) * g_arcballScale);
+                    break;
+                case 3:
+                    // invert sign of rotation only
+                    m = RigTForm::makeTranslation(Cvec3(0, 0, -dy) * g_arcballScale);
+                    break;
+                }
+            }
         }
-
-        Cvec2 center_screen_coord = getScreenSpaceCoord(center_eye_coord, makeProjectionMatrix(),
-            g_frustNear, g_frustFovY, g_windowWidth, g_windowHeight);
-
-        // calculate z coordinate of clicked points in screen coordinate
-
-        int v1_x = (int)(g_mouseClickX - center_screen_coord(0));
-        int v1_y = (int)(g_mouseClickY - center_screen_coord(1));
-        int v1_z = calculateScreenZ(g_arcballScreenRadius, g_mouseClickX, g_mouseClickY, center_screen_coord);
-
-        // !!!!! Caution: Flip y before using it !!!!!
-        int v2_x = (int)(x - center_screen_coord(0));
-        int v2_y = (int)(g_windowHeight - y - 1 - center_screen_coord(1));
-        int v2_z = calculateScreenZ(g_arcballScreenRadius, x, g_windowHeight - y - 1, center_screen_coord);
-
-        Cvec3 v1 = normalize(Cvec3(v1_x, v1_y, v1_z));
-        Cvec3 v2 = normalize(Cvec3(v2_x, v2_y, v2_z));
-        Cvec3 k = cross(v1, v2);
-
-        rotation = Quat(dot(v1, v2), k);
-
-        if (g_VPState.is_world_sky_frame()) {
-            rotation = inv(rotation);
-        }
-
-        m = RigTForm(rotation);
     }
     
     else {
@@ -744,6 +796,8 @@ static void mouse(const int button, const int state, const int x, const int y) {
   g_mouseMClickButton &= !(button == GLUT_MIDDLE_BUTTON && state == GLUT_UP);
 
   g_mouseClickDown = g_mouseLClickButton || g_mouseRClickButton || g_mouseMClickButton;
+
+  glutPostRedisplay();
 }
 
 static void keyboard(const unsigned char key, const int x, const int y) {
