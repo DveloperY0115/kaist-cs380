@@ -17,7 +17,6 @@ inline Cvec2 getScreenSpaceCoord(const Cvec3& p,
                                  const Matrix4& projection,
                                  double frustNear, double frustFovY,
                                  int screenWidth, int screenHeight) {
-    // warning shouldn't be ignored...
     if (p[2] > -CS175_EPS) {
         std::cerr << "WARNING: getScreenSpaceCoord of a point near or behind Z=0 plane. Returning screen-center instead." << std::endl;
         return Cvec2((screenWidth-1)/2.0, (screenHeight-1)/2.0);

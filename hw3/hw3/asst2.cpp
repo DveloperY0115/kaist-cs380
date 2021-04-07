@@ -210,15 +210,15 @@ class ViewpointState {
 public:
     // Constructor
     ViewpointState() {
-        current_obj_idx = 1;    // initially cube 1
-        current_eye_idx = 0;    // initially cube 2
+        CurrentObjIdx = 1;    // initially cube 1
+        CurrentEyeIdx = 0;    // initially cube 2
         updateAuxFrame();     // initial calculation of auxiliary frame
         updateWorldEyeFrame();    // initial calculation of world-eye frame
-        is_world_sky_frame_ = false;    
+        IsWorldSkyFrame_ = false;    
     }
 
     void transformObjWrtA(const RigTForm& M) {
-        manipulatable_obj[current_obj_idx] = doMtoOwrtA(M, manipulatable_obj[current_obj_idx], getAuxFrame());
+        manipulatable_obj[CurrentObjIdx] = doMtoOwrtA(M, manipulatable_obj[CurrentObjIdx], getAuxFrame());
     }
 
     /* modify transform according to current auxiliary frame */
@@ -230,15 +230,15 @@ public:
          */
         if (isWorldSkyFrame()) {
             // case 2
-            return static_cast<unsigned int>(aux_frame_descriptor::world_sky);
+            return static_cast<unsigned int>(AuxFrameDescriptor::world_sky);
         }
         else if (isSkySkyFrame()) {
             // case 3
-            return static_cast<unsigned int>(aux_frame_descriptor::sky_sky);
+            return static_cast<unsigned int>(AuxFrameDescriptor::sky_sky);
         }
         else {
             // case 1
-            return static_cast<unsigned int>(aux_frame_descriptor::cube_other);
+            return static_cast<unsigned int>(AuxFrameDescriptor::cube_other);
         }
     }
 
@@ -248,14 +248,14 @@ public:
             setIsWorldSkyFrame(false);
         }
 
-        current_eye_idx++;
-        if (current_eye_idx > 2)
-            current_eye_idx = 0;
+        CurrentEyeIdx++;
+        if (CurrentEyeIdx > 2)
+            CurrentEyeIdx = 0;
 
-        if (current_eye_idx != 0 && current_obj_idx == 0) {
+        if (CurrentEyeIdx != 0 && CurrentObjIdx == 0) {
             // if current eye is a cube and user tries to transform sky camera
             std::cout << "You CANNOT control sky camera with respect to cube! \n";
-            current_obj_idx = 1;
+            CurrentObjIdx = 1;
         }
 
         if (isSkySkyFrame()) {
@@ -275,14 +275,14 @@ public:
             setIsWorldSkyFrame(false);
         }
 
-        current_obj_idx++;
-        if (current_obj_idx > 2)
-            current_obj_idx = 0;
+        CurrentObjIdx++;
+        if (CurrentObjIdx > 2)
+            CurrentObjIdx = 0;
 
-        if (current_eye_idx != 0 && current_obj_idx == 0) {
+        if (CurrentObjIdx != 0 && CurrentObjIdx == 0) {
             // if current eye is a cube and user tries to transform sky camera
             std::cout << "You CANNOT control sky camera with respect to cube! \n";
-            current_obj_idx = 1;
+            CurrentObjIdx = 1;
         }
 
         if (isSkySkyFrame()) {
@@ -298,39 +298,39 @@ public:
 
     void setIsWorldSkyFrame(const bool v) {
         // warning you should check input type
-        is_world_sky_frame_ = v;
+        IsWorldSkyFrame_ = v;
     }
 
     void updateAuxFrame() {
         if (isWorldSkyFrame()) {
             // if current frame is world-eye frame
             updateWorldEyeFrame();
-            aux_frame = world_eye_frame;
+            AuxFrame = WorldEyeFrame;
         }
         else {
-            aux_frame = makeMixedFrame(getCurrentObj(), getCurrentEye());
+            AuxFrame = makeMixedFrame(getCurrentObj(), getCurrentEye());
         }
     }
 
     void updateWorldEyeFrame() {
-        world_eye_frame = makeMixedFrame(g_worldRbt, getCurrentEye());
+        WorldEyeFrame = makeMixedFrame(g_worldRbt, getCurrentEye());
     }
 
     /* getters */
     RigTForm getCurrentObj() {
-        return manipulatable_obj[current_obj_idx];
+        return manipulatable_obj[CurrentObjIdx];
     }
 
     RigTForm getCurrentEye() {
-        return manipulatable_obj[current_eye_idx];
+        return manipulatable_obj[CurrentEyeIdx];
     }
 
     RigTForm getAuxFrame() {
-        return aux_frame;
+        return AuxFrame;
     }
 
     bool isArcballVisible() {
-        if (isWorldSkyFrame() || ((current_obj_idx == 1 || current_obj_idx == 2) && (current_obj_idx != current_eye_idx))) {
+        if (isWorldSkyFrame() || ((CurrentObjIdx == 1 || CurrentObjIdx == 2) && (CurrentObjIdx != CurrentEyeIdx))) {
             // two cases
             // (1) Current auxiliary frame is world-sky frame
             // (2) User is controlling one of the cubes and the current eye is not equal to it
@@ -341,17 +341,17 @@ public:
 
     /* utilities */
     bool isSkySkyFrame() {
-        return current_eye_idx == 0 && current_obj_idx == 0;
+        return (CurrentEyeIdx == 0) && (CurrentObjIdx == 0);
     }
     
     bool isWorldSkyFrame() {
-        return is_world_sky_frame_;
+        return IsWorldSkyFrame_;
     }
     
     void describeCurrentEye() {
         string current_eye_name;
 
-        switch (current_eye_idx) {
+        switch (CurrentEyeIdx) {
         case 0:
             current_eye_name = "Sky-View";
             break;
@@ -365,13 +365,13 @@ public:
 
         std::cout << "Current eye is " << current_eye_name << "\n";
         std::cout << "Eye matrix for this camera is: \n";
-        printRigTForm(manipulatable_obj[current_eye_idx]);
+        printRigTForm(manipulatable_obj[CurrentEyeIdx]);
     }
 
     void describeCurrentObj() {
         string current_obj_name;
 
-        switch (current_obj_idx) {
+        switch (CurrentObjIdx) {
         case 0:
             current_obj_name = "Sky-View";
             break;
@@ -385,7 +385,7 @@ public:
 
         std::cout << "Controlling " << current_obj_name << "\n";
         std::cout << "Object matrix for this object is: \n";
-        printRigTForm(manipulatable_obj[current_obj_idx]);
+        printRigTForm(manipulatable_obj[CurrentObjIdx]);
     }
 
     void describeCurrentAuxFrame() {
@@ -408,14 +408,14 @@ public:
     }
 
 private:
-    bool is_world_sky_frame_;
-    unsigned int current_obj_idx;    // initially cube 1
-    unsigned int current_eye_idx;    // initially cube 2
+    bool IsWorldSkyFrame_;
+    unsigned int CurrentObjIdx;    // initially cube 1
+    unsigned int CurrentEyeIdx;    // initially cube 2
 
     // RigTForm representation of aux_frame and world_eye_frame
-    RigTForm aux_frame;
-    RigTForm world_eye_frame;
-    enum class aux_frame_descriptor { cube_other = 1, world_sky, sky_sky };
+    RigTForm AuxFrame;
+    RigTForm WorldEyeFrame;
+    enum class AuxFrameDescriptor { cube_other = 1, world_sky, sky_sky };
 };
 
 static ViewpointState g_VPState = ViewpointState();
