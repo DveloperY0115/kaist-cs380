@@ -423,7 +423,6 @@ static ViewpointState g_VPState = ViewpointState();
 // values related to arcball appearance
 static double g_arcballScreenRadius = 0.25 * std::min(g_windowWidth, g_windowHeight);
 static double g_arcballScale;
-static bool is_z_translation = false;
 
 ///////////////// END OF G L O B A L S //////////////////////////////////////////////////
 
