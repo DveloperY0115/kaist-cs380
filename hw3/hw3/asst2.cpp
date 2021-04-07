@@ -731,7 +731,7 @@ static RigTForm arcball_interface_translation(const int x, const int y) {
     const double dy = g_windowHeight - y - 1 - g_mouseClickY;
 
     if (g_mouseRClickButton && !g_mouseLClickButton) { // right button down?
-        switch (g_VPState.get_aux_frame_descriptor()) {
+        switch (g_VPState.getAuxFrameDescriptor()) {
         case 1:
             // default behavior
             m = RigTForm::makeTranslation(Cvec3(dx, dy, 0) * g_arcballScale);
@@ -748,7 +748,7 @@ static RigTForm arcball_interface_translation(const int x, const int y) {
         }
     }
     else if (g_mouseMClickButton || (g_mouseLClickButton && g_mouseRClickButton)) {  // middle or (left and right) button down?
-        switch (g_VPState.get_aux_frame_descriptor()) {
+        switch (g_VPState.getAuxFrameDescriptor()) {
         case 1:
             // default behavior
             m = RigTForm::makeTranslation(Cvec3(0, 0, -dy) * g_arcballScale);
@@ -774,7 +774,7 @@ static RigTForm default_interface_rotation(const int x, const int y) {
     const double dx = x - g_mouseClickX;
     const double dy = g_windowHeight - y - 1 - g_mouseClickY;
 
-    switch (g_VPState.get_aux_frame_descriptor()) {
+    switch (g_VPState.getAuxFrameDescriptor()) {
     case 1:
         // default behavior
         m = RigTForm::makeXRotation(-dy) * RigTForm::makeYRotation(dx);
@@ -803,7 +803,7 @@ static RigTForm default_interface_translation(const int x, const int y) {
 
     if (g_mouseMClickButton || (g_mouseLClickButton && g_mouseRClickButton)) {
         // middle or both left-right button down?
-        switch (g_VPState.get_aux_frame_descriptor()) {
+        switch (g_VPState.getAuxFrameDescriptor()) {
         case 1:
             // default behavior
             m = RigTForm::makeTranslation(Cvec3(0, 0, -dy) * 0.01);
@@ -821,7 +821,7 @@ static RigTForm default_interface_translation(const int x, const int y) {
 
     else {
         // right button down?
-        switch (g_VPState.get_aux_frame_descriptor()) {
+        switch (g_VPState.getAuxFrameDescriptor()) {
         case 1:
             // default behavior
             m = RigTForm::makeTranslation(Cvec3(dx, dy, 0) * 0.01);
