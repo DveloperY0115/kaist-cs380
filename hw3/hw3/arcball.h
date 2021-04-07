@@ -50,7 +50,7 @@ inline double getScreenToEyeScale(double z, double frustFovY, int screenHeight) 
 
 // Calculate the z coordinate of the point of interaction in screen coordinate system
 // Clamp the z value if necessary
-inline int calculateScreenZ(double ScreenRadius, int x, int y, Cvec2 CenterCoord) {
+inline int calculateScreenZ(double screenRadius, int x, int y, Cvec2 centerCoord) {
     /*
     * ScreenRadius: Radius of the arcball on screen
     * x: X-coordinate of the click
@@ -65,7 +65,7 @@ inline int calculateScreenZ(double ScreenRadius, int x, int y, Cvec2 CenterCoord
     }
     */   
 
-    if (std::pow(ScreenRadius, 2) < std::pow(x - CenterCoord[0], 2) + std::pow(y - CenterCoord[1], 2)) {
+    if (std::pow(screenRadius, 2) < std::pow(x - centerCoord[0], 2) + std::pow(y - centerCoord[1], 2)) {
         // mouse pointer is outside the arcball
         // behavior -> rotate along z axis
         return -1;
@@ -73,7 +73,7 @@ inline int calculateScreenZ(double ScreenRadius, int x, int y, Cvec2 CenterCoord
 
     else {
         // mouse pointer is inside the arcball
-        return (int)std::sqrt(std::pow(ScreenRadius, 2) - std::pow(x - CenterCoord[0], 2) - std::pow(y - CenterCoord[1], 2));
+        return (int)std::sqrt(std::pow(screenRadius, 2) - std::pow(x - centerCoord[0], 2) - std::pow(y - centerCoord[1], 2));
     }
 }
 #endif
