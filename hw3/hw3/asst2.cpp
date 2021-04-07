@@ -349,41 +349,41 @@ public:
     }
     
     void describeCurrentEye() {
-        string current_eye_name;
+        string CurrentEyeName;
 
         switch (CurrentEyeIdx) {
         case 0:
-            current_eye_name = "Sky-View";
+            CurrentEyeName = "Sky-View";
             break;
         case 1:
-            current_eye_name = "Cube 1";
+            CurrentEyeName = "Cube 1";
             break;
         case 2:
-            current_eye_name = "Cube 2";
+            CurrentEyeName = "Cube 2";
             break;
         }
 
-        std::cout << "Current eye is " << current_eye_name << "\n";
+        std::cout << "Current eye is " << CurrentEyeName << "\n";
         std::cout << "Eye matrix for this camera is: \n";
         printRigTForm(manipulatable_obj[CurrentEyeIdx]);
     }
 
     void describeCurrentObj() {
-        string current_obj_name;
+        string CurrentObjName;
 
         switch (CurrentObjIdx) {
         case 0:
-            current_obj_name = "Sky-View";
+            CurrentObjName = "Sky-View";
             break;
         case 1:
-            current_obj_name = "Cube 1";
+            CurrentObjName = "Cube 1";
             break;
         case 2:
-            current_obj_name = "Cube 2";
+            CurrentObjName = "Cube 2";
             break;
         }
 
-        std::cout << "Controlling " << current_obj_name << "\n";
+        std::cout << "Controlling " << CurrentObjName << "\n";
         std::cout << "Object matrix for this object is: \n";
         printRigTForm(manipulatable_obj[CurrentObjIdx]);
     }
