@@ -212,17 +212,17 @@ public:
     ViewpointState() {
         current_obj_idx = 1;    // initially cube 1
         current_eye_idx = 0;    // initially cube 2
-        update_aux_frame();     // initial calculation of auxiliary frame
-        update_world_eye_frame();    // initial calculation of world-eye frame
+        updateAuxFrame();     // initial calculation of auxiliary frame
+        updateWorldEyeFrame();    // initial calculation of world-eye frame
         is_world_sky_frame_ = false;    
     }
 
-    void transform_obj_wrt_A(const RigTForm& M) {
-        manipulatable_obj[current_obj_idx] = doMtoOwrtA(M, manipulatable_obj[current_obj_idx], get_aux_frame());
+    void transformObjWrtA(const RigTForm& M) {
+        manipulatable_obj[current_obj_idx] = doMtoOwrtA(M, manipulatable_obj[current_obj_idx], getAuxFrame());
     }
 
     /* modify transform according to current auxiliary frame */
-    unsigned int get_aux_frame_descriptor() {
+    unsigned int getAuxFrameDescriptor() {
         /* Three cases
          * Case 1 - Manipulate cubes
          * Case 2 - Manipulate sky view w.r.t world origin and sky view axes
@@ -243,7 +243,7 @@ public:
     }
 
     /* setters */
-    void switch_eye() {
+    void switchEye() {
         if (is_world_sky_frame()) {
             set_is_world_sky_frame(false);
         }
@@ -269,7 +269,7 @@ public:
         update_aux_frame();
     }
 
-    void switch_obj() {
+    void switchObject() {
 
         if (is_world_sky_frame()) {
             set_is_world_sky_frame(false);
@@ -296,12 +296,12 @@ public:
         update_aux_frame();
     }
 
-    void set_is_world_sky_frame(const bool v) {
+    void setIsWorldSkyFrame(const bool v) {
         // warning you should check input type
         is_world_sky_frame_ = v;
     }
 
-    void update_aux_frame() {
+    void updateAuxFrame() {
         if (is_world_sky_frame()) {
             // if current frame is world-eye frame
             update_world_eye_frame();
@@ -312,25 +312,25 @@ public:
         }
     }
 
-    void update_world_eye_frame() {
+    void updateWorldEyeFrame() {
         world_eye_frame = makeMixedFrame(g_worldRbt, get_current_eye());
     }
 
     /* getters */
-    RigTForm get_current_obj() {
+    RigTForm getCurrentObj() {
         return manipulatable_obj[current_obj_idx];
     }
 
-    RigTForm get_current_eye() {
+    RigTForm getCurrentEye() {
         return manipulatable_obj[current_eye_idx];
     }
 
-    RigTForm get_aux_frame() {
+    RigTForm getAuxFrame() {
         return aux_frame;
     }
 
-    bool is_arcball_visible() {
-        if (is_world_sky_frame() || ((current_obj_idx == 1 || current_obj_idx == 2) && (current_obj_idx != current_eye_idx))) {
+    bool isArcballVisible() {
+        if (isWorldSkyFrame() || ((current_obj_idx == 1 || current_obj_idx == 2) && (current_obj_idx != current_eye_idx))) {
             // two cases
             // (1) Current auxiliary frame is world-sky frame
             // (2) User is controlling one of the cubes and the current eye is not equal to it
@@ -340,15 +340,15 @@ public:
     }
 
     /* utilities */
-    bool is_sky_sky_frame() {
+    bool isSkySkyFrame() {
         return current_eye_idx == 0 && current_obj_idx == 0;
     }
     
-    bool is_world_sky_frame() {
+    bool isWorldSkyFrame() {
         return is_world_sky_frame_;
     }
     
-    void describe_current_eye() {
+    void describeCurrentEye() {
         string current_eye_name;
 
         switch (current_eye_idx) {
@@ -368,7 +368,7 @@ public:
         printRigTForm(manipulatable_obj[current_eye_idx]);
     }
 
-    void describe_current_obj() {
+    void describeCurrentObj() {
         string current_obj_name;
 
         switch (current_obj_idx) {
@@ -388,21 +388,21 @@ public:
         printRigTForm(manipulatable_obj[current_obj_idx]);
     }
 
-    void describe_current_aux() {
-        if (is_world_sky_frame()) {
+    void describeCurrentAuxFrame() {
+        if (isWorldSkyFrame()) {
             std::cout << "Currently in World-Sky frame\n";
         }
         std::cout << "Current auxiliary frame is: \n";
-        printRigTForm(get_aux_frame());
+        printRigTForm(getAuxFrame());
     }
 
-    void describe_current_status() {
+    void describeCurrentStatus() {
         std::cout << "================================================\n";
-        describe_current_eye();
+        describeCurrentEye();
         std::cout << "\n";
-        describe_current_obj();
+        describeCurrentObj();
         std::cout << "\n";
-        describe_current_aux();
+        describeCurrentAuxFrame();
         std::cout << "================================================\n";
 
     }
