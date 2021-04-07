@@ -210,55 +210,55 @@ class ViewpointState {
 public:
     // Constructor
     ViewpointState() {
-        current_obj_idx = 1;    // initially cube 1
-        current_eye_idx = 0;    // initially cube 2
-        update_aux_frame();     // initial calculation of auxiliary frame
-        update_world_eye_frame();    // initial calculation of world-eye frame
-        is_world_sky_frame_ = false;    
+        CurrentObjIdx = 1;    // initially cube 1
+        CurrentEyeIdx = 0;    // initially cube 2
+        updateAuxFrame();     // initial calculation of auxiliary frame
+        updateWorldEyeFrame();    // initial calculation of world-eye frame
+        IsWorldSkyFrame_ = false;    
     }
 
-    void transform_obj_wrt_A(const RigTForm& M) {
-        manipulatable_obj[current_obj_idx] = doMtoOwrtA(M, manipulatable_obj[current_obj_idx], get_aux_frame());
+    void transformObjWrtA(const RigTForm& M) {
+        manipulatable_obj[CurrentObjIdx] = doMtoOwrtA(M, manipulatable_obj[CurrentObjIdx], getAuxFrame());
     }
 
     /* modify transform according to current auxiliary frame */
-    unsigned int get_aux_frame_descriptor() {
+    unsigned int getAuxFrameDescriptor() {
         /* Three cases
          * Case 1 - Manipulate cubes
          * Case 2 - Manipulate sky view w.r.t world origin and sky view axes
          * Case 3 - Manipulate sky view w.r.t its origin and axes
          */
-        if (is_world_sky_frame()) {
+        if (isWorldSkyFrame()) {
             // case 2
-            return static_cast<unsigned int>(aux_frame_descriptor::world_sky);
+            return static_cast<unsigned int>(AuxFrameDescriptor::world_sky);
         }
-        else if (is_sky_sky_frame()) {
+        else if (isSkySkyFrame()) {
             // case 3
-            return static_cast<unsigned int>(aux_frame_descriptor::sky_sky);
+            return static_cast<unsigned int>(AuxFrameDescriptor::sky_sky);
         }
         else {
             // case 1
-            return static_cast<unsigned int>(aux_frame_descriptor::cube_other);
+            return static_cast<unsigned int>(AuxFrameDescriptor::cube_other);
         }
     }
 
     /* setters */
-    void switch_eye() {
-        if (is_world_sky_frame()) {
-            set_is_world_sky_frame(false);
+    void switchEye() {
+        if (isWorldSkyFrame()) {
+            setIsWorldSkyFrame(false);
         }
 
-        current_eye_idx++;
-        if (current_eye_idx > 2)
-            current_eye_idx = 0;
+        CurrentEyeIdx++;
+        if (CurrentEyeIdx > 2)
+            CurrentEyeIdx = 0;
 
-        if (current_eye_idx != 0 && current_obj_idx == 0) {
+        if (CurrentEyeIdx != 0 && CurrentObjIdx == 0) {
             // if current eye is a cube and user tries to transform sky camera
             std::cout << "You CANNOT control sky camera with respect to cube! \n";
-            current_obj_idx = 1;
+            CurrentObjIdx = 1;
         }
 
-        if (is_sky_sky_frame()) {
+        if (isSkySkyFrame()) {
             // if current frame is sky-sky frame
             // give a user an option 'm'
             std::cout << "You're now in sky-sky frame\n";
@@ -266,26 +266,26 @@ public:
         }
 
         // update auxiliary frame for new viewpoint
-        update_aux_frame();
+        updateAuxFrame();
     }
 
-    void switch_obj() {
+    void switchObject() {
 
-        if (is_world_sky_frame()) {
-            set_is_world_sky_frame(false);
+        if (isWorldSkyFrame()) {
+            setIsWorldSkyFrame(false);
         }
 
-        current_obj_idx++;
-        if (current_obj_idx > 2)
-            current_obj_idx = 0;
+        CurrentObjIdx++;
+        if (CurrentObjIdx > 2)
+            CurrentObjIdx = 0;
 
-        if (current_eye_idx != 0 && current_obj_idx == 0) {
+        if (CurrentObjIdx != 0 && CurrentObjIdx == 0) {
             // if current eye is a cube and user tries to transform sky camera
             std::cout << "You CANNOT control sky camera with respect to cube! \n";
-            current_obj_idx = 1;
+            CurrentObjIdx = 1;
         }
 
-        if (is_sky_sky_frame()) {
+        if (isSkySkyFrame()) {
             // if current frame is sky-sky frame
             // give a user an option 'm'
             std::cout << "You're now in sky-sky frame\n";
@@ -293,44 +293,44 @@ public:
         }
 
         // update auxiliary frame for new object
-        update_aux_frame();
+        updateAuxFrame();
     }
 
-    void set_is_world_sky_frame(const bool v) {
+    void setIsWorldSkyFrame(const bool v) {
         // warning you should check input type
-        is_world_sky_frame_ = v;
+        IsWorldSkyFrame_ = v;
     }
 
-    void update_aux_frame() {
-        if (is_world_sky_frame()) {
+    void updateAuxFrame() {
+        if (isWorldSkyFrame()) {
             // if current frame is world-eye frame
-            update_world_eye_frame();
-            aux_frame = world_eye_frame;
+            updateWorldEyeFrame();
+            AuxFrame = WorldEyeFrame;
         }
         else {
-            aux_frame = makeMixedFrame(get_current_obj(), get_current_eye());
+            AuxFrame = makeMixedFrame(getCurrentObj(), getCurrentEye());
         }
     }
 
-    void update_world_eye_frame() {
-        world_eye_frame = makeMixedFrame(g_worldRbt, get_current_eye());
+    void updateWorldEyeFrame() {
+        WorldEyeFrame = makeMixedFrame(g_worldRbt, getCurrentEye());
     }
 
     /* getters */
-    RigTForm get_current_obj() {
-        return manipulatable_obj[current_obj_idx];
+    RigTForm getCurrentObj() {
+        return manipulatable_obj[CurrentObjIdx];
     }
 
-    RigTForm get_current_eye() {
-        return manipulatable_obj[current_eye_idx];
+    RigTForm getCurrentEye() {
+        return manipulatable_obj[CurrentEyeIdx];
     }
 
-    RigTForm get_aux_frame() {
-        return aux_frame;
+    RigTForm getAuxFrame() {
+        return AuxFrame;
     }
 
-    bool is_arcball_visible() {
-        if (is_world_sky_frame() || ((current_obj_idx == 1 || current_obj_idx == 2) && (current_obj_idx != current_eye_idx))) {
+    bool isArcballVisible() {
+        if (isWorldSkyFrame() || ((CurrentObjIdx == 1 || CurrentObjIdx == 2) && (CurrentObjIdx != CurrentEyeIdx))) {
             // two cases
             // (1) Current auxiliary frame is world-sky frame
             // (2) User is controlling one of the cubes and the current eye is not equal to it
@@ -340,82 +340,82 @@ public:
     }
 
     /* utilities */
-    bool is_sky_sky_frame() {
-        return current_eye_idx == 0 && current_obj_idx == 0;
+    bool isSkySkyFrame() {
+        return (CurrentEyeIdx == 0) && (CurrentObjIdx == 0);
     }
     
-    bool is_world_sky_frame() {
-        return is_world_sky_frame_;
+    bool isWorldSkyFrame() {
+        return IsWorldSkyFrame_;
     }
     
-    void describe_current_eye() {
-        string current_eye_name;
+    void describeCurrentEye() {
+        string CurrentEyeName;
 
-        switch (current_eye_idx) {
+        switch (CurrentEyeIdx) {
         case 0:
-            current_eye_name = "Sky-View";
+            CurrentEyeName = "Sky-View";
             break;
         case 1:
-            current_eye_name = "Cube 1";
+            CurrentEyeName = "Cube 1";
             break;
         case 2:
-            current_eye_name = "Cube 2";
+            CurrentEyeName = "Cube 2";
             break;
         }
 
-        std::cout << "Current eye is " << current_eye_name << "\n";
+        std::cout << "Current eye is " << CurrentEyeName << "\n";
         std::cout << "Eye matrix for this camera is: \n";
-        printRigTForm(manipulatable_obj[current_eye_idx]);
+        printRigTForm(manipulatable_obj[CurrentEyeIdx]);
     }
 
-    void describe_current_obj() {
-        string current_obj_name;
+    void describeCurrentObj() {
+        string CurrentObjName;
 
-        switch (current_obj_idx) {
+        switch (CurrentObjIdx) {
         case 0:
-            current_obj_name = "Sky-View";
+            CurrentObjName = "Sky-View";
             break;
         case 1:
-            current_obj_name = "Cube 1";
+            CurrentObjName = "Cube 1";
             break;
         case 2:
-            current_obj_name = "Cube 2";
+            CurrentObjName = "Cube 2";
             break;
         }
 
-        std::cout << "Controlling " << current_obj_name << "\n";
+        std::cout << "Controlling " << CurrentObjName << "\n";
         std::cout << "Object matrix for this object is: \n";
-        printRigTForm(manipulatable_obj[current_obj_idx]);
+        printRigTForm(manipulatable_obj[CurrentObjIdx]);
     }
 
-    void describe_current_aux() {
-        if (is_world_sky_frame()) {
+    void describeCurrentAuxFrame() {
+        if (isWorldSkyFrame()) {
             std::cout << "Currently in World-Sky frame\n";
         }
         std::cout << "Current auxiliary frame is: \n";
-        printRigTForm(get_aux_frame());
+        printRigTForm(getAuxFrame());
     }
 
-    void describe_current_status() {
+    void describeCurrentStatus() {
         std::cout << "================================================\n";
-        describe_current_eye();
+        describeCurrentEye();
         std::cout << "\n";
-        describe_current_obj();
+        describeCurrentObj();
         std::cout << "\n";
-        describe_current_aux();
+        describeCurrentAuxFrame();
         std::cout << "================================================\n";
 
     }
 
 private:
-    bool is_world_sky_frame_;
-    unsigned int current_obj_idx;    // initially cube 1
-    unsigned int current_eye_idx;    // initially cube 2
+    bool IsWorldSkyFrame_;
+    unsigned int CurrentObjIdx;    // initially cube 1
+    unsigned int CurrentEyeIdx;    // initially cube 2
 
     // RigTForm representation of aux_frame and world_eye_frame
-    RigTForm aux_frame;
-    RigTForm world_eye_frame;
-    enum class aux_frame_descriptor { cube_other = 1, world_sky, sky_sky };
+    RigTForm AuxFrame;
+    RigTForm WorldEyeFrame;
+    enum class AuxFrameDescriptor { cube_other = 1, world_sky, sky_sky };
 };
 
 static ViewpointState g_VPState = ViewpointState();
@@ -512,7 +512,7 @@ static void drawStuff() {
   sendProjectionMatrix(curSS, projmat);
 
   // use the skyRbt as the eyeRbt
-  const RigTForm eyeRbt = g_VPState.get_current_eye();
+  const RigTForm eyeRbt = g_VPState.getCurrentEye();
   const RigTForm invEyeRbt = inv(eyeRbt);
 
   const Cvec3 eyeLight1 = Cvec3(invEyeRbt * Cvec4(g_light1, 1)); // g_light1 position in eye coordinates
@@ -551,10 +551,10 @@ static void drawStuff() {
   g_cube_2->draw(curSS);
 
   // draw the arcball
-  if (g_VPState.is_arcball_visible()) {
+  if (g_VPState.isArcballVisible()) {
       glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);  // draw wireframe
 
-      if (g_VPState.is_world_sky_frame()) {
+      if (g_VPState.isWorldSkyFrame()) {
           // if the user is in world-sky frame, draw arcball at world center
           RigTForm MVRigTForm = invEyeRbt * g_worldRbt;
           MVM = RigTFormToMatrix(MVRigTForm);
@@ -567,7 +567,7 @@ static void drawStuff() {
 
       else {
           // otherwise, sync its position with current object
-          RigTForm MVRigTForm = invEyeRbt * g_VPState.get_current_obj();
+          RigTForm MVRigTForm = invEyeRbt * g_VPState.getCurrentObj();
           MVM = RigTFormToMatrix(MVRigTForm);
 
           if (!((g_mouseLClickButton && g_mouseRClickButton) || g_mouseMClickButton)) {
@@ -618,24 +618,24 @@ static void reshape(const int w, const int h) {
 }
 
 /* Forward declaration for motion helpers */
-static RigTForm arcball_interface_rotation(const int x, const int y);
-static RigTForm arcball_interface_translation(const int x, const int y);
-static RigTForm default_interface_rotation(const int x, const int y);
-static RigTForm default_interface_translation(const int x, const int y);
+static RigTForm ArcballInterfaceRotation(const int x, const int y);
+static RigTForm ArcballInterfaceTranslation(const int x, const int y);
+static RigTForm DefaultInterfaceRotation(const int x, const int y);
+static RigTForm DefaultInterfaceTranslation(const int x, const int y);
 
 static void motion(const int x, const int y) {
     RigTForm m;
 
-    if (g_VPState.is_arcball_visible()) {
+    if (g_VPState.isArcballVisible()) {
         // rotation when arcball is visible
 
         if (g_mouseLClickButton && !g_mouseRClickButton) {
-            m = arcball_interface_rotation(x, y);
+            m = ArcballInterfaceRotation(x, y);
         }
 
         // translation when arcball is visible
         else {
-            m = arcball_interface_translation(x, y);
+            m = ArcballInterfaceTranslation(x, y);
         }
     }
     
@@ -644,17 +644,17 @@ static void motion(const int x, const int y) {
 
         if (g_mouseLClickButton && !g_mouseRClickButton) {
             // left button down. rotation
-            m = default_interface_rotation(x, y);
+            m = DefaultInterfaceRotation(x, y);
         }
         else {
             // right button down. translation on xy plane or along z axis
-            m = default_interface_translation(x, y);
+            m = DefaultInterfaceTranslation(x, y);
         }
     }
 
   if (g_mouseClickDown) {
-      g_VPState.transform_obj_wrt_A(m);
-      g_VPState.update_aux_frame();
+      g_VPState.transformObjWrtA(m);
+      g_VPState.updateAuxFrame();
 
       glutPostRedisplay(); // we always redraw if we changed the scene
   }
@@ -665,36 +665,36 @@ static void motion(const int x, const int y) {
 
 /* Helper functions for motions */
 
-static RigTForm arcball_interface_rotation(const int x, const int y) {
+static RigTForm ArcballInterfaceRotation(const int x, const int y) {
     // rotation when arcball is visible
-        Quat rotation = Quat();
+        Quat Rotation = Quat();
 
-        RigTForm eyeRbt = g_VPState.get_current_eye();
+        RigTForm eyeRbt = g_VPState.getCurrentEye();
         RigTForm invEyeRbt = inv(eyeRbt);
-        Cvec3 center_eye_coord = Cvec3();
+        Cvec3 CenterEyeCoord = Cvec3();
 
-        if (!g_VPState.is_world_sky_frame()) {
+        if (!g_VPState.isWorldSkyFrame()) {
             // in cube-eye frame
-            center_eye_coord = (invEyeRbt * g_VPState.get_current_obj()).getTranslation();
+            CenterEyeCoord = (invEyeRbt * g_VPState.getCurrentObj()).getTranslation();
         }
         else {
             // in world-eye frames
-            center_eye_coord = (invEyeRbt * g_worldRbt).getTranslation();
+            CenterEyeCoord = (invEyeRbt * g_worldRbt).getTranslation();
         }
 
-        Cvec2 center_screen_coord = getScreenSpaceCoord(center_eye_coord, makeProjectionMatrix(),
+        Cvec2 center_screen_coord = getScreenSpaceCoord(CenterEyeCoord, makeProjectionMatrix(),
             g_frustNear, g_frustFovY, g_windowWidth, g_windowHeight);
 
         // calculate z coordinate of clicked points in screen coordinate
 
         int v1_x = (int)(g_mouseClickX - center_screen_coord(0));
         int v1_y = (int)(g_mouseClickY - center_screen_coord(1));
-        int v1_z = calculateScreenZ(g_arcballScreenRadius, g_mouseClickX, g_mouseClickY, center_screen_coord);
+        int v1_z = getScreenZ(g_arcballScreenRadius, g_mouseClickX, g_mouseClickY, center_screen_coord);
 
-        // !!!!! Caution: Flip y before using it !!!!!
+        // !!!!! Caution: Flip y before using it !!!!! -> TODO: implement function for better readability
         int v2_x = (int)(x - center_screen_coord(0));
         int v2_y = (int)(g_windowHeight - y - 1 - center_screen_coord(1));
-        int v2_z = calculateScreenZ(g_arcballScreenRadius, x, g_windowHeight - y - 1, center_screen_coord);
+        int v2_z = getScreenZ(g_arcballScreenRadius, x, g_windowHeight - y - 1, center_screen_coord);
 
         Cvec3 v1;
         Cvec3 v2;
@@ -706,7 +706,7 @@ static RigTForm arcball_interface_rotation(const int x, const int y) {
             v2 = normalize(Cvec3(v2_x, v2_y, 0));
             k = cross(v1, v2);
 
-            rotation = Quat(dot(v1, v2), k);
+            Rotation = Quat(dot(v1, v2), k);
         }
 
         else {
@@ -714,24 +714,24 @@ static RigTForm arcball_interface_rotation(const int x, const int y) {
             v2 = normalize(Cvec3(v2_x, v2_y, v2_z));
             k = cross(v1, v2);
 
-            rotation = Quat(dot(v1, v2), k);
+            Rotation = Quat(dot(v1, v2), k);
 
-            if (g_VPState.is_world_sky_frame()) {
-                rotation = inv(rotation);
+            if (g_VPState.isWorldSkyFrame()) {
+                Rotation = inv(Rotation);
             }
         }
 
-        return RigTForm(rotation);
+        return RigTForm(Rotation);
 }
 
-static RigTForm arcball_interface_translation(const int x, const int y) {
+static RigTForm ArcballInterfaceTranslation(const int x, const int y) {
 
     RigTForm m;
     const double dx = x - g_mouseClickX;
     const double dy = g_windowHeight - y - 1 - g_mouseClickY;
 
     if (g_mouseRClickButton && !g_mouseLClickButton) { // right button down?
-        switch (g_VPState.get_aux_frame_descriptor()) {
+        switch (g_VPState.getAuxFrameDescriptor()) {
         case 1:
             // default behavior
             m = RigTForm::makeTranslation(Cvec3(dx, dy, 0) * g_arcballScale);
@@ -748,7 +748,7 @@ static RigTForm arcball_interface_translation(const int x, const int y) {
         }
     }
     else if (g_mouseMClickButton || (g_mouseLClickButton && g_mouseRClickButton)) {  // middle or (left and right) button down?
-        switch (g_VPState.get_aux_frame_descriptor()) {
+        switch (g_VPState.getAuxFrameDescriptor()) {
         case 1:
             // default behavior
             m = RigTForm::makeTranslation(Cvec3(0, 0, -dy) * g_arcballScale);
@@ -767,14 +767,14 @@ static RigTForm arcball_interface_translation(const int x, const int y) {
     return m;
 }
 
-static RigTForm default_interface_rotation(const int x, const int y) {
+static RigTForm DefaultInterfaceRotation(const int x, const int y) {
     
     RigTForm m;
 
     const double dx = x - g_mouseClickX;
     const double dy = g_windowHeight - y - 1 - g_mouseClickY;
 
-    switch (g_VPState.get_aux_frame_descriptor()) {
+    switch (g_VPState.getAuxFrameDescriptor()) {
     case 1:
         // default behavior
         m = RigTForm::makeXRotation(-dy) * RigTForm::makeYRotation(dx);
@@ -794,7 +794,7 @@ static RigTForm default_interface_rotation(const int x, const int y) {
     return m;
 }
 
-static RigTForm default_interface_translation(const int x, const int y) {
+static RigTForm DefaultInterfaceTranslation(const int x, const int y) {
     
     RigTForm m;
 
@@ -803,7 +803,7 @@ static RigTForm default_interface_translation(const int x, const int y) {
 
     if (g_mouseMClickButton || (g_mouseLClickButton && g_mouseRClickButton)) {
         // middle or both left-right button down?
-        switch (g_VPState.get_aux_frame_descriptor()) {
+        switch (g_VPState.getAuxFrameDescriptor()) {
         case 1:
             // default behavior
             m = RigTForm::makeTranslation(Cvec3(0, 0, -dy) * 0.01);
@@ -821,7 +821,7 @@ static RigTForm default_interface_translation(const int x, const int y) {
 
     else {
         // right button down?
-        switch (g_VPState.get_aux_frame_descriptor()) {
+        switch (g_VPState.getAuxFrameDescriptor()) {
         case 1:
             // default behavior
             m = RigTForm::makeTranslation(Cvec3(dx, dy, 0) * 0.01);
@@ -898,42 +898,42 @@ static void keyboard(const unsigned char key, const int x, const int y) {
         std::cout << "Pressed 'v'! Switching camera\n";
         
         // switch view point
-        g_VPState.switch_eye();
+        g_VPState.switchEye();
 
         // describe current state
-        g_VPState.describe_current_status();
+        g_VPState.describeCurrentStatus();
         break;
 
     case 'o':
         std::cout << "Pressed 'o'! Switching object\n";
 
         // switch object
-        g_VPState.switch_obj();
+        g_VPState.switchObject();
 
         // describe current state
-        g_VPState.describe_current_status();
+        g_VPState.describeCurrentStatus();
         break;
 
     case 'm':
-        if (!g_VPState.is_sky_sky_frame()) {
+        if (!g_VPState.isSkySkyFrame()) {
             // current frame is not a sky-sky frame
             std::cout << "You can use this option ONLY when you're in sky-sky frame\n";
         }
         else {
             // current frame is a sky-sky frame
-            if (!g_VPState.is_world_sky_frame()) {
+            if (!g_VPState.isWorldSkyFrame()) {
                 // current frame is a sky-sky frame -> switching to world-sky frame
                 std::cout << "Switching to World-Sky frame\n";
-                g_VPState.set_is_world_sky_frame(true);
-                g_VPState.update_aux_frame();
-                g_VPState.describe_current_status();
+                g_VPState.setIsWorldSkyFrame(true);
+                g_VPState.updateAuxFrame();
+                g_VPState.describeCurrentStatus();
             }
             else {
                 // current frame is a world-sky frame -> switching to sky-sky frame
                 std::cout << "Switching to Sky-Sky frame\n";
-                g_VPState.set_is_world_sky_frame(false);
-                g_VPState.update_aux_frame();
-                g_VPState.describe_current_status();
+                g_VPState.setIsWorldSkyFrame(false);
+                g_VPState.updateAuxFrame();
+                g_VPState.describeCurrentStatus();
             }
         }
 
@@ -946,13 +946,13 @@ static void keyboard(const unsigned char key, const int x, const int y) {
         for (int i = 0; i < 3; ++i) {
             manipulatable_obj[i] = initial_rigs[i];
         }
-        g_VPState.update_aux_frame();
+        g_VPState.updateAuxFrame();
 
-        g_VPState.describe_current_status();
+        g_VPState.describeCurrentStatus();
         break;
 
     case 'd':
-        g_VPState.describe_current_status();
+        g_VPState.describeCurrentStatus();
         break;
     }
     glutPostRedisplay();
