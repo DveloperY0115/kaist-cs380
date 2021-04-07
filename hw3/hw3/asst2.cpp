@@ -697,14 +697,29 @@ static RigTForm arcball_interface_rotation(const int x, const int y) {
         int v2_y = (int)(g_windowHeight - y - 1 - center_screen_coord(1));
         int v2_z = calculateScreenZ(g_arcballScreenRadius, x, g_windowHeight - y - 1, center_screen_coord);
 
-        Cvec3 v1 = normalize(Cvec3(v1_x, v1_y, v1_z));
-        Cvec3 v2 = normalize(Cvec3(v2_x, v2_y, v2_z));
-        Cvec3 k = cross(v1, v2);
+        Cvec3 v1;
+        Cvec3 v2;
+        Cvec3 k;
 
-        rotation = Quat(dot(v1, v2), k);
+        if (v1_z < 0 || v2_z < 0) {
+            // user points outside the arcball
+            v1 = normalize(Cvec3(v1_x, v1_y, 0));
+            v2 = normalize(Cvec3(v2_x, v2_y, 0));
+            k = cross(v1, v2);
 
-        if (g_VPState.is_world_sky_frame()) {
-            rotation = inv(rotation);
+            rotation = Quat(dot(v1, v2), k);
+        }
+
+        else {
+            v1 = normalize(Cvec3(v1_x, v1_y, v1_z));
+            v2 = normalize(Cvec3(v2_x, v2_y, v2_z));
+            k = cross(v1, v2);
+
+            rotation = Quat(dot(v1, v2), k);
+
+            if (g_VPState.is_world_sky_frame()) {
+                rotation = inv(rotation);
+            }
         }
 
         return RigTForm(rotation);

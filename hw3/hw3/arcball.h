@@ -65,14 +65,12 @@ inline int calculateScreenZ(double ScreenRadius, int x, int y, Cvec2 center_coor
     }
     */   
 
-    // TODO: Fix strange interpolation behavior -> when pointer is outside, rotate around z axis!
     if (std::pow(ScreenRadius, 2) < std::pow(x - center_coord[0], 2) + std::pow(y - center_coord[1], 2)) {
         // mouse pointer is outside the arcball
-        Cvec2 unit_dir = normalize(Cvec2(x, y) - center_coord);
-        unit_dir *= (1 / 2) * ScreenRadius;
-        Cvec2 interpoated_pt = center_coord + unit_dir;
-        return (int)std::sqrt(std::pow(ScreenRadius, 2) - std::pow(interpoated_pt[0] - center_coord[0], 2) - std::pow(interpoated_pt[1]- center_coord[1], 2));
+        // behavior -> rotate along z axis
+        return -1;
     }
+
     else {
         // mouse pointer is inside the arcball
         return (int)std::sqrt(std::pow(ScreenRadius, 2) - std::pow(x - center_coord[0], 2) - std::pow(y - center_coord[1], 2));
