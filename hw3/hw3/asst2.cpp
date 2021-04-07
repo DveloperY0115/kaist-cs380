@@ -618,10 +618,10 @@ static void reshape(const int w, const int h) {
 }
 
 /* Forward declaration for motion helpers */
-static RigTForm arcball_interface_rotation(const int x, const int y);
-static RigTForm arcball_interface_translation(const int x, const int y);
-static RigTForm default_interface_rotation(const int x, const int y);
-static RigTForm default_interface_translation(const int x, const int y);
+static RigTForm ArcballInterfaceRotation(const int x, const int y);
+static RigTForm ArcballInterfaceTranslation(const int x, const int y);
+static RigTForm DefaultInterfaceRotation(const int x, const int y);
+static RigTForm DefaultInterfaceTranslation(const int x, const int y);
 
 static void motion(const int x, const int y) {
     RigTForm m;
@@ -630,12 +630,12 @@ static void motion(const int x, const int y) {
         // rotation when arcball is visible
 
         if (g_mouseLClickButton && !g_mouseRClickButton) {
-            m = arcball_interface_rotation(x, y);
+            m = ArcballInterfaceRotation(x, y);
         }
 
         // translation when arcball is visible
         else {
-            m = arcball_interface_translation(x, y);
+            m = ArcballInterfaceTranslation(x, y);
         }
     }
     
@@ -644,11 +644,11 @@ static void motion(const int x, const int y) {
 
         if (g_mouseLClickButton && !g_mouseRClickButton) {
             // left button down. rotation
-            m = default_interface_rotation(x, y);
+            m = DefaultInterfaceRotation(x, y);
         }
         else {
             // right button down. translation on xy plane or along z axis
-            m = default_interface_translation(x, y);
+            m = DefaultInterfaceTranslation(x, y);
         }
     }
 
@@ -665,7 +665,7 @@ static void motion(const int x, const int y) {
 
 /* Helper functions for motions */
 
-static RigTForm arcball_interface_rotation(const int x, const int y) {
+static RigTForm ArcballInterfaceRotation(const int x, const int y) {
     // rotation when arcball is visible
         Quat rotation = Quat();
 
@@ -724,7 +724,7 @@ static RigTForm arcball_interface_rotation(const int x, const int y) {
         return RigTForm(rotation);
 }
 
-static RigTForm arcball_interface_translation(const int x, const int y) {
+static RigTForm ArcballInterfaceTranslation(const int x, const int y) {
 
     RigTForm m;
     const double dx = x - g_mouseClickX;
@@ -767,7 +767,7 @@ static RigTForm arcball_interface_translation(const int x, const int y) {
     return m;
 }
 
-static RigTForm default_interface_rotation(const int x, const int y) {
+static RigTForm DefaultInterfaceRotation(const int x, const int y) {
     
     RigTForm m;
 
@@ -794,7 +794,7 @@ static RigTForm default_interface_rotation(const int x, const int y) {
     return m;
 }
 
-static RigTForm default_interface_translation(const int x, const int y) {
+static RigTForm DefaultInterfaceTranslation(const int x, const int y) {
     
     RigTForm m;
 
