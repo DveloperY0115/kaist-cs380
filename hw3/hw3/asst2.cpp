@@ -621,113 +621,37 @@ static void reshape(const int w, const int h) {
 /* Forward declaration for motion helpers */
 static RigTForm arcball_interface_rotation(const int x, const int y);
 static RigTForm arcball_interface_translation(const int x, const int y);
+static RigTForm default_interface_rotation(const int x, const int y);
+static RigTForm default_interface_translation(const int x, const int y);
 
 static void motion(const int x, const int y) {
     RigTForm m;
 
     if (g_VPState.is_arcball_visible()) {
-        // rotation?
+        // rotation when arcball is visible
+
         if (g_mouseLClickButton && !g_mouseRClickButton) {
             m = arcball_interface_rotation(x, y);
         }
 
         // translation when arcball is visible
         else {
-            const double dx = x - g_mouseClickX;
-            const double dy = g_windowHeight - y - 1 - g_mouseClickY;
-
-            if (g_mouseRClickButton && !g_mouseLClickButton) { // right button down?
-                switch (g_VPState.get_aux_frame_descriptor()) {
-                case 1:
-                    // default behavior
-                    m = RigTForm::makeTranslation(Cvec3(dx, dy, 0) * g_arcballScale);
-                    break;
-                case 2:
-                    // invert sign of rotation and translation
-                    m = RigTForm::makeTranslation(-Cvec3(dx, dy, 0) * g_arcballScale);
-                    break;
-
-                case 3:
-                    // invert sign of rotation only
-                    m = RigTForm::makeTranslation(Cvec3(dx, dy, 0) * g_arcballScale);
-                    break;
-                }
-            }
-            else if (g_mouseMClickButton || (g_mouseLClickButton && g_mouseRClickButton)) {  // middle or (left and right) button down?
-                switch (g_VPState.get_aux_frame_descriptor()) {
-                case 1:
-                    // default behavior
-                    m = RigTForm::makeTranslation(Cvec3(0, 0, -dy) * g_arcballScale);
-                    break;
-                case 2:
-                    // invert sign of rotation and translation
-                    m = RigTForm::makeTranslation(-Cvec3(0, 0, -dy) * g_arcballScale);
-                    break;
-                case 3:
-                    // invert sign of rotation only
-                    m = RigTForm::makeTranslation(Cvec3(0, 0, -dy) * g_arcballScale);
-                    break;
-                }
-            }
+            m = arcball_interface_translation(x, y);
         }
     }
     
     else {
-        const double dx = x - g_mouseClickX;
-        const double dy = g_windowHeight - y - 1 - g_mouseClickY;
+        // interface when arcball is invisible
 
-      if (g_mouseLClickButton && !g_mouseRClickButton) { // left button down?
-          switch (g_VPState.get_aux_frame_descriptor()) {
-          case 1:
-              // default behavior
-              m = RigTForm::makeXRotation(-dy) * RigTForm::makeYRotation(dx);
-              break;
-
-          case 2:
-              // invert sign of rotation and translation
-              m = RigTForm::makeXRotation(dy) * RigTForm::makeYRotation(-dx);
-              break;
-
-          case 3:
-              // invert sign of rotation only
-              m = RigTForm::makeXRotation(dy) * RigTForm::makeYRotation(-dx);
-              break;
-          }
-      }
-      else if (g_mouseRClickButton && !g_mouseLClickButton) { // right button down?
-          switch (g_VPState.get_aux_frame_descriptor()) {
-          case 1:
-              // default behavior
-              m = RigTForm::makeTranslation(Cvec3(dx, dy, 0) * 0.01);
-              break;
-          case 2:
-              // invert sign of rotation and translation
-              m = RigTForm::makeTranslation(-Cvec3(dx, dy, 0) * 0.01);
-              break;
-
-          case 3:
-              // invert sign of rotation only
-              m = RigTForm::makeTranslation(Cvec3(dx, dy, 0) * 0.01);
-              break;
-          }
-      }
-      else if (g_mouseMClickButton || (g_mouseLClickButton && g_mouseRClickButton)) {  // middle or (left and right) button down?
-          switch (g_VPState.get_aux_frame_descriptor()) {
-          case 1:
-              // default behavior
-              m = RigTForm::makeTranslation(Cvec3(0, 0, -dy) * 0.01);
-              break;
-          case 2:
-              // invert sign of rotation and translation
-              m = RigTForm::makeTranslation(-Cvec3(0, 0, -dy) * 0.01);
-              break;
-          case 3:
-              // invert sign of rotation only
-              m = RigTForm::makeTranslation(Cvec3(0, 0, -dy) * 0.01);
-              break;
-          }
-      }
-   }
+        if (g_mouseLClickButton && !g_mouseRClickButton) {
+            // left button down. rotation
+            m = default_interface_rotation(x, y);
+        }
+        else {
+            // right button down. translation on xy plane or along z axis
+            m = default_interface_translation(x, y);
+        }
+    }
 
   if (g_mouseClickDown) {
       g_VPState.transform_obj_wrt_A(m);
@@ -784,6 +708,123 @@ static RigTForm arcball_interface_rotation(const int x, const int y) {
         }
 
         return RigTForm(rotation);
+}
+
+static RigTForm arcball_interface_translation(const int x, const int y) {
+
+    RigTForm m;
+    const double dx = x - g_mouseClickX;
+    const double dy = g_windowHeight - y - 1 - g_mouseClickY;
+
+    if (g_mouseRClickButton && !g_mouseLClickButton) { // right button down?
+        switch (g_VPState.get_aux_frame_descriptor()) {
+        case 1:
+            // default behavior
+            m = RigTForm::makeTranslation(Cvec3(dx, dy, 0) * g_arcballScale);
+            break;
+        case 2:
+            // invert sign of rotation and translation
+            m = RigTForm::makeTranslation(-Cvec3(dx, dy, 0) * g_arcballScale);
+            break;
+
+        case 3:
+            // invert sign of rotation only
+            m = RigTForm::makeTranslation(Cvec3(dx, dy, 0) * g_arcballScale);
+            break;
+        }
+    }
+    else if (g_mouseMClickButton || (g_mouseLClickButton && g_mouseRClickButton)) {  // middle or (left and right) button down?
+        switch (g_VPState.get_aux_frame_descriptor()) {
+        case 1:
+            // default behavior
+            m = RigTForm::makeTranslation(Cvec3(0, 0, -dy) * g_arcballScale);
+            break;
+        case 2:
+            // invert sign of rotation and translation
+            m = RigTForm::makeTranslation(-Cvec3(0, 0, -dy) * g_arcballScale);
+            break;
+        case 3:
+            // invert sign of rotation only
+            m = RigTForm::makeTranslation(Cvec3(0, 0, -dy) * g_arcballScale);
+            break;
+        }
+    }
+
+    return m;
+}
+
+static RigTForm default_interface_rotation(const int x, const int y) {
+    
+    RigTForm m;
+
+    const double dx = x - g_mouseClickX;
+    const double dy = g_windowHeight - y - 1 - g_mouseClickY;
+
+    switch (g_VPState.get_aux_frame_descriptor()) {
+    case 1:
+        // default behavior
+        m = RigTForm::makeXRotation(-dy) * RigTForm::makeYRotation(dx);
+        break;
+
+    case 2:
+        // invert sign of rotation and translation
+        m = RigTForm::makeXRotation(dy) * RigTForm::makeYRotation(-dx);
+        break;
+
+    case 3:
+        // invert sign of rotation only
+        m = RigTForm::makeXRotation(dy) * RigTForm::makeYRotation(-dx);
+        break;
+    }
+
+    return m;
+}
+
+static RigTForm default_interface_translation(const int x, const int y) {
+    
+    RigTForm m;
+
+    const double dx = x - g_mouseClickX;
+    const double dy = g_windowHeight - y - 1 - g_mouseClickY;
+
+    if (g_mouseMClickButton || (g_mouseLClickButton && g_mouseRClickButton)) {
+        // middle or both left-right button down?
+        switch (g_VPState.get_aux_frame_descriptor()) {
+        case 1:
+            // default behavior
+            m = RigTForm::makeTranslation(Cvec3(0, 0, -dy) * 0.01);
+            break;
+        case 2:
+            // invert sign of rotation and translation
+            m = RigTForm::makeTranslation(-Cvec3(0, 0, -dy) * 0.01);
+            break;
+        case 3:
+            // invert sign of rotation only
+            m = RigTForm::makeTranslation(Cvec3(0, 0, -dy) * 0.01);
+            break;
+        }
+    }
+
+    else {
+        // right button down?
+        switch (g_VPState.get_aux_frame_descriptor()) {
+        case 1:
+            // default behavior
+            m = RigTForm::makeTranslation(Cvec3(dx, dy, 0) * 0.01);
+            break;
+        case 2:
+            // invert sign of rotation and translation
+            m = RigTForm::makeTranslation(-Cvec3(dx, dy, 0) * 0.01);
+            break;
+
+        case 3:
+            // invert sign of rotation only
+            m = RigTForm::makeTranslation(Cvec3(dx, dy, 0) * 0.01);
+            break;
+        }
+    }
+    
+    return m;
 }
 
 static void mouse(const int button, const int state, const int x, const int y) {
