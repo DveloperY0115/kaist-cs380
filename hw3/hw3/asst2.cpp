@@ -667,22 +667,22 @@ static void motion(const int x, const int y) {
 
 static RigTForm ArcballInterfaceRotation(const int x, const int y) {
     // rotation when arcball is visible
-        Quat rotation = Quat();
+        Quat Rotation = Quat();
 
         RigTForm eyeRbt = g_VPState.getCurrentEye();
         RigTForm invEyeRbt = inv(eyeRbt);
-        Cvec3 center_eye_coord = Cvec3();
+        Cvec3 CenterEyeCoord = Cvec3();
 
         if (!g_VPState.isWorldSkyFrame()) {
             // in cube-eye frame
-            center_eye_coord = (invEyeRbt * g_VPState.getCurrentObj()).getTranslation();
+            CenterEyeCoord = (invEyeRbt * g_VPState.getCurrentObj()).getTranslation();
         }
         else {
             // in world-eye frames
-            center_eye_coord = (invEyeRbt * g_worldRbt).getTranslation();
+            CenterEyeCoord = (invEyeRbt * g_worldRbt).getTranslation();
         }
 
-        Cvec2 center_screen_coord = getScreenSpaceCoord(center_eye_coord, makeProjectionMatrix(),
+        Cvec2 center_screen_coord = getScreenSpaceCoord(CenterEyeCoord, makeProjectionMatrix(),
             g_frustNear, g_frustFovY, g_windowWidth, g_windowHeight);
 
         // calculate z coordinate of clicked points in screen coordinate
@@ -691,7 +691,7 @@ static RigTForm ArcballInterfaceRotation(const int x, const int y) {
         int v1_y = (int)(g_mouseClickY - center_screen_coord(1));
         int v1_z = getScreenZ(g_arcballScreenRadius, g_mouseClickX, g_mouseClickY, center_screen_coord);
 
-        // !!!!! Caution: Flip y before using it !!!!!
+        // !!!!! Caution: Flip y before using it !!!!! -> TODO: implement function for better readability
         int v2_x = (int)(x - center_screen_coord(0));
         int v2_y = (int)(g_windowHeight - y - 1 - center_screen_coord(1));
         int v2_z = getScreenZ(g_arcballScreenRadius, x, g_windowHeight - y - 1, center_screen_coord);
@@ -706,7 +706,7 @@ static RigTForm ArcballInterfaceRotation(const int x, const int y) {
             v2 = normalize(Cvec3(v2_x, v2_y, 0));
             k = cross(v1, v2);
 
-            rotation = Quat(dot(v1, v2), k);
+            Rotation = Quat(dot(v1, v2), k);
         }
 
         else {
@@ -714,14 +714,14 @@ static RigTForm ArcballInterfaceRotation(const int x, const int y) {
             v2 = normalize(Cvec3(v2_x, v2_y, v2_z));
             k = cross(v1, v2);
 
-            rotation = Quat(dot(v1, v2), k);
+            Rotation = Quat(dot(v1, v2), k);
 
             if (g_VPState.isWorldSkyFrame()) {
-                rotation = inv(rotation);
+                Rotation = inv(Rotation);
             }
         }
 
-        return RigTForm(rotation);
+        return RigTForm(Rotation);
 }
 
 static RigTForm ArcballInterfaceTranslation(const int x, const int y) {
