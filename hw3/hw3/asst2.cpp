@@ -228,11 +228,11 @@ public:
          * Case 2 - Manipulate sky view w.r.t world origin and sky view axes
          * Case 3 - Manipulate sky view w.r.t its origin and axes
          */
-        if (is_world_sky_frame()) {
+        if (isWorldSkyFrame()) {
             // case 2
             return static_cast<unsigned int>(aux_frame_descriptor::world_sky);
         }
-        else if (is_sky_sky_frame()) {
+        else if (isSkySkyFrame()) {
             // case 3
             return static_cast<unsigned int>(aux_frame_descriptor::sky_sky);
         }
@@ -244,8 +244,8 @@ public:
 
     /* setters */
     void switchEye() {
-        if (is_world_sky_frame()) {
-            set_is_world_sky_frame(false);
+        if (isWorldSkyFrame()) {
+            setIsWorldSkyFrame(false);
         }
 
         current_eye_idx++;
@@ -258,7 +258,7 @@ public:
             current_obj_idx = 1;
         }
 
-        if (is_sky_sky_frame()) {
+        if (isSkySkyFrame()) {
             // if current frame is sky-sky frame
             // give a user an option 'm'
             std::cout << "You're now in sky-sky frame\n";
@@ -266,13 +266,13 @@ public:
         }
 
         // update auxiliary frame for new viewpoint
-        update_aux_frame();
+        updateAuxFrame();
     }
 
     void switchObject() {
 
-        if (is_world_sky_frame()) {
-            set_is_world_sky_frame(false);
+        if (isWorldSkyFrame()) {
+            setIsWorldSkyFrame(false);
         }
 
         current_obj_idx++;
@@ -285,7 +285,7 @@ public:
             current_obj_idx = 1;
         }
 
-        if (is_sky_sky_frame()) {
+        if (isSkySkyFrame()) {
             // if current frame is sky-sky frame
             // give a user an option 'm'
             std::cout << "You're now in sky-sky frame\n";
@@ -293,7 +293,7 @@ public:
         }
 
         // update auxiliary frame for new object
-        update_aux_frame();
+        updateAuxFrame();
     }
 
     void setIsWorldSkyFrame(const bool v) {
@@ -302,18 +302,18 @@ public:
     }
 
     void updateAuxFrame() {
-        if (is_world_sky_frame()) {
+        if (isWorldSkyFrame()) {
             // if current frame is world-eye frame
-            update_world_eye_frame();
+            updateWorldEyeFrame();
             aux_frame = world_eye_frame;
         }
         else {
-            aux_frame = makeMixedFrame(get_current_obj(), get_current_eye());
+            aux_frame = makeMixedFrame(getCurrentObj(), getCurrentEye());
         }
     }
 
     void updateWorldEyeFrame() {
-        world_eye_frame = makeMixedFrame(g_worldRbt, get_current_eye());
+        world_eye_frame = makeMixedFrame(g_worldRbt, getCurrentEye());
     }
 
     /* getters */
@@ -626,7 +626,7 @@ static RigTForm default_interface_translation(const int x, const int y);
 static void motion(const int x, const int y) {
     RigTForm m;
 
-    if (g_VPState.is_arcball_visible()) {
+    if (g_VPState.isArcballVisible()) {
         // rotation when arcball is visible
 
         if (g_mouseLClickButton && !g_mouseRClickButton) {
@@ -653,8 +653,8 @@ static void motion(const int x, const int y) {
     }
 
   if (g_mouseClickDown) {
-      g_VPState.transform_obj_wrt_A(m);
-      g_VPState.update_aux_frame();
+      g_VPState.transformObjWrtA(m);
+      g_VPState.updateAuxFrame();
 
       glutPostRedisplay(); // we always redraw if we changed the scene
   }
