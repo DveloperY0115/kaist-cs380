@@ -512,7 +512,7 @@ static void drawStuff() {
   sendProjectionMatrix(curSS, projmat);
 
   // use the skyRbt as the eyeRbt
-  const RigTForm eyeRbt = g_VPState.get_current_eye();
+  const RigTForm eyeRbt = g_VPState.getCurrentEye();
   const RigTForm invEyeRbt = inv(eyeRbt);
 
   const Cvec3 eyeLight1 = Cvec3(invEyeRbt * Cvec4(g_light1, 1)); // g_light1 position in eye coordinates
@@ -551,10 +551,10 @@ static void drawStuff() {
   g_cube_2->draw(curSS);
 
   // draw the arcball
-  if (g_VPState.is_arcball_visible()) {
+  if (g_VPState.isArcballVisible()) {
       glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);  // draw wireframe
 
-      if (g_VPState.is_world_sky_frame()) {
+      if (g_VPState.isWorldSkyFrame()) {
           // if the user is in world-sky frame, draw arcball at world center
           RigTForm MVRigTForm = invEyeRbt * g_worldRbt;
           MVM = RigTFormToMatrix(MVRigTForm);
@@ -567,7 +567,7 @@ static void drawStuff() {
 
       else {
           // otherwise, sync its position with current object
-          RigTForm MVRigTForm = invEyeRbt * g_VPState.get_current_obj();
+          RigTForm MVRigTForm = invEyeRbt * g_VPState.getCurrentObj();
           MVM = RigTFormToMatrix(MVRigTForm);
 
           if (!((g_mouseLClickButton && g_mouseRClickButton) || g_mouseMClickButton)) {
@@ -669,13 +669,13 @@ static RigTForm arcball_interface_rotation(const int x, const int y) {
     // rotation when arcball is visible
         Quat rotation = Quat();
 
-        RigTForm eyeRbt = g_VPState.get_current_eye();
+        RigTForm eyeRbt = g_VPState.getCurrentEye();
         RigTForm invEyeRbt = inv(eyeRbt);
         Cvec3 center_eye_coord = Cvec3();
 
-        if (!g_VPState.is_world_sky_frame()) {
+        if (!g_VPState.isWorldSkyFrame()) {
             // in cube-eye frame
-            center_eye_coord = (invEyeRbt * g_VPState.get_current_obj()).getTranslation();
+            center_eye_coord = (invEyeRbt * g_VPState.getCurrentObj()).getTranslation();
         }
         else {
             // in world-eye frames
@@ -716,7 +716,7 @@ static RigTForm arcball_interface_rotation(const int x, const int y) {
 
             rotation = Quat(dot(v1, v2), k);
 
-            if (g_VPState.is_world_sky_frame()) {
+            if (g_VPState.isWorldSkyFrame()) {
                 rotation = inv(rotation);
             }
         }
