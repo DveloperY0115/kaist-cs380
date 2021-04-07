@@ -689,12 +689,12 @@ static RigTForm ArcballInterfaceRotation(const int x, const int y) {
 
         int v1_x = (int)(g_mouseClickX - center_screen_coord(0));
         int v1_y = (int)(g_mouseClickY - center_screen_coord(1));
-        int v1_z = calculateScreenZ(g_arcballScreenRadius, g_mouseClickX, g_mouseClickY, center_screen_coord);
+        int v1_z = getScreenZ(g_arcballScreenRadius, g_mouseClickX, g_mouseClickY, center_screen_coord);
 
         // !!!!! Caution: Flip y before using it !!!!!
         int v2_x = (int)(x - center_screen_coord(0));
         int v2_y = (int)(g_windowHeight - y - 1 - center_screen_coord(1));
-        int v2_z = calculateScreenZ(g_arcballScreenRadius, x, g_windowHeight - y - 1, center_screen_coord);
+        int v2_z = getScreenZ(g_arcballScreenRadius, x, g_windowHeight - y - 1, center_screen_coord);
 
         Cvec3 v1;
         Cvec3 v2;

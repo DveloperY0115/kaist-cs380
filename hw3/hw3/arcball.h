@@ -49,7 +49,7 @@ inline double getScreenToEyeScale(double z, double frustFovY, int screenHeight) 
 
 // Calculate the z coordinate of the point of interaction in screen coordinate system
 // Clamp the z value if necessary
-inline int calculateScreenZ(double screenRadius, int x, int y, Cvec2 centerCoord) {
+inline int getScreenZ(double screenRadius, int x, int y, Cvec2 centerCoord) {
     /*
     * ScreenRadius: Radius of the arcball on screen
     * x: X-coordinate of the click
