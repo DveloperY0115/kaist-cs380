@@ -13,6 +13,7 @@ class Quat;
 double dot(const Quat& q, const Quat& p);
 double norm2(const Quat& q);
 Quat inv(const Quat& q);
+Quat pow(const Quat& q, const double alpha);
 Quat normalize(const Quat& q);
 Matrix4 quatToMatrix(const Quat& q);
 
@@ -137,6 +138,25 @@ inline Quat inv(const Quat& q) {
 
 inline Quat normalize(const Quat& q) {
   return q / std::sqrt(norm2(q));
+}
+
+/*
+* Power operator for quaternions
+*/
+inline Quat pow(const Quat& q, const double& alpha) {
+    /*
+    * Assume input quaternion q is of form
+    * [ cos(theta), sin(theta) *k ]
+    */
+    Quat r = q;
+
+    if (r(0) < 0) {
+        // if the first component of 
+    }
+
+    double theta = std::acos(r(0));    // calculate theta using arccosine
+    double alpha_theta = alpha * theta;
+
 }
 
 inline Matrix4 quatToMatrix(const Quat& q) {
