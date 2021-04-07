@@ -17,13 +17,15 @@ inline Cvec2 getScreenSpaceCoord(const Cvec3& p,
                                  const Matrix4& projection,
                                  double frustNear, double frustFovY,
                                  int screenWidth, int screenHeight) {
-  if (p[2] > -CS175_EPS) {
-    std::cerr << "WARNING: getScreenSpaceCoord of a point near or behind Z=0 plane. Returning screen-center instead." << std::endl;
-    return Cvec2((screenWidth-1)/2.0, (screenHeight-1)/2.0);
-  }
-  Cvec4 q = projection * Cvec4(p, 1);
-  Cvec3 clipCoord = Cvec3(q) / q[3];
-  return Cvec2(clipCoord[0] * screenWidth / 2.0 + (screenWidth - 1)/2.0,
+    // warning shouldn't be ignored...
+    if (p[2] > -CS175_EPS) {
+        std::cerr << "WARNING: getScreenSpaceCoord of a point near or behind Z=0 plane. Returning screen-center instead." << std::endl;
+        return Cvec2((screenWidth-1)/2.0, (screenHeight-1)/2.0);
+    }
+    
+    Cvec4 q = projection * Cvec4(p, 1);
+    Cvec3 clipCoord = Cvec3(q) / q[3];
+    return Cvec2(clipCoord[0] * screenWidth / 2.0 + (screenWidth - 1)/2.0,
                clipCoord[1] * screenHeight / 2.0 + (screenHeight - 1)/2.0);
 }
 
@@ -37,12 +39,42 @@ inline Cvec2 getScreenSpaceCoord(const Cvec3& p,
 // But if you do pass in a point behind Z=0 plane, we'll just
 // print a warning, and return 1
 inline double getScreenToEyeScale(double z, double frustFovY, int screenHeight) {
-  if (z > -CS175_EPS) {
+  
+    if (z > -CS175_EPS) {
     std::cerr << "WARNING: getScreenToEyeScale on z near or behind Z=0 plane. Returning 1 instead." << std::endl;
     return 1;
   }
+
   return -(z * tan(frustFovY * CS175_PI/360.0)) * 2 / screenHeight;
 }
 
+// Calculate the z coordinate of the point of interaction in screen coordinate system
+// Clamp the z value if necessary
+inline int calculateScreenZ(double ScreenRadius, int x, int y, Cvec2 center_coord) {
+    /*
+    * ScreenRadius: Radius of the arcball on screen
+    * x: X-coordinate of the click
+    * y: Y-coordinate of the click
+    * center_coord: Screen space coordinate of the center of the arcball
+    /*
+    * 
+    if (std::pow(ScreenRadius, 2) < std::pow(x - center_coord[0], 2) + std::pow(y - center_coord[1], 2)) {
+        // clamp if necessary
+        std::cout << "You're trying to move the ball without even touching it!\n";
+        exit(-1);
+    }
+    */   
+
+    if (std::pow(ScreenRadius, 2) < std::pow(x - center_coord[0], 2) + std::pow(y - center_coord[1], 2)) {
+        // mouse pointer is outside the arcball
+        // behavior -> rotate along z axis
+        return -1;
+    }
+
+    else {
+        // mouse pointer is inside the arcball
+        return (int)std::sqrt(std::pow(ScreenRadius, 2) - std::pow(x - center_coord[0], 2) - std::pow(y - center_coord[1], 2));
+    }
+}
 #endif
 

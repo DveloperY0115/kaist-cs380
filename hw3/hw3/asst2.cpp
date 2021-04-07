@@ -10,6 +10,7 @@
 #include <string>
 #include <memory>
 #include <stdexcept>
+#include <cmath>
 
 #include <GL/glew.h>
 #ifdef __APPLE__
@@ -18,8 +19,10 @@
 #   include <GL/glut.h>
 #endif
 
+#include "arcball.h"
 #include "cvec.h"
 #include "matrix4.h"
+#include "rigtform.h"
 #include "geometrymaker.h"
 #include "rigtform.h"
 #include "ppm.h"
@@ -178,7 +181,7 @@ struct Geometry {
 };
 
 // Vertex buffer and index buffer associated with the ground and cube geometry
-static shared_ptr<Geometry> g_ground, g_cube_1, g_cube_2;
+static shared_ptr<Geometry> g_ground, g_cube_1, g_cube_2, g_sphere;
 static std::vector<shared_ptr<Geometry>> scene;     // (refactor required) later use this to put all scene geometries in one vector
 
 // --------- Scene
@@ -187,8 +190,8 @@ static const Cvec3 g_light1(2.0, 3.0, 14.0), g_light2(-2, -3.0, -5.0);  // defin
 
 // Eye, Object matrices
 static RigTForm g_skyRbt = RigTForm(Cvec3(0.0, 0.25, 4.0));
-static RigTForm objRbt_1 = RigTForm(Cvec3(0.75, 0, 0));
-static RigTForm objRbt_2 = RigTForm(Cvec3(-0.75, 0, 0));
+static RigTForm objRbt_1 = RigTForm(Cvec3(0.75, 0, 0.0));
+static RigTForm objRbt_2 = RigTForm(Cvec3(-0.75, 0, 0.0));
 
 // World matrix
 static RigTForm g_worldRbt = RigTForm(Cvec3(0.0, 0.0, 0.0));
@@ -198,7 +201,7 @@ static bool is_worldsky_frame = false;
 // 1. cube 1
 // 2. cube 2
 static RigTForm initial_rigs[3] = { g_skyRbt, objRbt_1, objRbt_2 };
-static Cvec3f g_objectColors[2] = { Cvec3f(1, 0, 0), Cvec3f(0, 0, 1) };
+static Cvec3f g_objectColors[3] = { Cvec3f(1, 0, 0), Cvec3f(0, 0, 1), Cvec3f(0, 1, 0) };
 
 // list of manipulatable object matrices
 static RigTForm manipulatable_obj[3] = { g_skyRbt, objRbt_1, objRbt_2 };
@@ -326,6 +329,16 @@ public:
         return aux_frame;
     }
 
+    bool is_arcball_visible() {
+        if (is_world_sky_frame() || ((current_obj_idx == 1 || current_obj_idx == 2) && (current_obj_idx != current_eye_idx))) {
+            // two cases
+            // (1) Current auxiliary frame is world-sky frame
+            // (2) User is controlling one of the cubes and the current eye is not equal to it
+            return true;
+        } 
+        return false;
+    }
+
     /* utilities */
     bool is_sky_sky_frame() {
         return current_eye_idx == 0 && current_obj_idx == 0;
@@ -405,8 +418,11 @@ private:
     enum class aux_frame_descriptor { cube_other = 1, world_sky, sky_sky };
 };
 
-// Refactoring --> All view-obj information will be incapsulated in here!
 static ViewpointState g_VPState = ViewpointState();
+
+// values related to arcball appearance
+static double g_arcballScreenRadius = 0.25 * std::min(g_windowWidth, g_windowHeight);
+static double g_arcballScale;
 
 ///////////////// END OF G L O B A L S //////////////////////////////////////////////////
 
@@ -437,6 +453,21 @@ static void initCubes() {
   // create the second cube
   makeCube(1, vtx.begin(), idx.begin());
   g_cube_2.reset(new Geometry(&vtx[0], &idx[0], vbLen, ibLen));
+}
+
+static void initSpheres() {
+    int slices = 10;
+    int stacks = 10;
+    int ibLen, vbLen;
+    getSphereVbIbLen(slices, stacks, vbLen, ibLen);
+
+    // Temporary storage for sphere geometry
+    std::vector<VertexPN> vtx(vbLen);
+    std::vector<unsigned short> idx(ibLen);
+
+    // create a sphere for arcball visualization
+    makeSphere(1.0, slices, stacks, vtx.begin(), idx.begin());
+    g_sphere.reset(new Geometry(&vtx[0], &idx[0], vbLen, ibLen));
 }
 
 // takes a projection matrix and send to the the shaders
@@ -492,8 +523,10 @@ static void drawStuff() {
   // draw ground
   // ===========
   //
-  const Matrix4 groundRbt = Matrix4();  // identity -> find a way to replace it with RigTForm!
-  Matrix4 MVM = RigTFormToMatrix(invEyeRbt) * groundRbt;
+
+  // TODO: Find way to replace 'normalMatrix'
+  const RigTForm groundRbt = RigTForm();  // identity -> find a way to replace it with RigTForm!
+  Matrix4 MVM = RigTFormToMatrix(invEyeRbt * groundRbt);
   Matrix4 NMVM = normalMatrix(MVM);
   sendModelViewNormalMatrix(curSS, MVM, NMVM);
   safe_glUniform3f(curSS.h_uColor, 0.1, 0.95, 0.1); // set color
@@ -516,6 +549,48 @@ static void drawStuff() {
 
   safe_glUniform3f(curSS.h_uColor, g_objectColors[1][0], g_objectColors[1][1], g_objectColors[1][2]);
   g_cube_2->draw(curSS);
+
+  // draw the arcball
+  if (g_VPState.is_arcball_visible()) {
+      glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);  // draw wireframe
+
+      if (g_VPState.is_world_sky_frame()) {
+          // if the user is in world-sky frame, draw arcball at world center
+          RigTForm MVRigTForm = invEyeRbt * g_worldRbt;
+          MVM = RigTFormToMatrix(MVRigTForm);
+
+          if (!((g_mouseLClickButton && g_mouseRClickButton) || g_mouseMClickButton)) {
+              g_arcballScale = getScreenToEyeScale(MVRigTForm.getTranslation()[2],
+                  g_frustFovY, g_windowHeight);
+          }
+      } 
+
+      else {
+          // otherwise, sync its position with current object
+          RigTForm MVRigTForm = invEyeRbt * g_VPState.get_current_obj();
+          MVM = RigTFormToMatrix(MVRigTForm);
+
+          if (!((g_mouseLClickButton && g_mouseRClickButton) || g_mouseMClickButton)) {
+              g_arcballScale = getScreenToEyeScale(MVRigTForm.getTranslation()[2],
+                  g_frustFovY, g_windowHeight);
+          }
+      }
+      
+      // scale arcball properly
+      double scale = g_arcballScale * g_arcballScreenRadius;
+      Matrix4 scale_mat = Matrix4::makeScale(Cvec3(scale, scale, scale));
+
+
+      MVM *= scale_mat;
+
+      NMVM = normalMatrix(MVM);
+      sendModelViewNormalMatrix(curSS, MVM, NMVM);
+
+      safe_glUniform3f(curSS.h_uColor, g_objectColors[2][0], g_objectColors[2][1], g_objectColors[2][2]);
+      g_sphere->draw(curSS);
+
+      glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);  // end wireframe mode
+  }
 }
 
 /* GLUT callbacks */
@@ -535,70 +610,49 @@ static void reshape(const int w, const int h) {
   g_windowWidth = w;
   g_windowHeight = h;
   glViewport(0, 0, w, h);
+  // update the size of the arcball
+  g_arcballScreenRadius = 0.25 * std::min(g_windowWidth, g_windowHeight);
   cerr << "Size of window is now " << w << "x" << h << endl;
   updateFrustFovY();
   glutPostRedisplay();
 }
 
+/* Forward declaration for motion helpers */
+static RigTForm arcball_interface_rotation(const int x, const int y);
+static RigTForm arcball_interface_translation(const int x, const int y);
+static RigTForm default_interface_rotation(const int x, const int y);
+static RigTForm default_interface_translation(const int x, const int y);
+
 static void motion(const int x, const int y) {
-  const double dx = x - g_mouseClickX;
-  const double dy = g_windowHeight - y - 1 - g_mouseClickY;
+    RigTForm m;
 
-  RigTForm m;
-  if (g_mouseLClickButton && !g_mouseRClickButton) { // left button down?
-      switch (g_VPState.get_aux_frame_descriptor()) {
-      case 1:
-          // default behavior
-          m = RigTForm::makeXRotation(-dy) * RigTForm::makeYRotation(dx);
-          break;
+    if (g_VPState.is_arcball_visible()) {
+        // rotation when arcball is visible
 
-      case 2:
-          // invert sign of rotation and translation
-          m = RigTForm::makeXRotation(dy) * RigTForm::makeYRotation(-dx);
-          break;
+        if (g_mouseLClickButton && !g_mouseRClickButton) {
+            m = arcball_interface_rotation(x, y);
+        }
 
-      case 3:
-          // invert sign of rotation only
-          m = RigTForm::makeXRotation(dy) * RigTForm::makeYRotation(-dx);
-          break;
-      }
-  }
-  else if (g_mouseRClickButton && !g_mouseLClickButton) { // right button down?
-      switch (g_VPState.get_aux_frame_descriptor()) {
-      case 1:
-          // default behavior
-          m = RigTForm::makeTranslation(Cvec3(dx, dy, 0) * 0.01);
-          break;
-      case 2:
-          // invert sign of rotation and translation
-          m = RigTForm::makeTranslation(-Cvec3(dx, dy, 0) * 0.01);
-          break;
+        // translation when arcball is visible
+        else {
+            m = arcball_interface_translation(x, y);
+        }
+    }
+    
+    else {
+        // interface when arcball is invisible
 
-      case 3:
-          // invert sign of rotation only
-          m = RigTForm::makeTranslation(Cvec3(dx, dy, 0) * 0.01);
-          break;
-      }
-  }
-  else if (g_mouseMClickButton || (g_mouseLClickButton && g_mouseRClickButton)) {  // middle or (left and right) button down?
-      switch (g_VPState.get_aux_frame_descriptor()) {
-      case 1:
-          // default behavior
-          m = RigTForm::makeTranslation(Cvec3(0, 0, -dy) * 0.01);
-          break;
-      case 2:
-          // invert sign of rotation and translation
-          m = RigTForm::makeTranslation(-Cvec3(0, 0, -dy) * 0.01);
-          break;
-      case 3:
-          // invert sign of rotation only
-          m = RigTForm::makeTranslation(Cvec3(0, 0, -dy) * 0.01);
-          break;
-      }
-  }
+        if (g_mouseLClickButton && !g_mouseRClickButton) {
+            // left button down. rotation
+            m = default_interface_rotation(x, y);
+        }
+        else {
+            // right button down. translation on xy plane or along z axis
+            m = default_interface_translation(x, y);
+        }
+    }
 
   if (g_mouseClickDown) {
-
       g_VPState.transform_obj_wrt_A(m);
       g_VPState.update_aux_frame();
 
@@ -607,6 +661,184 @@ static void motion(const int x, const int y) {
 
   g_mouseClickX = x;
   g_mouseClickY = g_windowHeight - y - 1;
+}
+
+/* Helper functions for motions */
+
+static RigTForm arcball_interface_rotation(const int x, const int y) {
+    // rotation when arcball is visible
+        Quat rotation = Quat();
+
+        RigTForm eyeRbt = g_VPState.get_current_eye();
+        RigTForm invEyeRbt = inv(eyeRbt);
+        Cvec3 center_eye_coord = Cvec3();
+
+        if (!g_VPState.is_world_sky_frame()) {
+            // in cube-eye frame
+            center_eye_coord = (invEyeRbt * g_VPState.get_current_obj()).getTranslation();
+        }
+        else {
+            // in world-eye frames
+            center_eye_coord = (invEyeRbt * g_worldRbt).getTranslation();
+        }
+
+        Cvec2 center_screen_coord = getScreenSpaceCoord(center_eye_coord, makeProjectionMatrix(),
+            g_frustNear, g_frustFovY, g_windowWidth, g_windowHeight);
+
+        // calculate z coordinate of clicked points in screen coordinate
+
+        int v1_x = (int)(g_mouseClickX - center_screen_coord(0));
+        int v1_y = (int)(g_mouseClickY - center_screen_coord(1));
+        int v1_z = calculateScreenZ(g_arcballScreenRadius, g_mouseClickX, g_mouseClickY, center_screen_coord);
+
+        // !!!!! Caution: Flip y before using it !!!!!
+        int v2_x = (int)(x - center_screen_coord(0));
+        int v2_y = (int)(g_windowHeight - y - 1 - center_screen_coord(1));
+        int v2_z = calculateScreenZ(g_arcballScreenRadius, x, g_windowHeight - y - 1, center_screen_coord);
+
+        Cvec3 v1;
+        Cvec3 v2;
+        Cvec3 k;
+
+        if (v1_z < 0 || v2_z < 0) {
+            // user points outside the arcball
+            v1 = normalize(Cvec3(v1_x, v1_y, 0));
+            v2 = normalize(Cvec3(v2_x, v2_y, 0));
+            k = cross(v1, v2);
+
+            rotation = Quat(dot(v1, v2), k);
+        }
+
+        else {
+            v1 = normalize(Cvec3(v1_x, v1_y, v1_z));
+            v2 = normalize(Cvec3(v2_x, v2_y, v2_z));
+            k = cross(v1, v2);
+
+            rotation = Quat(dot(v1, v2), k);
+
+            if (g_VPState.is_world_sky_frame()) {
+                rotation = inv(rotation);
+            }
+        }
+
+        return RigTForm(rotation);
+}
+
+static RigTForm arcball_interface_translation(const int x, const int y) {
+
+    RigTForm m;
+    const double dx = x - g_mouseClickX;
+    const double dy = g_windowHeight - y - 1 - g_mouseClickY;
+
+    if (g_mouseRClickButton && !g_mouseLClickButton) { // right button down?
+        switch (g_VPState.get_aux_frame_descriptor()) {
+        case 1:
+            // default behavior
+            m = RigTForm::makeTranslation(Cvec3(dx, dy, 0) * g_arcballScale);
+            break;
+        case 2:
+            // invert sign of rotation and translation
+            m = RigTForm::makeTranslation(-Cvec3(dx, dy, 0) * g_arcballScale);
+            break;
+
+        case 3:
+            // invert sign of rotation only
+            m = RigTForm::makeTranslation(Cvec3(dx, dy, 0) * g_arcballScale);
+            break;
+        }
+    }
+    else if (g_mouseMClickButton || (g_mouseLClickButton && g_mouseRClickButton)) {  // middle or (left and right) button down?
+        switch (g_VPState.get_aux_frame_descriptor()) {
+        case 1:
+            // default behavior
+            m = RigTForm::makeTranslation(Cvec3(0, 0, -dy) * g_arcballScale);
+            break;
+        case 2:
+            // invert sign of rotation and translation
+            m = RigTForm::makeTranslation(-Cvec3(0, 0, -dy) * g_arcballScale);
+            break;
+        case 3:
+            // invert sign of rotation only
+            m = RigTForm::makeTranslation(Cvec3(0, 0, -dy) * g_arcballScale);
+            break;
+        }
+    }
+
+    return m;
+}
+
+static RigTForm default_interface_rotation(const int x, const int y) {
+    
+    RigTForm m;
+
+    const double dx = x - g_mouseClickX;
+    const double dy = g_windowHeight - y - 1 - g_mouseClickY;
+
+    switch (g_VPState.get_aux_frame_descriptor()) {
+    case 1:
+        // default behavior
+        m = RigTForm::makeXRotation(-dy) * RigTForm::makeYRotation(dx);
+        break;
+
+    case 2:
+        // invert sign of rotation and translation
+        m = RigTForm::makeXRotation(dy) * RigTForm::makeYRotation(-dx);
+        break;
+
+    case 3:
+        // invert sign of rotation only
+        m = RigTForm::makeXRotation(dy) * RigTForm::makeYRotation(-dx);
+        break;
+    }
+
+    return m;
+}
+
+static RigTForm default_interface_translation(const int x, const int y) {
+    
+    RigTForm m;
+
+    const double dx = x - g_mouseClickX;
+    const double dy = g_windowHeight - y - 1 - g_mouseClickY;
+
+    if (g_mouseMClickButton || (g_mouseLClickButton && g_mouseRClickButton)) {
+        // middle or both left-right button down?
+        switch (g_VPState.get_aux_frame_descriptor()) {
+        case 1:
+            // default behavior
+            m = RigTForm::makeTranslation(Cvec3(0, 0, -dy) * 0.01);
+            break;
+        case 2:
+            // invert sign of rotation and translation
+            m = RigTForm::makeTranslation(-Cvec3(0, 0, -dy) * 0.01);
+            break;
+        case 3:
+            // invert sign of rotation only
+            m = RigTForm::makeTranslation(Cvec3(0, 0, -dy) * 0.01);
+            break;
+        }
+    }
+
+    else {
+        // right button down?
+        switch (g_VPState.get_aux_frame_descriptor()) {
+        case 1:
+            // default behavior
+            m = RigTForm::makeTranslation(Cvec3(dx, dy, 0) * 0.01);
+            break;
+        case 2:
+            // invert sign of rotation and translation
+            m = RigTForm::makeTranslation(-Cvec3(dx, dy, 0) * 0.01);
+            break;
+
+        case 3:
+            // invert sign of rotation only
+            m = RigTForm::makeTranslation(Cvec3(dx, dy, 0) * 0.01);
+            break;
+        }
+    }
+    
+    return m;
 }
 
 static void mouse(const int button, const int state, const int x, const int y) {
@@ -622,6 +854,8 @@ static void mouse(const int button, const int state, const int x, const int y) {
   g_mouseMClickButton &= !(button == GLUT_MIDDLE_BUTTON && state == GLUT_UP);
 
   g_mouseClickDown = g_mouseLClickButton || g_mouseRClickButton || g_mouseMClickButton;
+
+  glutPostRedisplay();
 }
 
 static void keyboard(const unsigned char key, const int x, const int y) {
@@ -732,7 +966,7 @@ static void initGlutState(int argc, char* argv[]) {
     glutInit(&argc, argv);                                  // initialize Glut based on cmd-line args
     glutInitDisplayMode(GLUT_RGBA | GLUT_DOUBLE | GLUT_DEPTH);  //  RGBA pixel channels and double buffering
     glutInitWindowSize(g_windowWidth, g_windowHeight);      // create a window
-    glutCreateWindow("Assignment 2");                       // title the window
+    glutCreateWindow("Assignment 3");                       // title the window
 
     glutDisplayFunc(display);                               // display rendering callback
     glutReshapeFunc(reshape);                               // window reshape callback
@@ -768,6 +1002,7 @@ static void initShaders() {
 static void initGeometry() {
     initGround();
     initCubes();
+    initSpheres();
 }
 
 int main(int argc, char* argv[]) {
