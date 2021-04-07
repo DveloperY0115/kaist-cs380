@@ -898,42 +898,42 @@ static void keyboard(const unsigned char key, const int x, const int y) {
         std::cout << "Pressed 'v'! Switching camera\n";
         
         // switch view point
-        g_VPState.switch_eye();
+        g_VPState.switchEye();
 
         // describe current state
-        g_VPState.describe_current_status();
+        g_VPState.describeCurrentStatus();
         break;
 
     case 'o':
         std::cout << "Pressed 'o'! Switching object\n";
 
         // switch object
-        g_VPState.switch_obj();
+        g_VPState.switchObject();
 
         // describe current state
-        g_VPState.describe_current_status();
+        g_VPState.describeCurrentStatus();
         break;
 
     case 'm':
-        if (!g_VPState.is_sky_sky_frame()) {
+        if (!g_VPState.isSkySkyFrame()) {
             // current frame is not a sky-sky frame
             std::cout << "You can use this option ONLY when you're in sky-sky frame\n";
         }
         else {
             // current frame is a sky-sky frame
-            if (!g_VPState.is_world_sky_frame()) {
+            if (!g_VPState.isWorldSkyFrame()) {
                 // current frame is a sky-sky frame -> switching to world-sky frame
                 std::cout << "Switching to World-Sky frame\n";
-                g_VPState.set_is_world_sky_frame(true);
-                g_VPState.update_aux_frame();
-                g_VPState.describe_current_status();
+                g_VPState.setIsWorldSkyFrame(true);
+                g_VPState.updateAuxFrame();
+                g_VPState.describeCurrentStatus();
             }
             else {
                 // current frame is a world-sky frame -> switching to sky-sky frame
                 std::cout << "Switching to Sky-Sky frame\n";
-                g_VPState.set_is_world_sky_frame(false);
-                g_VPState.update_aux_frame();
-                g_VPState.describe_current_status();
+                g_VPState.setIsWorldSkyFrame(false);
+                g_VPState.updateAuxFrame();
+                g_VPState.describeCurrentStatus();
             }
         }
 
@@ -946,13 +946,13 @@ static void keyboard(const unsigned char key, const int x, const int y) {
         for (int i = 0; i < 3; ++i) {
             manipulatable_obj[i] = initial_rigs[i];
         }
-        g_VPState.update_aux_frame();
+        g_VPState.updateAuxFrame();
 
-        g_VPState.describe_current_status();
+        g_VPState.describeCurrentStatus();
         break;
 
     case 'd':
-        g_VPState.describe_current_status();
+        g_VPState.describeCurrentStatus();
         break;
     }
     glutPostRedisplay();
