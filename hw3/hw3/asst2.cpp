@@ -228,17 +228,23 @@ public:
          * Case 2 - Manipulate sky view w.r.t world origin and sky view axes
          * Case 3 - Manipulate sky view w.r.t its origin and axes
          */
-        if (isWorldSkyFrame()) {
-            // case 2
-            return static_cast<unsigned int>(AuxFrameDescriptor::world_sky);
+
+        if (((CurrentObjIdx == 1 && CurrentEyeIdx == 2) || (CurrentObjIdx == 2 && CurrentEyeIdx == 1) || ((CurrentObjIdx == 1 || CurrentObjIdx == 2) && (CurrentEyeIdx == 0)))) {
+            /* case 1
+            * 1. Object: Cube 1, Eye: Cube 2
+            * 2. Object: Cube 2, Eye: Cube 1
+            * 3. Object: Cube 1 or 2, Eye: Sky
+            */ 
+            return 1;
         }
-        else if (isSkySkyFrame()) {
-            // case 3
-            return static_cast<unsigned int>(AuxFrameDescriptor::sky_sky);
+        else if (isWorldSkyFrame()) {
+            /* case 2
+            * World-Sky frame
+            */
+            return 2;
         }
         else {
-            // case 1
-            return static_cast<unsigned int>(AuxFrameDescriptor::cube_other);
+            return 3;
         }
     }
 
@@ -279,7 +285,7 @@ public:
         if (CurrentObjIdx > 2)
             CurrentObjIdx = 0;
 
-        if (CurrentObjIdx != 0 && CurrentObjIdx == 0) {
+        if (CurrentEyeIdx != 0 && CurrentObjIdx == 0) {
             // if current eye is a cube and user tries to transform sky camera
             std::cout << "You CANNOT control sky camera with respect to cube! \n";
             CurrentObjIdx = 1;
@@ -415,7 +421,6 @@ private:
     // RigTForm representation of aux_frame and world_eye_frame
     RigTForm AuxFrame;
     RigTForm WorldEyeFrame;
-    enum class AuxFrameDescriptor { cube_other = 1, world_sky, sky_sky };
 };
 
 static ViewpointState g_VPState = ViewpointState();
@@ -560,6 +565,7 @@ static void drawStuff() {
           MVM = RigTFormToMatrix(MVRigTForm);
 
           if (!((g_mouseLClickButton && g_mouseRClickButton) || g_mouseMClickButton)) {
+              // when trasnlating along z axis, scale the arcball radius
               g_arcballScale = getScreenToEyeScale(MVRigTForm.getTranslation()[2],
                   g_frustFovY, g_windowHeight);
           }
@@ -571,6 +577,7 @@ static void drawStuff() {
           MVM = RigTFormToMatrix(MVRigTForm);
 
           if (!((g_mouseLClickButton && g_mouseRClickButton) || g_mouseMClickButton)) {
+              // when trasnlating along z axis, scale the arcball radius
               g_arcballScale = getScreenToEyeScale(MVRigTForm.getTranslation()[2],
                   g_frustFovY, g_windowHeight);
           }
@@ -641,7 +648,6 @@ static void motion(const int x, const int y) {
     
     else {
         // interface when arcball is invisible
-
         if (g_mouseLClickButton && !g_mouseRClickButton) {
             // left button down. rotation
             m = DefaultInterfaceRotation(x, y);
@@ -707,6 +713,10 @@ static RigTForm ArcballInterfaceRotation(const int x, const int y) {
             k = cross(v1, v2);
 
             Rotation = Quat(dot(v1, v2), k);
+
+            if (g_VPState.isWorldSkyFrame()) {
+                Rotation = inv(Rotation);
+            }
         }
 
         else {
@@ -777,7 +787,7 @@ static RigTForm DefaultInterfaceRotation(const int x, const int y) {
     switch (g_VPState.getAuxFrameDescriptor()) {
     case 1:
         // default behavior
-        m = RigTForm::makeXRotation(-dy) * RigTForm::makeYRotation(dx);
+        m = RigTForm::makeXRotation(dy) * RigTForm::makeYRotation(dx);
         break;
 
     case 2:
