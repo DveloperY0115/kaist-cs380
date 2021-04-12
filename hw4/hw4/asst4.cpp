@@ -504,40 +504,8 @@ static void drawStuff(const ShaderState& curSS, bool picking) {
             g_currentPickedRbtNode = shared_ptr<SgRbtNode>();   // set to NULL
     }
 
+    // [LEAVE IT FOR TASK 2] draw the arcball
     /*
-    * Note. The comment under this comment will be replaced by scene graph method soon!
-    */
-    // draw ground
-    // ===========
-    //
-
-    // TODO: Find way to replace 'normalMatrix'
-    const RigTForm groundRbt = RigTForm();  // identity -> find a way to replace it with RigTForm!
-    Matrix4 MVM = RigTFormToMatrix(invEyeRbt * groundRbt);
-    Matrix4 NMVM = normalMatrix(MVM);
-    sendModelViewNormalMatrix(curSS, MVM, NMVM);
-    safe_glUniform3f(curSS.h_uColor, 0.1, 0.95, 0.1); // set color
-    g_ground->draw(curSS);
-
-    // draw cubes
-    // ==========
-    // draw the first one
-    MVM = RigTFormToMatrix(invEyeRbt * manipulatable_obj[1]);
-    NMVM = normalMatrix(MVM);
-    sendModelViewNormalMatrix(curSS, MVM, NMVM);
-
-    safe_glUniform3f(curSS.h_uColor, g_objectColors[0][0], g_objectColors[0][1], g_objectColors[0][2]);
-    g_cube->draw(curSS);
-
-    // draw the second one
-    MVM = RigTFormToMatrix(invEyeRbt * manipulatable_obj[2]);
-    NMVM = normalMatrix(MVM);
-    sendModelViewNormalMatrix(curSS, MVM, NMVM);
-
-    safe_glUniform3f(curSS.h_uColor, g_objectColors[1][0], g_objectColors[1][1], g_objectColors[1][2]);
-    g_cube->draw(curSS);
-
-    // draw the arcball
     if (g_VPState.isArcballVisible()) {
         glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);  // draw wireframe
 
@@ -580,6 +548,7 @@ static void drawStuff(const ShaderState& curSS, bool picking) {
 
         glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);  // end wireframe mode
     }
+    */
 }
 
 /* GLUT callbacks */
