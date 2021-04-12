@@ -1076,7 +1076,7 @@ int main(int argc, char* argv[]) {
         initGLState();
         initShaders();
         initGeometry();
-
+        initScene();
         glutMainLoop();
         return 0;
     }
