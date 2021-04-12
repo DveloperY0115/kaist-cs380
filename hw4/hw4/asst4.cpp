@@ -434,11 +434,7 @@ static void initCubes() {
 
   // create the first cube
   makeCube(1, vtx.begin(), idx.begin());
-  g_cube_1.reset(new Geometry(&vtx[0], &idx[0], vbLen, ibLen));
-
-  // create the second cube
-  makeCube(1, vtx.begin(), idx.begin());
-  g_cube_2.reset(new Geometry(&vtx[0], &idx[0], vbLen, ibLen));
+  g_cube.reset(new Geometry(&vtx[0], &idx[0], vbLen, ibLen));
 }
 
 static void initSpheres() {
@@ -531,7 +527,7 @@ static void drawStuff(const ShaderState& curSS, bool picking) {
     sendModelViewNormalMatrix(curSS, MVM, NMVM);
 
     safe_glUniform3f(curSS.h_uColor, g_objectColors[0][0], g_objectColors[0][1], g_objectColors[0][2]);
-    g_cube_1->draw(curSS);
+    g_cube->draw(curSS);
 
     // draw the second one
     MVM = RigTFormToMatrix(invEyeRbt * manipulatable_obj[2]);
@@ -539,7 +535,7 @@ static void drawStuff(const ShaderState& curSS, bool picking) {
     sendModelViewNormalMatrix(curSS, MVM, NMVM);
 
     safe_glUniform3f(curSS.h_uColor, g_objectColors[1][0], g_objectColors[1][1], g_objectColors[1][2]);
-    g_cube_2->draw(curSS);
+    g_cube->draw(curSS);
 
     // draw the arcball
     if (g_VPState.isArcballVisible()) {
@@ -1029,9 +1025,9 @@ static void constructRobot(shared_ptr<SgTransformNode> base, const Cvec3& color)
     };
 
     ShapeDesc shapeDesc[NUM_SHAPES] = {
-      {0, 0,         0, 0, TORSO_WIDTH, TORSO_LEN, TORSO_THICK, g_cube_1}, // torso
-      {1, ARM_LEN / 2, 0, 0, ARM_LEN, ARM_THICK, ARM_THICK, g_cube_1}, // upper right arm
-      {2, ARM_LEN / 2, 0, 0, ARM_LEN, ARM_THICK, ARM_THICK, g_cube_1}, // lower right arm
+      {0, 0,         0, 0, TORSO_WIDTH, TORSO_LEN, TORSO_THICK, g_cube}, // torso
+      {1, ARM_LEN / 2, 0, 0, ARM_LEN, ARM_THICK, ARM_THICK, g_cube}, // upper right arm
+      {2, ARM_LEN / 2, 0, 0, ARM_LEN, ARM_THICK, ARM_THICK, g_cube}, // lower right arm
     };
 
     shared_ptr<SgTransformNode> jointNodes[NUM_JOINTS];
