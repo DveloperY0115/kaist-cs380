@@ -162,7 +162,7 @@ static std::shared_ptr<SgRbtNode> g_skyNode, g_groundNode, g_robot1Node, g_robot
 static std::shared_ptr<SgRbtNode> g_currentPickedRbtNode;
 
 // Vertex buffer and index buffer associated with the ground and cube geometry
-static shared_ptr<Geometry> g_ground, g_cube_1, g_cube_2, g_sphere;
+static shared_ptr<Geometry> g_ground, g_cube, g_sphere;
 static std::vector<shared_ptr<Geometry>> scene;     // (refactor required) later use this to put all scene geometries in one vector
 
 // --------- Scene
@@ -479,96 +479,111 @@ static Matrix4 makeProjectionMatrix() {
            g_frustNear, g_frustFar);
 }
 
-static void drawStuff() {
-  // short hand for current shader state
-  const ShaderState& curSS = *g_shaderStates[g_activeShader];
+static void drawStuff(const ShaderState& curSS, bool picking) {
 
-  // build & send proj. matrix to vshader
-  const Matrix4 projmat = makeProjectionMatrix();
-  sendProjectionMatrix(curSS, projmat);
+    
+    // build & send proj. matrix to vshader
+    const Matrix4 projmat = makeProjectionMatrix();
+    sendProjectionMatrix(curSS, projmat);
 
-  // use the skyRbt as the eyeRbt
-  const RigTForm eyeRbt = g_VPState.getCurrentEye();
-  const RigTForm invEyeRbt = inv(eyeRbt);
+    // use the skyRbt as the eyeRbt
+    const RigTForm eyeRbt = g_VPState.getCurrentEye();
+    const RigTForm invEyeRbt = inv(eyeRbt);
 
-  const Cvec3 eyeLight1 = Cvec3(invEyeRbt * Cvec4(g_light1, 1)); // g_light1 position in eye coordinates
-  const Cvec3 eyeLight2 = Cvec3(invEyeRbt * Cvec4(g_light2, 1)); // g_light2 position in eye coordinates
-  safe_glUniform3f(curSS.h_uLight, eyeLight1[0], eyeLight1[1], eyeLight1[2]);
-  safe_glUniform3f(curSS.h_uLight2, eyeLight2[0], eyeLight2[1], eyeLight2[2]);
+    const Cvec3 eyeLight1 = Cvec3(invEyeRbt * Cvec4(g_light1, 1)); // g_light1 position in eye coordinates
+    const Cvec3 eyeLight2 = Cvec3(invEyeRbt * Cvec4(g_light2, 1)); // g_light2 position in eye coordinates
+    safe_glUniform3f(curSS.h_uLight, eyeLight1[0], eyeLight1[1], eyeLight1[2]);
+    safe_glUniform3f(curSS.h_uLight2, eyeLight2[0], eyeLight2[1], eyeLight2[2]);
 
-  // draw ground
-  // ===========
-  //
+    if (!picking) {
+        Drawer drawer(invEyeRbt, curSS);
+        g_world->accept(drawer);
+    }
+    else {
+        Picker picker(invEyeRbt, curSS);
+        g_world->accept(picker);
+        glFlush();
+        g_currentPickedRbtNode = picker.getRbtNodeAtXY(g_mouseClickX, g_mouseClickY);
+        if (g_currentPickedRbtNode == g_groundNode)
+            g_currentPickedRbtNode = shared_ptr<SgRbtNode>();   // set to NULL
+    }
 
-  // TODO: Find way to replace 'normalMatrix'
-  const RigTForm groundRbt = RigTForm();  // identity -> find a way to replace it with RigTForm!
-  Matrix4 MVM = RigTFormToMatrix(invEyeRbt * groundRbt);
-  Matrix4 NMVM = normalMatrix(MVM);
-  sendModelViewNormalMatrix(curSS, MVM, NMVM);
-  safe_glUniform3f(curSS.h_uColor, 0.1, 0.95, 0.1); // set color
-  g_ground->draw(curSS);
+    /*
+    * Note. The comment under this comment will be replaced by scene graph method soon!
+    */
+    // draw ground
+    // ===========
+    //
 
-  // draw cubes
-  // ==========
-  // draw the first one
-  MVM = RigTFormToMatrix(invEyeRbt * manipulatable_obj[1]);
-  NMVM = normalMatrix(MVM);
-  sendModelViewNormalMatrix(curSS, MVM, NMVM);
+    // TODO: Find way to replace 'normalMatrix'
+    const RigTForm groundRbt = RigTForm();  // identity -> find a way to replace it with RigTForm!
+    Matrix4 MVM = RigTFormToMatrix(invEyeRbt * groundRbt);
+    Matrix4 NMVM = normalMatrix(MVM);
+    sendModelViewNormalMatrix(curSS, MVM, NMVM);
+    safe_glUniform3f(curSS.h_uColor, 0.1, 0.95, 0.1); // set color
+    g_ground->draw(curSS);
 
-  safe_glUniform3f(curSS.h_uColor, g_objectColors[0][0], g_objectColors[0][1], g_objectColors[0][2]);
-  g_cube_1->draw(curSS);
+    // draw cubes
+    // ==========
+    // draw the first one
+    MVM = RigTFormToMatrix(invEyeRbt * manipulatable_obj[1]);
+    NMVM = normalMatrix(MVM);
+    sendModelViewNormalMatrix(curSS, MVM, NMVM);
 
-  // draw the second one
-  MVM = RigTFormToMatrix(invEyeRbt * manipulatable_obj[2]);
-  NMVM = normalMatrix(MVM);
-  sendModelViewNormalMatrix(curSS, MVM, NMVM);
+    safe_glUniform3f(curSS.h_uColor, g_objectColors[0][0], g_objectColors[0][1], g_objectColors[0][2]);
+    g_cube_1->draw(curSS);
 
-  safe_glUniform3f(curSS.h_uColor, g_objectColors[1][0], g_objectColors[1][1], g_objectColors[1][2]);
-  g_cube_2->draw(curSS);
+    // draw the second one
+    MVM = RigTFormToMatrix(invEyeRbt * manipulatable_obj[2]);
+    NMVM = normalMatrix(MVM);
+    sendModelViewNormalMatrix(curSS, MVM, NMVM);
 
-  // draw the arcball
-  if (g_VPState.isArcballVisible()) {
-      glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);  // draw wireframe
+    safe_glUniform3f(curSS.h_uColor, g_objectColors[1][0], g_objectColors[1][1], g_objectColors[1][2]);
+    g_cube_2->draw(curSS);
 
-      if (g_VPState.isWorldSkyFrame()) {
-          // if the user is in world-sky frame, draw arcball at world center
-          RigTForm MVRigTForm = invEyeRbt * g_worldRbt;
-          MVM = RigTFormToMatrix(MVRigTForm);
+    // draw the arcball
+    if (g_VPState.isArcballVisible()) {
+        glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);  // draw wireframe
 
-          if (!((g_mouseLClickButton && g_mouseRClickButton) || g_mouseMClickButton)) {
-              // when trasnlating along z axis, scale the arcball radius
-              g_arcballScale = getScreenToEyeScale(MVRigTForm.getTranslation()[2],
-                  g_frustFovY, g_windowHeight);
-          }
-      } 
+        if (g_VPState.isWorldSkyFrame()) {
+            // if the user is in world-sky frame, draw arcball at world center
+            RigTForm MVRigTForm = invEyeRbt * g_worldRbt;
+            MVM = RigTFormToMatrix(MVRigTForm);
 
-      else {
-          // otherwise, sync its position with current object
-          RigTForm MVRigTForm = invEyeRbt * g_VPState.getCurrentObj();
-          MVM = RigTFormToMatrix(MVRigTForm);
+            if (!((g_mouseLClickButton && g_mouseRClickButton) || g_mouseMClickButton)) {
+                // when trasnlating along z axis, scale the arcball radius
+                g_arcballScale = getScreenToEyeScale(MVRigTForm.getTranslation()[2],
+                    g_frustFovY, g_windowHeight);
+            }
+        }
 
-          if (!((g_mouseLClickButton && g_mouseRClickButton) || g_mouseMClickButton)) {
-              // when trasnlating along z axis, scale the arcball radius
-              g_arcballScale = getScreenToEyeScale(MVRigTForm.getTranslation()[2],
-                  g_frustFovY, g_windowHeight);
-          }
-      }
-      
-      // scale arcball properly
-      double scale = g_arcballScale * g_arcballScreenRadius;
-      Matrix4 scale_mat = Matrix4::makeScale(Cvec3(scale, scale, scale));
+        else {
+            // otherwise, sync its position with current object
+            RigTForm MVRigTForm = invEyeRbt * g_VPState.getCurrentObj();
+            MVM = RigTFormToMatrix(MVRigTForm);
+
+            if (!((g_mouseLClickButton && g_mouseRClickButton) || g_mouseMClickButton)) {
+                // when trasnlating along z axis, scale the arcball radius
+                g_arcballScale = getScreenToEyeScale(MVRigTForm.getTranslation()[2],
+                    g_frustFovY, g_windowHeight);
+            }
+        }
+
+        // scale arcball properly
+        double scale = g_arcballScale * g_arcballScreenRadius;
+        Matrix4 scale_mat = Matrix4::makeScale(Cvec3(scale, scale, scale));
 
 
-      MVM *= scale_mat;
+        MVM *= scale_mat;
 
-      NMVM = normalMatrix(MVM);
-      sendModelViewNormalMatrix(curSS, MVM, NMVM);
+        NMVM = normalMatrix(MVM);
+        sendModelViewNormalMatrix(curSS, MVM, NMVM);
 
-      safe_glUniform3f(curSS.h_uColor, g_objectColors[2][0], g_objectColors[2][1], g_objectColors[2][2]);
-      g_sphere->draw(curSS);
+        safe_glUniform3f(curSS.h_uColor, g_objectColors[2][0], g_objectColors[2][1], g_objectColors[2][2]);
+        g_sphere->draw(curSS);
 
-      glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);  // end wireframe mode
-  }
+        glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);  // end wireframe mode
+    }
 }
 
 /* GLUT callbacks */
@@ -577,7 +592,7 @@ static void display() {
   glUseProgram(g_shaderStates[g_activeShader]->program);
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);                   // clear framebuffer color&depth
 
-  drawStuff();
+  drawStuff(*g_shaderStates[g_activeShader], false);
 
   glutSwapBuffers();                                    // show the back buffer (where we rendered stuff)
 
@@ -1014,9 +1029,9 @@ static void constructRobot(shared_ptr<SgTransformNode> base, const Cvec3& color)
     };
 
     ShapeDesc shapeDesc[NUM_SHAPES] = {
-      {0, 0,         0, 0, TORSO_WIDTH, TORSO_LEN, TORSO_THICK, g_cube}, // torso
-      {1, ARM_LEN / 2, 0, 0, ARM_LEN, ARM_THICK, ARM_THICK, g_cube}, // upper right arm
-      {2, ARM_LEN / 2, 0, 0, ARM_LEN, ARM_THICK, ARM_THICK, g_cube}, // lower right arm
+      {0, 0,         0, 0, TORSO_WIDTH, TORSO_LEN, TORSO_THICK, g_cube_1}, // torso
+      {1, ARM_LEN / 2, 0, 0, ARM_LEN, ARM_THICK, ARM_THICK, g_cube_1}, // upper right arm
+      {2, ARM_LEN / 2, 0, 0, ARM_LEN, ARM_THICK, ARM_THICK, g_cube_1}, // lower right arm
     };
 
     shared_ptr<SgTransformNode> jointNodes[NUM_JOINTS];
