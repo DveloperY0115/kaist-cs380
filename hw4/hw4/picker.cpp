@@ -5,7 +5,7 @@
 using namespace std;
 
 Picker::Picker(const RigTForm& initialRbt, const ShaderState& curSS)
-  : drawer_(initialRbt, curSS), idCounter_(0), srgbFrameBuffer_(!g_Gl2Compatible) {}
+  : drawer_(initialRbt, curSS), idCounter_(1), srgbFrameBuffer_(!g_Gl2Compatible) {}
 
 bool Picker::visit(SgTransformNode& node) {
     nodeStack_.push_back(node.shared_from_this());
@@ -31,8 +31,7 @@ bool Picker::visit(SgShapeNode& node) {
 
     // set the color of the geometry uniquely
     Cvec3 color = idToColor(idCounter_);
-    safe_glUniform3f(drawer_.getCurSS().h_uColor, 
-        static_cast<GLfloat>(color(0)), static_cast<GLfloat>(color(1)), static_cast<GLfloat>(color(2)));
+    safe_glUniform3f(drawer_.getCurSS().h_uIdColor, static_cast<GLfloat>(color(0)), static_cast<GLfloat>(color(1)), static_cast<GLfloat>(color(2)));
     return drawer_.visit(node);
 }
 
@@ -41,13 +40,18 @@ bool Picker::visit(SgShapeNode& node) {
 * Clean up uniform variable after draw call
 */
 bool Picker::postVisit(SgShapeNode& node) {
-    safe_glUniform3f(drawer_.getCurSS().h_uColor, 0, 0, 0);
+    safe_glUniform3f(drawer_.getCurSS().h_uIdColor, 0, 0, 0);
     return drawer_.postVisit(node);
 }
 
 shared_ptr<SgRbtNode> Picker::getRbtNodeAtXY(int x, int y) {
-  // TODO
-  return shared_ptr<SgRbtNode>(); // return null for now
+    PackedPixel color;
+    glReadPixels(x, y, 1, 1, GL_RGB, GL_UNSIGNED_BYTE, &color);
+    int id = colorToId(color);
+    std::cout << id << "\n";
+    shared_ptr<SgRbtNode> rbt_node = find(id);
+
+    return rbt_node;
 }
 
 //------------------
