@@ -160,6 +160,7 @@ typedef SgGeometryShapeNode<Geometry> MyShapeNode;
 static std::shared_ptr<SgRootNode> g_world;
 static std::shared_ptr<SgRbtNode> g_skyNode, g_groundNode, g_robot1Node, g_robot2Node;
 static std::shared_ptr<SgRbtNode> g_currentPickedRbtNode;
+
 // Vertex buffer and index buffer associated with the ground and cube geometry
 static shared_ptr<Geometry> g_ground, g_cube_1, g_cube_2, g_sphere;
 static std::vector<shared_ptr<Geometry>> scene;     // (refactor required) later use this to put all scene geometries in one vector
@@ -983,6 +984,81 @@ static void initGeometry() {
     initGround();
     initCubes();
     initSpheres();
+}
+
+static void constructRobot(shared_ptr<SgTransformNode> base, const Cvec3& color) {
+
+    const double ARM_LEN = 0.7,
+        ARM_THICK = 0.25,
+        TORSO_LEN = 1.5,
+        TORSO_THICK = 0.25,
+        TORSO_WIDTH = 1;
+    const int NUM_JOINTS = 3,
+        NUM_SHAPES = 3;
+
+    struct JointDesc {
+        int parent;
+        float x, y, z;
+    };
+
+    JointDesc jointDesc[NUM_JOINTS] = {
+      {-1}, // torso
+      {0,  TORSO_WIDTH / 2, TORSO_LEN / 2, 0}, // upper right arm
+      {1,  ARM_LEN, 0, 0}, // lower right arm
+    };
+
+    struct ShapeDesc {
+        int parentJointId;
+        float x, y, z, sx, sy, sz;
+        shared_ptr<Geometry> geometry;
+    };
+
+    ShapeDesc shapeDesc[NUM_SHAPES] = {
+      {0, 0,         0, 0, TORSO_WIDTH, TORSO_LEN, TORSO_THICK, g_cube}, // torso
+      {1, ARM_LEN / 2, 0, 0, ARM_LEN, ARM_THICK, ARM_THICK, g_cube}, // upper right arm
+      {2, ARM_LEN / 2, 0, 0, ARM_LEN, ARM_THICK, ARM_THICK, g_cube}, // lower right arm
+    };
+
+    shared_ptr<SgTransformNode> jointNodes[NUM_JOINTS];
+
+    for (int i = 0; i < NUM_JOINTS; ++i) {
+        if (jointDesc[i].parent == -1)
+            jointNodes[i] = base;
+        else {
+            jointNodes[i].reset(new SgRbtNode(RigTForm(Cvec3(jointDesc[i].x, jointDesc[i].y, jointDesc[i].z))));
+            jointNodes[jointDesc[i].parent]->addChild(jointNodes[i]);
+        }
+    }
+    for (int i = 0; i < NUM_SHAPES; ++i) {
+        shared_ptr<MyShapeNode> shape(
+            new MyShapeNode(shapeDesc[i].geometry,
+                color,
+                Cvec3(shapeDesc[i].x, shapeDesc[i].y, shapeDesc[i].z),
+                Cvec3(0, 0, 0),
+                Cvec3(shapeDesc[i].sx, shapeDesc[i].sy, shapeDesc[i].sz)));
+        jointNodes[shapeDesc[i].parentJointId]->addChild(shape);
+    }
+}
+
+static void initScene() {
+    g_world.reset(new SgRootNode());
+
+    g_skyNode.reset(new SgRbtNode(RigTForm(Cvec3(0.0, 0.25, 4.0))));
+
+    g_groundNode.reset(new SgRbtNode());
+    g_groundNode->addChild(shared_ptr<MyShapeNode>(
+        new MyShapeNode(g_ground, Cvec3(0.1, 0.95, 0.1))));
+
+    g_robot1Node.reset(new SgRbtNode(RigTForm(Cvec3(-2, 1, 0))));
+    g_robot2Node.reset(new SgRbtNode(RigTForm(Cvec3(2, 1, 0))));
+
+    constructRobot(g_robot1Node, Cvec3(1, 0, 0)); // a Red robot
+    constructRobot(g_robot2Node, Cvec3(0, 0, 1)); // a Blue robot
+
+    g_world->addChild(g_skyNode);
+    g_world->addChild(g_groundNode);
+    g_world->addChild(g_robot1Node);
+    g_world->addChild(g_robot2Node);
 }
 
 int main(int argc, char* argv[]) {
