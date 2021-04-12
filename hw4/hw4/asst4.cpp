@@ -438,8 +438,8 @@ static void initCubes() {
 }
 
 static void initSpheres() {
-    int slices = 10;
-    int stacks = 10;
+    int slices = 20;
+    int stacks = 20;
     int ibLen, vbLen;
     getSphereVbIbLen(slices, stacks, vbLen, ibLen);
 
