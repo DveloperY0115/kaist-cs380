@@ -156,6 +156,10 @@ struct Geometry {
 };
 
 typedef SgGeometryShapeNode<Geometry> MyShapeNode;
+
+static std::shared_ptr<SgRootNode> g_world;
+static std::shared_ptr<SgRbtNode> g_skyNode, g_groundNode, g_robot1Node, g_robot2Node;
+static std::shared_ptr<SgRbtNode> g_currentPickedRbtNode;
 // Vertex buffer and index buffer associated with the ground and cube geometry
 static shared_ptr<Geometry> g_ground, g_cube_1, g_cube_2, g_sphere;
 static std::vector<shared_ptr<Geometry>> scene;     // (refactor required) later use this to put all scene geometries in one vector
