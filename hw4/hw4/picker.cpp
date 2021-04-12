@@ -5,13 +5,11 @@
 using namespace std;
 
 Picker::Picker(const RigTForm& initialRbt, const ShaderState& curSS)
-  : drawer_(initialRbt, curSS)
-  , idCounter_(0)
-  , srgbFrameBuffer_(!g_Gl2Compatible) {}
+  : drawer_(initialRbt, curSS), idCounter_(0), srgbFrameBuffer_(!g_Gl2Compatible) {}
 
 bool Picker::visit(SgTransformNode& node) {
-  // TODO
-  return drawer_.visit(node);
+    nodeStack_.push_back(node.shared_from_this());
+    return drawer_.visit(node);
 }
 
 bool Picker::postVisit(SgTransformNode& node) {
@@ -19,9 +17,23 @@ bool Picker::postVisit(SgTransformNode& node) {
   return drawer_.postVisit(node);
 }
 
+/*
+* Picker::visit
+* When reached ShapeNode, find its parent node containing rigid body transform
+* associated with it. Then map its unique ID and reference to the 'idToRbtNode'.
+*/
 bool Picker::visit(SgShapeNode& node) {
-  // TODO
-  return drawer_.visit(node);
+    
+    // map its parent representing RBT
+    idCounter_++;
+    std::shared_ptr<SgRbtNode> parent = std::dynamic_pointer_cast<SgRbtNode>(nodeStack_.back());
+    addToMap(idCounter_, parent);
+
+    // set the color of the geometry uniquely
+    Cvec3 color = idToColor(idCounter_);
+    safe_glUniform3f(drawer_.getCurSS().h_uColor, 
+        static_cast<GLfloat>(color(0)), static_cast<GLfloat>(color(1)), static_cast<GLfloat>(color(2)));
+    return drawer_.visit(node);
 }
 
 bool Picker::postVisit(SgShapeNode& node) {
