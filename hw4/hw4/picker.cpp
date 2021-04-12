@@ -13,8 +13,8 @@ bool Picker::visit(SgTransformNode& node) {
 }
 
 bool Picker::postVisit(SgTransformNode& node) {
-  // TODO
-  return drawer_.postVisit(node);
+    nodeStack_.pop_back();
+    return drawer_.postVisit(node);
 }
 
 /*
@@ -36,9 +36,13 @@ bool Picker::visit(SgShapeNode& node) {
     return drawer_.visit(node);
 }
 
+/*
+* Picker::postVisit
+* Clean up uniform variable after draw call
+*/
 bool Picker::postVisit(SgShapeNode& node) {
-  // TODO
-  return drawer_.postVisit(node);
+    safe_glUniform3f(drawer_.getCurSS().h_uColor, 0, 0, 0);
+    return drawer_.postVisit(node);
 }
 
 shared_ptr<SgRbtNode> Picker::getRbtNodeAtXY(int x, int y) {
