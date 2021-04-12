@@ -73,8 +73,8 @@ static int g_windowHeight = 512;
 static bool g_mouseClickDown = false;    // is the mouse button pressed
 static bool g_mouseLClickButton, g_mouseRClickButton, g_mouseMClickButton;
 static int g_mouseClickX, g_mouseClickY; // coordinates for mouse click event
-static int g_activeShader = 0;
 
+static int g_activeShader = 0;
 static const int PICKING_SHADER = 2;
 static const int g_numShaders = 3;
 static const char * const g_shaderFiles[g_numShaders][2] = {
@@ -161,6 +161,9 @@ typedef SgGeometryShapeNode<Geometry> MyShapeNode;
 static std::shared_ptr<SgRootNode> g_world;
 static std::shared_ptr<SgRbtNode> g_skyNode, g_groundNode, g_robot1Node, g_robot2Node;
 static std::shared_ptr<SgRbtNode> g_currentPickedRbtNode;
+
+// Toggle picking
+static bool g_isPicking = false;
 
 // Vertex buffer and index buffer associated with the ground and cube geometry
 static shared_ptr<Geometry> g_ground, g_cube, g_sphere;
@@ -558,7 +561,7 @@ static void display() {
   glUseProgram(g_shaderStates[g_activeShader]->program);
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);                   // clear framebuffer color&depth
 
-  drawStuff(*g_shaderStates[g_activeShader], false);
+  drawStuff(*g_shaderStates[g_activeShader], g_isPicking);
 
   glutSwapBuffers();                                    // show the back buffer (where we rendered stuff)
 
@@ -844,21 +847,22 @@ static void keyboard(const unsigned char key, const int x, const int y) {
             << "r\t\tReset the position of current object\n"
             << "drag left mouse to rotate\n" << endl;
         break;
+    case 'p':
+        std::cout << "Pressed 'p'!\n";
 
-    case 's':
-        // capture screen
-        glFlush();
-        writePpmScreenshot(g_windowWidth, g_windowHeight, "out.ppm");
-        break;
-
-    case 'f':
-        // enable/disenable shader
-        g_activeShader ^= 1;
+        if (g_isPicking) {
+            std::cout << "Disabling picking...\n";
+            g_isPicking = false;
+        }
+        else {
+            std::cout << "Enabling picking... \n";
+            g_isPicking = true;
+        }
         break;
 
     case 'v':
         std::cout << "Pressed 'v'! Switching camera\n";
-        
+
         // switch view point
         g_VPState.switchEye();
 
@@ -898,13 +902,12 @@ static void keyboard(const unsigned char key, const int x, const int y) {
                 g_VPState.describeCurrentStatus();
             }
         }
-
         break;
 
     case 'r':
         // reset object position
         std::cout << "Pressed 'r'! Resetting all object & eye position\n";
-        
+
         for (int i = 0; i < 3; ++i) {
             manipulatable_obj[i] = initial_rigs[i];
         }
@@ -916,7 +919,19 @@ static void keyboard(const unsigned char key, const int x, const int y) {
     case 'd':
         g_VPState.describeCurrentStatus();
         break;
+
+    case 's':
+        // capture screen
+        glFlush();
+        writePpmScreenshot(g_windowWidth, g_windowHeight, "out.ppm");
+        break;
+
+    case 'f':
+        // enable/disenable shader
+        g_activeShader ^= 1;
+        break;
     }
+
     glutPostRedisplay();
 }
 
