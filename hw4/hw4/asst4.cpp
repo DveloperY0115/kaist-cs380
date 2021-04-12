@@ -157,6 +157,7 @@ struct Geometry {
 
 typedef SgGeometryShapeNode<Geometry> MyShapeNode;
 
+// Scene graph nodes
 static std::shared_ptr<SgRootNode> g_world;
 static std::shared_ptr<SgRbtNode> g_skyNode, g_groundNode, g_robot1Node, g_robot2Node;
 static std::shared_ptr<SgRbtNode> g_currentPickedRbtNode;
@@ -968,13 +969,15 @@ static void initGeometry() {
 
 static void constructRobot(shared_ptr<SgTransformNode> base, const Cvec3& color) {
 
-    const double ARM_LEN = 0.7,
-        ARM_THICK = 0.25,
-        TORSO_LEN = 1.5,
-        TORSO_THICK = 0.25,
-        TORSO_WIDTH = 1;
-    const int NUM_JOINTS = 3,
-        NUM_SHAPES = 3;
+    const double ARM_LEN = 0.7;
+    const double ARM_THICK = 0.25;
+    const double TORSO_LEN = 1.5;
+    const double TORSO_THICK = 0.25;
+    const double TORSO_WIDTH = 1;
+    const double HEAD_RADIUS = 0.5;
+
+    const int NUM_JOINTS = 6;
+    const int NUM_SHAPES = 6;
 
     struct JointDesc {
         int parent;
@@ -982,9 +985,12 @@ static void constructRobot(shared_ptr<SgTransformNode> base, const Cvec3& color)
     };
 
     JointDesc jointDesc[NUM_JOINTS] = {
-      {-1}, // torso
-      {0,  TORSO_WIDTH / 2, TORSO_LEN / 2, 0}, // upper right arm
-      {1,  ARM_LEN, 0, 0}, // lower right arm
+        {-1}, // torso
+        {0, 0, TORSO_LEN, 0},  // head
+        {0, TORSO_WIDTH / 2, TORSO_LEN / 2, 0}, // upper right arm
+        {0, -TORSO_WIDTH / 2, TORSO_LEN / 2, 0}, // upper left arm
+        {2,  ARM_LEN, 0, 0}, // lower right arm
+        {3, -ARM_LEN, 0, 0} // lower left arm
     };
 
     struct ShapeDesc {
@@ -994,9 +1000,12 @@ static void constructRobot(shared_ptr<SgTransformNode> base, const Cvec3& color)
     };
 
     ShapeDesc shapeDesc[NUM_SHAPES] = {
-      {0, 0,         0, 0, TORSO_WIDTH, TORSO_LEN, TORSO_THICK, g_cube}, // torso
-      {1, ARM_LEN / 2, 0, 0, ARM_LEN, ARM_THICK, ARM_THICK, g_cube}, // upper right arm
-      {2, ARM_LEN / 2, 0, 0, ARM_LEN, ARM_THICK, ARM_THICK, g_cube}, // lower right arm
+        {0, 0, 0, 0, TORSO_WIDTH, TORSO_LEN, TORSO_THICK, g_cube}, // torso
+        {1, 0, 0, 0, HEAD_RADIUS, HEAD_RADIUS, HEAD_RADIUS, g_sphere},  // head
+        {2, ARM_LEN / 2, 0, 0, ARM_LEN, ARM_THICK, ARM_THICK, g_cube}, // upper right arm
+        {3, -ARM_LEN / 2, 0, 0, ARM_LEN, ARM_THICK, ARM_THICK, g_cube},  // upper left arm
+        {4, ARM_LEN / 2, 0, 0, ARM_LEN, ARM_THICK, ARM_THICK, g_cube}, // lower right arm
+        {5, -ARM_LEN / 2, 0, 0, ARM_LEN, ARM_THICK, ARM_THICK, g_cube}  // lower left arm
     };
 
     shared_ptr<SgTransformNode> jointNodes[NUM_JOINTS];
