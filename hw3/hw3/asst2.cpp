@@ -665,6 +665,7 @@ static void motion(const int x, const int y) {
       glutPostRedisplay(); // we always redraw if we changed the scene
   }
 
+  // update mouse position
   g_mouseClickX = x;
   g_mouseClickY = g_windowHeight - y - 1;
 }
@@ -684,7 +685,7 @@ static RigTForm ArcballInterfaceRotation(const int x, const int y) {
             CenterEyeCoord = (invEyeRbt * g_VPState.getCurrentObj()).getTranslation();
         }
         else {
-            // in world-eye frames
+            // in world-sky frames
             CenterEyeCoord = (invEyeRbt * g_worldRbt).getTranslation();
         }
 
@@ -708,6 +709,7 @@ static RigTForm ArcballInterfaceRotation(const int x, const int y) {
 
         if (v1_z < 0 || v2_z < 0) {
             // user points outside the arcball
+            // set z axis as rotation axis
             v1 = normalize(Cvec3(v1_x, v1_y, 0));
             v2 = normalize(Cvec3(v2_x, v2_y, 0));
             k = cross(v1, v2);

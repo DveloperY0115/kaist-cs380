@@ -5,7 +5,7 @@
 using namespace std;
 
 Picker::Picker(const RigTForm& initialRbt, const ShaderState& curSS)
-  : drawer_(initialRbt, curSS), idCounter_(1), srgbFrameBuffer_(!g_Gl2Compatible) {}
+  : drawer_(initialRbt, curSS), idCounter_(100), srgbFrameBuffer_(!g_Gl2Compatible) {}
 
 bool Picker::visit(SgTransformNode& node) {
     nodeStack_.push_back(node.shared_from_this());
@@ -25,7 +25,7 @@ bool Picker::postVisit(SgTransformNode& node) {
 bool Picker::visit(SgShapeNode& node) {
     
     // map its parent representing RBT
-    idCounter_++;
+    idCounter_ += 10;
     std::shared_ptr<SgRbtNode> parent = std::dynamic_pointer_cast<SgRbtNode>(nodeStack_.back());
     addToMap(idCounter_, parent);
 
