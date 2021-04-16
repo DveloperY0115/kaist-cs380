@@ -68,8 +68,15 @@ shared_ptr<SgRbtNode> Picker::getRbtNodeAtXY(int x, int y) {
     PackedPixel color;
     glReadPixels(x, y, 1, 1, GL_RGB, GL_UNSIGNED_BYTE, &color);
     int id = colorToId(color);
-    std::cout << id << "\n";
+
+    std::cout << "Picked color: " << (unsigned int)color.r << " " << (unsigned int)color.g << " " << (unsigned int)color.b << "||";
+    std::cout << "ID: " << id << "\n";
+    describeMap();
+
     shared_ptr<SgRbtNode> rbt_node = find(id);
+    if (rbt_node == nullptr) {
+        std::cout << "Something's wrong. It's not a registered node!\n";
+    }
 
     return rbt_node;
 }
