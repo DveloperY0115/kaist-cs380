@@ -96,9 +96,11 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="geometry.h" />
     <ClCompile Include="glsupport.cpp" />
     <ClCompile Include="ppm.cpp" />
     <ClCompile Include="asst2.cpp" />
+    <ClCompile Include="shaderstate.h" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="arcball.h" />
