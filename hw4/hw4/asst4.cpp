@@ -59,7 +59,7 @@ using namespace std;      // for string, vector, iostream, and other standard C+
 // loaded
 // ----------------------------------------------------------------------------
 
-const bool g_Gl2Compatible = false;
+const bool g_Gl2Compatible = true;
 
 static const float g_frustMinFov = 60.0;  // A minimal of 60 degree field of view
 static float g_frustFovY = g_frustMinFov; // FOV in y direction (updated by updateFrustFovY)
@@ -438,7 +438,6 @@ static void drawStuff(const ShaderState& curSS, bool picking) {
         g_world->accept(picker);
         glFlush();
         g_currentPickedRbtNode = picker.getRbtNodeAtXY(g_mouseClickX, g_mouseClickY);
-
         if (g_currentPickedRbtNode == g_groundNode)
             g_currentPickedRbtNode = shared_ptr<SgRbtNode>();   // set to NULL
     }
@@ -482,7 +481,14 @@ static void display() {
 
   drawStuff(*g_shaderStates[g_activeShader], g_isPicking);
 
-  glutSwapBuffers();                                    // show the back buffer (where we rendered stuff)
+  if (!g_isPicking) {
+      // DO NOT swap buffers when picking is on
+      glutSwapBuffers();
+  }
+  else {
+      g_isPicking = false;
+      g_activeShader = DEFAULT_SHADER;
+  }
 
   checkGlErrors();
 }
@@ -868,19 +874,12 @@ static void keyboard(const unsigned char key, const int x, const int y) {
         break;
 
     case 'p':
-        std::cout << "Pressed 'p'!\n";
-        if (g_isPicking) {
-            std::cout << "Disabling picking...\n";
-            g_activeShader = DEFAULT_SHADER;
-            g_isPicking = false;
-        }
-        else {
-            std::cout << "Enabling picking... \n";
-            g_activeShader = PICKING_SHADER;
-            g_isPicking = true;
-        }
+        std::cout << "Pressed 'p'! ";
+        std::cout << "Enabling picking... \n";
+        g_activeShader = PICKING_SHADER;
+        g_isPicking = true;
         // pick();
-        glutPostRedisplay();
+        // glutPostRedisplay();
         break;
     }
 }
