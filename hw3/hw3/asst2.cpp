@@ -465,9 +465,6 @@ static void drawStuff() {
 
             g_arcball.drawArcball(curSS);
         }
-        else {
-            std::cout << "Arcball is behind the camera! (z > 0)" << "\n";
-        }
     }
 }
 
@@ -504,9 +501,6 @@ static RigTForm DefaultInterfaceTranslation(const int x, const int y);
 static void motion(const int x, const int y) {
     RigTForm m;
 
-    RigTForm invEyeRbt = inv(g_VPState.getCurrentEye());
-    // Cvec3 objEyeCoord = (invEyeRbt * g_VP)
-
     if (g_VPState.isArcballEnabled() && g_arcball.isVisible()) {
         // rotation when arcball is enabled and visible
 
@@ -514,7 +508,6 @@ static void motion(const int x, const int y) {
             m = ArcballInterfaceRotation(x, y);
         }
 
-        // translation when arcball is enabled and visible
         else {
             m = ArcballInterfaceTranslation(x, y);
         }
