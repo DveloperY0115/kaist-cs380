@@ -937,15 +937,31 @@ static void keyboard(const unsigned char key, const int x, const int y) {
         // capture screen
         glFlush();
         writePpmScreenshot(g_windowWidth, g_windowHeight, "out.ppm");
+        glutPostRedisplay();
         break;
 
     case 'f':
         // enable/disenable shader
         g_activeShader ^= 1;
+        glutPostRedisplay();
+        break;
+
+    case 'p':
+        std::cout << "Pressed 'p'!\n";
+        if (g_isPicking) {
+            std::cout << "Disabling picking...\n";
+            g_activeShader = DEFAULT_SHADER;
+            g_isPicking = false;
+        }
+        else {
+            std::cout << "Enabling picking... \n";
+            g_activeShader = PICKING_SHADER;
+            g_isPicking = true;
+        }
+        // pick();
+        glutPostRedisplay();
         break;
     }
-
-    glutPostRedisplay();
 }
 
 /* End of GLUT callbacks */
