@@ -51,7 +51,6 @@ using namespace std;      // for string, vector, iostream, and other standard C+
 // ----------------------------------------------------------------------------
 const bool g_Gl2Compatible = false;
 
-
 static const float g_frustMinFov = 60.0;  // A minimal of 60 degree field of view
 static float g_frustFovY = g_frustMinFov; // FOV in y direction (updated by updateFrustFovY)
 
@@ -81,6 +80,7 @@ static vector<shared_ptr<ShaderState> > g_shaderStates; // our global shader sta
 // Vertex buffer and index buffer associated with the ground and cube geometry
 static shared_ptr<Geometry> g_ground, g_cube_1, g_cube_2, g_sphere;
 static std::vector<shared_ptr<Geometry>> scene;     // (refactor required) later use this to put all scene geometries in one vector
+static Arcball g_arcball;
 
 // --------- Scene
 
@@ -102,7 +102,7 @@ static RigTForm initial_rigs[3] = { g_skyRbt, objRbt_1, objRbt_2 };
 static Cvec3f g_objectColors[3] = { Cvec3f(1, 0, 0), Cvec3f(0, 0, 1), Cvec3f(0, 1, 0) };
 
 // list of manipulatable object matrices
-static RigTForm manipulatable_obj[3] = { g_skyRbt, objRbt_1, objRbt_2 };
+RigTForm manipulatable_obj[3] = { g_skyRbt, objRbt_1, objRbt_2 };
 
 class ViewpointState {
 public:
@@ -233,7 +233,7 @@ public:
         return AuxFrame;
     }
 
-    bool isArcballVisible() {
+    bool isArcballEnabled() {
         if (isWorldSkyFrame() || ((CurrentObjIdx == 1 || CurrentObjIdx == 2) && (CurrentObjIdx != CurrentEyeIdx))) {
             // two cases
             // (1) Current auxiliary frame is world-sky frame
@@ -321,11 +321,7 @@ private:
     RigTForm WorldEyeFrame;
 };
 
-static ViewpointState g_VPState = ViewpointState();
-
-// values related to arcball appearance
-static double g_arcballScreenRadius = 0.25 * std::min(g_windowWidth, g_windowHeight);
-static double g_arcballScale;
+ViewpointState g_VPState = ViewpointState();
 
 ///////////////// END OF G L O B A L S //////////////////////////////////////////////////
 
@@ -397,101 +393,82 @@ static Matrix4 makeProjectionMatrix() {
 }
 
 static void drawStuff() {
-  // short hand for current shader state
-  const ShaderState& curSS = *g_shaderStates[g_activeShader];
+    // short hand for current shader state
+    const ShaderState& curSS = *g_shaderStates[g_activeShader];
 
-  // build & send proj. matrix to vshader
-  const Matrix4 projmat = makeProjectionMatrix();
-  sendProjectionMatrix(curSS, projmat);
+    // build & send proj. matrix to vshader
+    const Matrix4 projmat = makeProjectionMatrix();
+    sendProjectionMatrix(curSS, projmat);
 
-  // use the skyRbt as the eyeRbt
-  const RigTForm eyeRbt = g_VPState.getCurrentEye();
-  const RigTForm invEyeRbt = inv(eyeRbt);
+    // use the skyRbt as the eyeRbt
+    const RigTForm eyeRbt = g_VPState.getCurrentEye();
+    const RigTForm invEyeRbt = inv(eyeRbt);
 
-  const Cvec3 eyeLight1 = Cvec3(invEyeRbt * Cvec4(g_light1, 1)); // g_light1 position in eye coordinates
-  const Cvec3 eyeLight2 = Cvec3(invEyeRbt * Cvec4(g_light2, 1)); // g_light2 position in eye coordinates
-  safe_glUniform3f(curSS.h_uLight, eyeLight1[0], eyeLight1[1], eyeLight1[2]);
-  safe_glUniform3f(curSS.h_uLight2, eyeLight2[0], eyeLight2[1], eyeLight2[2]);
+    const Cvec3 eyeLight1 = Cvec3(invEyeRbt * Cvec4(g_light1, 1)); // g_light1 position in eye coordinates
+    const Cvec3 eyeLight2 = Cvec3(invEyeRbt * Cvec4(g_light2, 1)); // g_light2 position in eye coordinates
+    safe_glUniform3f(curSS.h_uLight, eyeLight1[0], eyeLight1[1], eyeLight1[2]);
+    safe_glUniform3f(curSS.h_uLight2, eyeLight2[0], eyeLight2[1], eyeLight2[2]);
 
-  // draw ground
-  // ===========
-  //
+    // draw ground
+    // ===========
+    //
 
-  // TODO: Find way to replace 'normalMatrix'
-  const RigTForm groundRbt = RigTForm();  // identity -> find a way to replace it with RigTForm!
-  Matrix4 MVM = RigTFormToMatrix(invEyeRbt * groundRbt);
-  Matrix4 NMVM = normalMatrix(MVM);
-  sendModelViewNormalMatrix(curSS, MVM, NMVM);
-  safe_glUniform3f(curSS.h_uColor, 0.1, 0.95, 0.1); // set color
-  g_ground->draw(curSS);
+    const RigTForm groundRbt = RigTForm();  // identity -> find a way to replace it with RigTForm!
+    Matrix4 MVM = RigTFormToMatrix(invEyeRbt * groundRbt);
+    Matrix4 NMVM = normalMatrix(MVM);
+    sendModelViewNormalMatrix(curSS, MVM, NMVM);
+    safe_glUniform3f(curSS.h_uColor, 0.1, 0.95, 0.1); // set color
+    g_ground->draw(curSS);
 
-  // draw cubes
-  // ==========
-  // draw the first one
-  MVM = RigTFormToMatrix(invEyeRbt * manipulatable_obj[1]);
-  NMVM = normalMatrix(MVM);
-  sendModelViewNormalMatrix(curSS, MVM, NMVM);
+    // draw cubes
+    // ==========
+    // draw the first one
+    MVM = RigTFormToMatrix(invEyeRbt * manipulatable_obj[1]);
+    NMVM = normalMatrix(MVM);
+    sendModelViewNormalMatrix(curSS, MVM, NMVM);
 
-  safe_glUniform3f(curSS.h_uColor, g_objectColors[0][0], g_objectColors[0][1], g_objectColors[0][2]);
-  g_cube_1->draw(curSS);
+    safe_glUniform3f(curSS.h_uColor, g_objectColors[0][0], g_objectColors[0][1], g_objectColors[0][2]);
+    g_cube_1->draw(curSS);
 
-  // draw the second one
-  MVM = RigTFormToMatrix(invEyeRbt * manipulatable_obj[2]);
-  NMVM = normalMatrix(MVM);
-  sendModelViewNormalMatrix(curSS, MVM, NMVM);
+    // draw the second one
+    MVM = RigTFormToMatrix(invEyeRbt * manipulatable_obj[2]);
+    NMVM = normalMatrix(MVM);
+    sendModelViewNormalMatrix(curSS, MVM, NMVM);
 
-  safe_glUniform3f(curSS.h_uColor, g_objectColors[1][0], g_objectColors[1][1], g_objectColors[1][2]);
-  g_cube_2->draw(curSS);
+    safe_glUniform3f(curSS.h_uColor, g_objectColors[1][0], g_objectColors[1][1], g_objectColors[1][2]);
+    g_cube_2->draw(curSS);
 
-  // draw the arcball
-  if (g_VPState.isArcballVisible()) {
-      glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);  // draw wireframe
+    // when the arcball is enabled
+    if (g_VPState.isArcballEnabled()) {
 
-      if (g_VPState.isWorldSkyFrame()) {
-          // if the user is in world-sky frame, draw arcball at world center
-          RigTForm MVRigTForm = invEyeRbt * g_worldRbt;
-          MVM = RigTFormToMatrix(MVRigTForm);
+        // is arcball moving along z direction?
+        bool isZMovement = (g_mouseLClickButton && g_mouseRClickButton) || g_mouseMClickButton;
 
-          if (!((g_mouseLClickButton && g_mouseRClickButton) || g_mouseMClickButton)) {
-              // when trasnlating along z axis, scale the arcball radius
-              if (!(MVRigTForm.getTranslation()[2] > -CS175_EPS)) {
-                  // do not update arcball scale when the arcball is behind the eye (invisible)
-                  g_arcballScale = getScreenToEyeScale(MVRigTForm.getTranslation()[2],
-                      g_frustFovY, g_windowHeight);
-              }
-          }
-      } 
+        // update arcball status first
+        if (g_VPState.isWorldSkyFrame()) {
+            RigTForm MVRbt = invEyeRbt * g_worldRbt;
+            g_arcball.updateArcballMVRbt(MVRbt);
+        }
+        else {
+            RigTForm MVRbt = invEyeRbt * g_VPState.getCurrentObj();
+            g_arcball.updateArcballMVRbt(MVRbt);
+        }
 
-      else {
-          // otherwise, sync its position with current object
-          RigTForm MVRigTForm = invEyeRbt * g_VPState.getCurrentObj();
-          MVM = RigTFormToMatrix(MVRigTForm);
+        // draw arcball if it's in sight
+        if (g_arcball.isVisible()) {
 
-          if (!((g_mouseLClickButton && g_mouseRClickButton) || g_mouseMClickButton)) {
-              // when trasnlating along z axis, scale the arcball radius
-              if (!(MVRigTForm.getTranslation()[2] > -CS175_EPS)) {
-                  // do not update arcball scale when the arcball is behind the eye (invisible)
-                  g_arcballScale = getScreenToEyeScale(MVRigTForm.getTranslation()[2],
-                      g_frustFovY, g_windowHeight);
-              }
-          }
-      }
-      
-      // scale arcball properly
-      double scale = g_arcballScale * g_arcballScreenRadius;
-      Matrix4 scale_mat = Matrix4::makeScale(Cvec3(scale, scale, scale));
+            // update arcball scale if needed
+            if (!isZMovement) {
+                double z = g_arcball.getArcballMVRbt().getTranslation()(2);
+                g_arcball.updateArcballScale(getScreenToEyeScale(z, g_frustFovY, g_windowHeight));
+            }
 
-
-      MVM *= scale_mat;
-
-      NMVM = normalMatrix(MVM);
-      sendModelViewNormalMatrix(curSS, MVM, NMVM);
-
-      safe_glUniform3f(curSS.h_uColor, g_objectColors[2][0], g_objectColors[2][1], g_objectColors[2][2]);
-      g_sphere->draw(curSS);
-
-      glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);  // end wireframe mode
-  }
+            g_arcball.drawArcball(curSS);
+        }
+        else {
+            std::cout << "Arcball is behind the camera! (z > 0)" << "\n";
+        }
+    }
 }
 
 /* GLUT callbacks */
@@ -512,7 +489,7 @@ static void reshape(const int w, const int h) {
   g_windowHeight = h;
   glViewport(0, 0, w, h);
   // update the size of the arcball
-  g_arcballScreenRadius = 0.25 * std::min(g_windowWidth, g_windowHeight);
+  g_arcball.updateScreenRadius(0.25 * std::min(g_windowWidth, g_windowHeight));
   cerr << "Size of window is now " << w << "x" << h << endl;
   updateFrustFovY();
   glutPostRedisplay();
@@ -530,14 +507,14 @@ static void motion(const int x, const int y) {
     RigTForm invEyeRbt = inv(g_VPState.getCurrentEye());
     // Cvec3 objEyeCoord = (invEyeRbt * g_VP)
 
-    if (g_VPState.isArcballVisible()) {
-        // rotation when arcball is visible
+    if (g_VPState.isArcballEnabled() && g_arcball.isVisible()) {
+        // rotation when arcball is enabled and visible
 
         if (g_mouseLClickButton && !g_mouseRClickButton) {
             m = ArcballInterfaceRotation(x, y);
         }
 
-        // translation when arcball is visible
+        // translation when arcball is enabled and visible
         else {
             m = ArcballInterfaceTranslation(x, y);
         }
@@ -593,12 +570,12 @@ static RigTForm ArcballInterfaceRotation(const int x, const int y) {
 
         int v1_x = (int)(g_mouseClickX - center_screen_coord(0));
         int v1_y = (int)(g_mouseClickY - center_screen_coord(1));
-        int v1_z = getScreenZ(g_arcballScreenRadius, g_mouseClickX, g_mouseClickY, center_screen_coord);
+        int v1_z = getScreenZ(g_arcball.getScreenRadius(), g_mouseClickX, g_mouseClickY, center_screen_coord);
 
         // !!!!! Caution: Flip y before using it !!!!! -> TODO: implement function for better readability
         int v2_x = (int)(x - center_screen_coord(0));
         int v2_y = (int)(g_windowHeight - y - 1 - center_screen_coord(1));
-        int v2_z = getScreenZ(g_arcballScreenRadius, x, g_windowHeight - y - 1, center_screen_coord);
+        int v2_z = getScreenZ(g_arcball.getScreenRadius(), x, g_windowHeight - y - 1, center_screen_coord);
 
         Cvec3 v1;
         Cvec3 v2;
@@ -643,16 +620,16 @@ static RigTForm ArcballInterfaceTranslation(const int x, const int y) {
         switch (g_VPState.getAuxFrameDescriptor()) {
         case 1:
             // default behavior
-            m = RigTForm::makeTranslation(Cvec3(dx, dy, 0) * g_arcballScale);
+            m = RigTForm::makeTranslation(Cvec3(dx, dy, 0) * g_arcball.getArcballScale());
             break;
         case 2:
             // invert sign of rotation and translation
-            m = RigTForm::makeTranslation(-Cvec3(dx, dy, 0) * g_arcballScale);
+            m = RigTForm::makeTranslation(-Cvec3(dx, dy, 0) * g_arcball.getArcballScale());
             break;
 
         case 3:
             // invert sign of rotation only
-            m = RigTForm::makeTranslation(Cvec3(dx, dy, 0) * g_arcballScale);
+            m = RigTForm::makeTranslation(Cvec3(dx, dy, 0) * g_arcball.getArcballScale());
             break;
         }
     }
@@ -660,15 +637,15 @@ static RigTForm ArcballInterfaceTranslation(const int x, const int y) {
         switch (g_VPState.getAuxFrameDescriptor()) {
         case 1:
             // default behavior
-            m = RigTForm::makeTranslation(Cvec3(0, 0, -dy) * g_arcballScale);
+            m = RigTForm::makeTranslation(Cvec3(0, 0, -dy) * g_arcball.getArcballScale());
             break;
         case 2:
             // invert sign of rotation and translation
-            m = RigTForm::makeTranslation(-Cvec3(0, 0, -dy) * g_arcballScale);
+            m = RigTForm::makeTranslation(-Cvec3(0, 0, -dy) * g_arcball.getArcballScale());
             break;
         case 3:
             // invert sign of rotation only
-            m = RigTForm::makeTranslation(Cvec3(0, 0, -dy) * g_arcballScale);
+            m = RigTForm::makeTranslation(Cvec3(0, 0, -dy) * g_arcball.getArcballScale());
             break;
         }
     }
@@ -914,6 +891,10 @@ static void initGeometry() {
     initSpheres();
 }
 
+static void initArcball() {
+    g_arcball = Arcball(g_sphere, Cvec3(0, 1, 0), 0.25 * std::min(g_windowWidth, g_windowHeight), 1.0);
+}
+
 int main(int argc, char* argv[]) {
     try {
         initGlutState(argc, argv);
@@ -929,6 +910,7 @@ int main(int argc, char* argv[]) {
         initGLState();
         initShaders();
         initGeometry();
+        initArcball();
 
         glutMainLoop();
         return 0;
