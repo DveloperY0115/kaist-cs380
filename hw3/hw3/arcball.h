@@ -4,6 +4,21 @@
 #include <iostream>
 #include "cvec.h"
 #include "matrix4.h"
+#include "geometry.h"
+
+// forward declaration
+inline Cvec2 getScreenSpaceCoord(const Cvec3& p, const Matrix4& projection,
+                                 double frustNear, double frustFovY,
+                                 int screenWidth, int screenHeight);
+inline double getScreenToEyeScale(double z, double frustFovY, int screenHeight);
+inline int getScreenZ(double screenRadius, int x, int y, Cvec2 centerCoord);
+
+class Arcball {
+    Arcball(std::shared_ptr<Geometry>) {
+        return;
+    }
+};
+
 
 // Return the screen space projection in terms of pixels of a 3d point
 // given in eye-frame coordinates. 
