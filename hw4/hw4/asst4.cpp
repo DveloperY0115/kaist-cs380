@@ -499,10 +499,12 @@ static void drawStuff(const ShaderState& curSS, bool picking) {
         g_world->accept(drawer);
     }
     else {
-        Picker picker(invEyeRbt, curSS);
+        std::vector<std::shared_ptr<SgRbtNode>> robots = { g_robot1Node, g_robot2Node };
+        Picker picker(invEyeRbt, curSS, robots);
         g_world->accept(picker);
         glFlush();
         g_currentPickedRbtNode = picker.getRbtNodeAtXY(g_mouseClickX, g_mouseClickY);
+
         if (g_currentPickedRbtNode == g_groundNode)
             g_currentPickedRbtNode = shared_ptr<SgRbtNode>();   // set to NULL
     }
