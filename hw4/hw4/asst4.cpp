@@ -169,7 +169,6 @@ static bool g_isPicking = false;
 
 // Vertex buffer and index buffer associated with the ground and cube geometry
 static shared_ptr<Geometry> g_ground, g_cube, g_sphere;
-static std::vector<shared_ptr<Geometry>> scene;     // (refactor required) later use this to put all scene geometries in one vector
 
 // --------- Scene
 
@@ -187,18 +186,17 @@ static bool is_worldsky_frame = false;
 // list of object matrices
 // 1. cube 1
 // 2. cube 2
-static RigTForm initial_rigs[3] = { g_skyRbt, objRbt_1, objRbt_2 };
-static Cvec3f g_objectColors[3] = { Cvec3f(1, 0, 0), Cvec3f(0, 0, 1), Cvec3f(0, 1, 0) };
+static RigTForm initial_rigs[1] = { g_skyRbt };
 
 // list of manipulatable object matrices
-static RigTForm manipulatable_obj[3] = { g_skyRbt, objRbt_1, objRbt_2 };
+static RigTForm manipulatable_obj[1] = { g_skyRbt };
 
 class ViewpointState {
 public:
     // Constructor
     ViewpointState() {
-        CurrentObjIdx = 1;    // initially cube 1
-        CurrentEyeIdx = 0;    // initially cube 2
+        CurrentObjIdx = 0;    // initially sky camera
+        CurrentEyeIdx = 0;    // initially sky camera
         updateAuxFrame();     // initial calculation of auxiliary frame
         updateWorldEyeFrame();    // initial calculation of world-eye frame
         IsWorldSkyFrame_ = false;    
@@ -483,7 +481,6 @@ static Matrix4 makeProjectionMatrix() {
 
 static void drawStuff(const ShaderState& curSS, bool picking) {
 
-    
     // build & send proj. matrix to vshader
     const Matrix4 projmat = makeProjectionMatrix();
     sendProjectionMatrix(curSS, projmat);
@@ -884,7 +881,8 @@ static void keyboard(const unsigned char key, const int x, const int y) {
         // describe current state
         g_VPState.describeCurrentStatus();
         break;
-
+    */
+    /*
     case 'o':
         std::cout << "Pressed 'o'! Switching object\n";
 
@@ -894,7 +892,7 @@ static void keyboard(const unsigned char key, const int x, const int y) {
         // describe current state
         g_VPState.describeCurrentStatus();
         break;
-
+    
     case 'm':
         if (!g_VPState.isSkySkyFrame()) {
             // current frame is not a sky-sky frame
@@ -918,7 +916,7 @@ static void keyboard(const unsigned char key, const int x, const int y) {
             }
         }
         break;
-
+    */
     case 'r':
         // reset object position
         std::cout << "Pressed 'r'! Resetting all object & eye position\n";
@@ -929,6 +927,7 @@ static void keyboard(const unsigned char key, const int x, const int y) {
         g_VPState.updateAuxFrame();
 
         g_VPState.describeCurrentStatus();
+        glutPostRedisplay();
         break;
 
     case 'd':
