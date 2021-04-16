@@ -58,6 +58,32 @@ shared_ptr<SgRbtNode> Picker::getRbtNodeAtXY(int x, int y) {
 // Helper functions
 //------------------
 //
+
+/*
+* describeStack
+* 
+* Describes the current stack (used for debugging)
+* 
+* Prints out the ID and associated nodes in the stack
+*/
+void Picker::describeStack() {
+    for (auto& node : nodeStack_) {
+        std::cout << "ID: " << idCounter_ << node.get() << "\n";
+    }
+}
+
+/*
+* describeMap
+* 
+* Describes the current status of map (ID - SgRbtNode)
+*/
+void Picker::describeMap() {
+    for (auto const& x : idToRbtNode_) {
+        std::cout << "ID: " << x.first << "||";
+        std::cout << "Color: " << idToColor(x.first)(0) << " " << idToColor(x.first)(1) << " " << idToColor(x.first)(2) << "\n";
+    }
+}
+
 void Picker::addToMap(int id, shared_ptr<SgRbtNode> node) {
   idToRbtNode_[id] = node;
 }
