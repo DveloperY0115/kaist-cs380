@@ -871,19 +871,8 @@ static void keyboard(const unsigned char key, const int x, const int y) {
             << "r\t\tReset the position of current object\n"
             << "drag left mouse to rotate\n" << endl;
         break;
-    case 'p':
-        std::cout << "Pressed 'p'!\n";
 
-        if (g_isPicking) {
-            std::cout << "Disabling picking...\n";
-            g_isPicking = false;
-        }
-        else {
-            std::cout << "Enabling picking... \n";
-            g_isPicking = true;
-        }
-        break;
-
+    /*
     case 'v':
         std::cout << "Pressed 'v'! Switching camera\n";
 
