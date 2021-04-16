@@ -566,8 +566,11 @@ static void drawStuff() {
 
           if (!((g_mouseLClickButton && g_mouseRClickButton) || g_mouseMClickButton)) {
               // when trasnlating along z axis, scale the arcball radius
-              g_arcballScale = getScreenToEyeScale(MVRigTForm.getTranslation()[2],
-                  g_frustFovY, g_windowHeight);
+              if (!(MVRigTForm.getTranslation()[2] > -CS175_EPS)) {
+                  // do not update arcball scale when the arcball is behind the eye (invisible)
+                  g_arcballScale = getScreenToEyeScale(MVRigTForm.getTranslation()[2],
+                      g_frustFovY, g_windowHeight);
+              }
           }
       } 
 
@@ -578,8 +581,11 @@ static void drawStuff() {
 
           if (!((g_mouseLClickButton && g_mouseRClickButton) || g_mouseMClickButton)) {
               // when trasnlating along z axis, scale the arcball radius
-              g_arcballScale = getScreenToEyeScale(MVRigTForm.getTranslation()[2],
-                  g_frustFovY, g_windowHeight);
+              if (!(MVRigTForm.getTranslation()[2] > -CS175_EPS)) {
+                  // do not update arcball scale when the arcball is behind the eye (invisible)
+                  g_arcballScale = getScreenToEyeScale(MVRigTForm.getTranslation()[2],
+                      g_frustFovY, g_windowHeight);
+              }
           }
       }
       
@@ -632,6 +638,9 @@ static RigTForm DefaultInterfaceTranslation(const int x, const int y);
 
 static void motion(const int x, const int y) {
     RigTForm m;
+
+    RigTForm invEyeRbt = inv(g_VPState.getCurrentEye());
+    // Cvec3 objEyeCoord = (invEyeRbt * g_VP)
 
     if (g_VPState.isArcballVisible()) {
         // rotation when arcball is visible
