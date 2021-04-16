@@ -457,38 +457,6 @@ static void drawStuff(const ShaderState& curSS, bool picking) {
         if (g_currentPickedRbtNode == g_groundNode)
             g_currentPickedRbtNode = shared_ptr<SgRbtNode>();   // set to NULL
     }
-
-    /*
-    // [LEAVE IT FOR TASK 2] draw the arcball
-    // when the arcball is enabled
-    if (g_VPState.isArcballEnabled()) {
-
-        // is arcball moving along z direction?
-        bool isZMovement = (g_mouseLClickButton && g_mouseRClickButton) || g_mouseMClickButton;
-
-        // update arcball status first
-        if (g_VPState.isWorldSkyFrame()) {
-            RigTForm MVRbt = invEyeRbt * g_worldRbt;
-            g_arcball.updateArcballMVRbt(MVRbt);
-        }
-        else {
-            RigTForm MVRbt = invEyeRbt * g_VPState.getCurrentObj();
-            g_arcball.updateArcballMVRbt(MVRbt);
-        }
-
-        // draw arcball if it's in sight
-        if (g_arcball.isVisible()) {
-
-            // update arcball scale if needed
-            if (!isZMovement) {
-                double z = g_arcball.getArcballMVRbt().getTranslation()(2);
-                g_arcball.updateArcballScale(getScreenToEyeScale(z, g_frustFovY, g_windowHeight));
-            }
-
-            g_arcball.drawArcball(curSS);
-        }
-    }
-    */
 }
 
 /* GLUT callbacks */
@@ -815,28 +783,18 @@ static void keyboard(const unsigned char key, const int x, const int y) {
             << "drag left mouse to rotate\n" << endl;
         break;
 
-    /*
+    
     case 'v':
         std::cout << "Pressed 'v'! Switching camera\n";
-
+        /*
         // switch view point
         g_VPState.switchEye();
 
         // describe current state
         g_VPState.describeCurrentStatus();
+        */
         break;
-    */
-    /*
-    case 'o':
-        std::cout << "Pressed 'o'! Switching object\n";
 
-        // switch object
-        g_VPState.switchObject();
-
-        // describe current state
-        g_VPState.describeCurrentStatus();
-        break;
-    */
     case 'm':
         if (!g_VPState.isSkySkyFrame()) {
             // current frame is not a sky-sky frame
