@@ -74,8 +74,10 @@ static bool g_mouseClickDown = false;    // is the mouse button pressed
 static bool g_mouseLClickButton, g_mouseRClickButton, g_mouseMClickButton;
 static int g_mouseClickX, g_mouseClickY; // coordinates for mouse click event
 
-static int g_activeShader = 0;
+static const int DEFAULT_SHADER = 0;
 static const int PICKING_SHADER = 2;
+static int g_activeShader = DEFAULT_SHADER;
+
 static const int g_numShaders = 3;
 static const char * const g_shaderFiles[g_numShaders][2] = {
   {"./shaders/basic-gl3.vshader", "./shaders/diffuse-gl3.fshader"},
