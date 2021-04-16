@@ -40,18 +40,44 @@ public:
         , found_(false) {}
 
     const RigTForm getAccumulatedRbt(int offsetFromStackTop = 0) {
-        // TODO
-        return RigTForm();
+        int num_popped = 0;
+
+        while (!rbtStack_.empty() && num_popped < offsetFromStackTop) {
+            rbtStack_.pop_back();
+            num_popped++;
+        }
+
+        return rbtStack_.back();
     }
 
     virtual bool visit(SgTransformNode& node) {
-        // TODO
-        return 0;
+        // push node to stack at the first visit
+        if (rbtStack_.empty()) {
+            rbtStack_.push_back(node.getRbt());
+        }
+        else {
+            rbtStack_.push_back(rbtStack_.back() * node.getRbt());
+        }
+
+        if (target_ == node) {
+            found_ = true;
+            // if target found, stop searching
+            return false;
+        }
+
+        // otherwise, keep searching
+        return true;
     }
 
     virtual bool postVisit(SgTransformNode& node) {
-        // TODO
-        return 0;
+        if (!found_) {
+            // discard all nodes in the middle if target is not found
+            rbtStack_.pop_back();
+            return true;
+        }
+        else {
+            return false;
+        }
     }
 };
 

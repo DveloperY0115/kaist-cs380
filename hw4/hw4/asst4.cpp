@@ -431,6 +431,22 @@ static void drawStuff(const ShaderState& curSS, bool picking) {
     if (!picking) {
         Drawer drawer(invEyeRbt, curSS);
         g_world->accept(drawer);
+
+        // draw arcball
+        if (g_currentPickedRbtNode != nullptr) {
+            RigTForm MVRigTForm = invEyeRbt * getPathAccumRbt(g_world, g_currentPickedRbtNode);
+
+            bool isZMovement = (g_mouseLClickButton && g_mouseRClickButton) || g_mouseMClickButton;
+
+            g_arcball.updateArcballMVRbt(MVRigTForm);
+
+            if (!isZMovement) {
+                double z = g_arcball.getArcballMVRbt().getTranslation()(2);
+                g_arcball.updateArcballScale(getScreenToEyeScale(z, g_frustFovY, g_windowHeight));
+            }
+
+            g_arcball.drawArcball(curSS);
+        }
     }
     else {
         std::vector<std::shared_ptr<SgRbtNode>> robots = { g_robot1Node, g_robot2Node };
@@ -442,6 +458,7 @@ static void drawStuff(const ShaderState& curSS, bool picking) {
             g_currentPickedRbtNode = shared_ptr<SgRbtNode>();   // set to NULL
     }
 
+    /*
     // [LEAVE IT FOR TASK 2] draw the arcball
     // when the arcball is enabled
     if (g_VPState.isArcballEnabled()) {
@@ -471,6 +488,7 @@ static void drawStuff(const ShaderState& curSS, bool picking) {
             g_arcball.drawArcball(curSS);
         }
     }
+    */
 }
 
 /* GLUT callbacks */
@@ -843,18 +861,6 @@ static void keyboard(const unsigned char key, const int x, const int y) {
         }
         glutPostRedisplay();
         break;
-    case 'r':
-        // reset object position
-        std::cout << "Pressed 'r'! Resetting all object & eye position\n";
-
-        for (int i = 0; i < 3; ++i) {
-            manipulatable_obj[i] = initial_rigs[i];
-        }
-        g_VPState.updateAuxFrame();
-
-        g_VPState.describeCurrentStatus();
-        glutPostRedisplay();
-        break;
 
     case 'd':
         g_VPState.describeCurrentStatus();
@@ -878,8 +884,6 @@ static void keyboard(const unsigned char key, const int x, const int y) {
         std::cout << "Enabling picking... \n";
         g_activeShader = PICKING_SHADER;
         g_isPicking = true;
-        // pick();
-        // glutPostRedisplay();
         break;
     }
 }

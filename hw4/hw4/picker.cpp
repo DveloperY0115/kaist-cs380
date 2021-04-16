@@ -75,7 +75,6 @@ shared_ptr<SgRbtNode> Picker::getRbtNodeAtXY(int x, int y) {
     describeMap();
 
     shared_ptr<SgRbtNode> rbt_node = find(id);
-
     return rbt_node;
 }
 
