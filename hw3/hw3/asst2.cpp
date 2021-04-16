@@ -24,6 +24,8 @@
 #include "matrix4.h"
 #include "rigtform.h"
 #include "geometrymaker.h"
+#include "geometry.h"
+#include "shaderstate.h"
 #include "rigtform.h"
 #include "ppm.h"
 #include "glsupport.h"
@@ -47,7 +49,7 @@ using namespace std;      // for string, vector, iostream, and other standard C+
 // To complete the assignment you only need to edit the shader files that get
 // loaded
 // ----------------------------------------------------------------------------
-static const bool g_Gl2Compatible = false;
+const bool g_Gl2Compatible = false;
 
 
 static const float g_frustMinFov = 60.0;  // A minimal of 60 degree field of view
@@ -65,44 +67,6 @@ static bool g_mouseLClickButton, g_mouseRClickButton, g_mouseMClickButton;
 static int g_mouseClickX, g_mouseClickY; // coordinates for mouse click event
 static int g_activeShader = 0;
 
-struct ShaderState {
-  GlProgram program;
-
-  // Handles to uniform variables
-  GLint h_uLight, h_uLight2;
-  GLint h_uProjMatrix;
-  GLint h_uModelViewMatrix;
-  GLint h_uNormalMatrix;
-  GLint h_uColor;
-
-  // Handles to vertex attributes
-  GLint h_aPosition;
-  GLint h_aNormal;
-
-  ShaderState(const char* vsfn, const char* fsfn) {
-    readAndCompileShader(program, vsfn, fsfn);
-
-    const GLuint h = program; // short hand
-
-    // Retrieve handles to uniform variables
-    h_uLight = safe_glGetUniformLocation(h, "uLight");
-    h_uLight2 = safe_glGetUniformLocation(h, "uLight2");
-    h_uProjMatrix = safe_glGetUniformLocation(h, "uProjMatrix");
-    h_uModelViewMatrix = safe_glGetUniformLocation(h, "uModelViewMatrix");
-    h_uNormalMatrix = safe_glGetUniformLocation(h, "uNormalMatrix");
-    h_uColor = safe_glGetUniformLocation(h, "uColor");
-
-    // Retrieve handles to vertex attributes
-    h_aPosition = safe_glGetAttribLocation(h, "aPosition");
-    h_aNormal = safe_glGetAttribLocation(h, "aNormal");
-
-    if (!g_Gl2Compatible)
-      glBindFragDataLocation(h, 0, "fragColor");
-    checkGlErrors();
-  }
-
-};
-
 static const int g_numShaders = 2;
 static const char * const g_shaderFiles[g_numShaders][2] = {
   {"./shaders/basic-gl3.vshader", "./shaders/diffuse-gl3.fshader"},
@@ -113,72 +77,6 @@ static const char * const g_shaderFilesGl2[g_numShaders][2] = {
   {"./shaders/basic-gl2.vshader", "./shaders/solid-gl2.fshader"}
 };
 static vector<shared_ptr<ShaderState> > g_shaderStates; // our global shader states
-
-// --------- Geometry
-
-// Macro used to obtain relative offset of a field within a struct
-#define FIELD_OFFSET(StructType, field) &(((StructType *)0)->field)
-
-// A vertex with floating point position and normal
-struct VertexPN {
-  Cvec3f p, n;
-
-  VertexPN() {}
-  VertexPN(float x, float y, float z,
-           float nx, float ny, float nz)
-    : p(x,y,z), n(nx, ny, nz)
-  {}
-
-  // Define copy constructor and assignment operator from GenericVertex so we can
-  // use make* functions from geometrymaker.h
-  VertexPN(const GenericVertex& v) {
-    *this = v;
-  }
-
-  VertexPN& operator = (const GenericVertex& v) {
-    p = v.pos;
-    n = v.normal;
-    return *this;
-  }
-};
-
-struct Geometry {
-  GlBufferObject vbo, ibo;
-  int vboLen, iboLen;
-
-  Geometry(VertexPN *vtx, unsigned short *idx, int vboLen, int iboLen) {
-    this->vboLen = vboLen;
-    this->iboLen = iboLen;
-
-    // Now create the VBO and IBO
-    glBindBuffer(GL_ARRAY_BUFFER, vbo);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(VertexPN) * vboLen, vtx, GL_STATIC_DRAW);
-
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibo);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(unsigned short) * iboLen, idx, GL_STATIC_DRAW);
-  }
-
-  void draw(const ShaderState& curSS) {
-    // Enable the attributes used by our shader
-    safe_glEnableVertexAttribArray(curSS.h_aPosition);
-    safe_glEnableVertexAttribArray(curSS.h_aNormal);
-
-    // bind vbo
-    glBindBuffer(GL_ARRAY_BUFFER, vbo);
-    safe_glVertexAttribPointer(curSS.h_aPosition, 3, GL_FLOAT, GL_FALSE, sizeof(VertexPN), FIELD_OFFSET(VertexPN, p));
-    safe_glVertexAttribPointer(curSS.h_aNormal, 3, GL_FLOAT, GL_FALSE, sizeof(VertexPN), FIELD_OFFSET(VertexPN, n));
-
-    // bind ibo
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibo);
-
-    // draw!
-    glDrawElements(GL_TRIANGLES, iboLen, GL_UNSIGNED_SHORT, 0);
-
-    // Disable the attributes used by our shader
-    safe_glDisableVertexAttribArray(curSS.h_aPosition);
-    safe_glDisableVertexAttribArray(curSS.h_aNormal);
-  }
-};
 
 // Vertex buffer and index buffer associated with the ground and cube geometry
 static shared_ptr<Geometry> g_ground, g_cube_1, g_cube_2, g_sphere;
@@ -480,16 +378,6 @@ static void sendProjectionMatrix(const ShaderState& curSS, const Matrix4& projMa
   GLfloat glmatrix[16];
   projMatrix.writeToColumnMajorMatrix(glmatrix); // send projection matrix
   safe_glUniformMatrix4fv(curSS.h_uProjMatrix, glmatrix);
-}
-
-// takes MVM and its normal matrix to the shaders
-static void sendModelViewNormalMatrix(const ShaderState& curSS, const Matrix4& MVM, const Matrix4& NMVM) {
-  GLfloat glmatrix[16];
-  MVM.writeToColumnMajorMatrix(glmatrix); // send MVM
-  safe_glUniformMatrix4fv(curSS.h_uModelViewMatrix, glmatrix);
-
-  NMVM.writeToColumnMajorMatrix(glmatrix); // send NMVM
-  safe_glUniformMatrix4fv(curSS.h_uNormalMatrix, glmatrix);
 }
 
 // update g_frustFovY from g_frustMinFov, g_windowWidth, and g_windowHeight
