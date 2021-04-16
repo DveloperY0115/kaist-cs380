@@ -4,16 +4,34 @@
 
 using namespace std;
 
-Picker::Picker(const RigTForm& initialRbt, const ShaderState& curSS)
-  : drawer_(initialRbt, curSS), idCounter_(100), srgbFrameBuffer_(!g_Gl2Compatible) {}
+Picker::Picker(const RigTForm& initialRbt, const ShaderState& curSS, std::vector<std::shared_ptr<SgRbtNode>> robots)
+  : drawer_(initialRbt, curSS), idCounter_(0), isRobot(false), srgbFrameBuffer_(!g_Gl2Compatible) {
+    robot_1 = robots[0];
+    robot_2 = robots[1];
+}
 
 bool Picker::visit(SgTransformNode& node) {
-    nodeStack_.push_back(node.shared_from_this());
+    if (node.shared_from_this() == robot_1 || node.shared_from_this() == robot_2) {
+        isRobot = true;
+    }
+
+    if (isRobot) {
+        // add node to stack only if it belongs to robot graph
+        nodeStack_.push_back(node.shared_from_this());
+    }
+
     return drawer_.visit(node);
 }
 
 bool Picker::postVisit(SgTransformNode& node) {
-    nodeStack_.pop_back();
+    if (isRobot) {
+        nodeStack_.pop_back();
+    }
+
+    if (node.shared_from_this() == robot_1 || node.shared_from_this() == robot_2) {
+        isRobot = false;
+    }
+
     return drawer_.postVisit(node);
 }
 
@@ -24,14 +42,16 @@ bool Picker::postVisit(SgTransformNode& node) {
 */
 bool Picker::visit(SgShapeNode& node) {
     
-    // map its parent representing RBT
-    idCounter_ += 10;
-    std::shared_ptr<SgRbtNode> parent = std::dynamic_pointer_cast<SgRbtNode>(nodeStack_.back());
-    addToMap(idCounter_, parent);
+    if (isRobot) {
+        // map its parent representing RBT
+        idCounter_ += 1;
+        std::shared_ptr<SgRbtNode> parent = std::dynamic_pointer_cast<SgRbtNode>(nodeStack_.back());
+        addToMap(idCounter_, parent);
 
-    // set the color of the geometry uniquely
-    Cvec3 color = idToColor(idCounter_);
-    safe_glUniform3f(drawer_.getCurSS().h_uIdColor, static_cast<GLfloat>(color(0)), static_cast<GLfloat>(color(1)), static_cast<GLfloat>(color(2)));
+        // set the color of the geometry uniquely
+        Cvec3 color = idToColor(idCounter_);
+        safe_glUniform3f(drawer_.getCurSS().h_uIdColor, color(0), color(1), color(2));
+    }
     return drawer_.visit(node);
 }
 
