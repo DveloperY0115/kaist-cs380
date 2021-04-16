@@ -10,7 +10,6 @@
     <ClCompile Include="scenegraph.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="arcball.h" />
     <ClInclude Include="geometrymaker.h" />
     <ClInclude Include="glsupport.h" />
     <ClInclude Include="cvec.h">
@@ -32,6 +31,8 @@
     <ClInclude Include="drawer.h" />
     <ClInclude Include="picker.h" />
     <ClInclude Include="scenegraph.h" />
+    <ClInclude Include="arcball.h" />
+    <ClInclude Include="geometry.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="shaders\basic-gl2.vshader">

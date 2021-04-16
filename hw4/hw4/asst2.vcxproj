@@ -107,6 +107,7 @@
     <ClInclude Include="asstcommon.h" />
     <ClInclude Include="cvec.h" />
     <ClInclude Include="drawer.h" />
+    <ClInclude Include="geometry.h" />
     <ClInclude Include="geometrymaker.h" />
     <ClInclude Include="glsupport.h" />
     <ClInclude Include="matrix4.h" />
