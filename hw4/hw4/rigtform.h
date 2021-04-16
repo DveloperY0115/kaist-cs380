@@ -67,12 +67,12 @@ public:
   Cvec4 operator * (const Cvec4& a) const {
       assert(a[3] == 0 || a[3] == 1);
 
-      // rotate vector 'a' first using quaternion
+      // if 'a' is a coordinate, translate it
+      // otherwise, do nothing
       Cvec4 t_a = (*this).getRotation() * a;
 
       if (a[3] == 1) {
           // 'a' represents a coordinate in Affine form
-          // translation is a valid operation
           Cvec3 t_ = (*this).getTranslation();
           Cvec4 t = Cvec4(t_[0], t_[1], t_[2], 0);
           t_a += t;
@@ -84,8 +84,10 @@ public:
   // Calculate RigTForm object representing the compound RBT of two RBTs
   RigTForm operator * (const RigTForm& a) const {
       // get t_1 and t_2 
-      Cvec4 t_1 = Cvec4((*this).getTranslation(), 0);
-      Cvec4 t_2 = Cvec4(a.getTranslation(), 0);
+      Cvec3 t_1_ = (*this).getTranslation();
+      Cvec4 t_1 = Cvec4(t_1_, 0);
+      Cvec3 t_2_ = a.getTranslation();
+      Cvec4 t_2 = Cvec4(t_2_, 0);
 
       // get r_1 and r_2
       Quat r_1 = (*this).getRotation();
@@ -123,7 +125,8 @@ public:
 // Calculate the inverse of the given RBT in RigTForm form
 inline RigTForm inv(const RigTForm& tform) {
     // get t_1
-    Cvec4 t = Cvec4(tform.getTranslation(), 0);
+    Cvec3 t__ = tform.getTranslation();
+    Cvec4 t = Cvec4(t__, 0);
 
     // calculate rotation part
     Quat r_inv = inv(tform.getRotation());
