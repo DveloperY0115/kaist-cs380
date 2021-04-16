@@ -50,6 +50,7 @@ bool Picker::visit(SgShapeNode& node) {
 
         // set the color of the geometry uniquely
         Cvec3 color = idToColor(idCounter_);
+
         safe_glUniform3f(drawer_.getCurSS().h_uIdColor, color(0), color(1), color(2));
     }
     return drawer_.visit(node);
@@ -74,9 +75,6 @@ shared_ptr<SgRbtNode> Picker::getRbtNodeAtXY(int x, int y) {
     describeMap();
 
     shared_ptr<SgRbtNode> rbt_node = find(id);
-    if (rbt_node == nullptr) {
-        std::cout << "Something's wrong. It's not a registered node!\n";
-    }
 
     return rbt_node;
 }
