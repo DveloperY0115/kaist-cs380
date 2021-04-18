@@ -264,18 +264,18 @@ static void motion(const int x, const int y) {
     const double dx = x - g_mouseClickX;
     const double dy = g_windowHeight - y - 1 - g_mouseClickY;
 
+    RigTForm eyeRbt = getPathAccumRbt(g_world, g_currentEyeNode);
+    RigTForm invEyeRbt = inv(eyeRbt);
+
     RigTForm m;
 
     // if not ego motion, enable arcball
     if (g_currentEyeNode != g_currentPickedRbtNode) {
         // rotation when arcball is visible
-
         if (g_mouseLClickButton && !g_mouseRClickButton) {
             Quat Rotation = Quat();
 
-            RigTForm eyeRbt = g_currentEyeNode->getRbt();
-            RigTForm invEyeRbt = inv(eyeRbt);
-            Cvec2 arcballScreenCoord = getScreenSpaceCoord((invEyeRbt * g_currentPickedRbtNode->getRbt()).getTranslation(),
+            Cvec2 arcballScreenCoord = getScreenSpaceCoord((invEyeRbt * getPathAccumRbt(g_world, g_currentPickedRbtNode)).getTranslation(),
                 makeProjectionMatrix(), g_frustNear, g_frustFovY, g_windowWidth, g_windowHeight);
         
             // calculate z coordinate of clicked points in screen coordinate
@@ -323,7 +323,6 @@ static void motion(const int x, const int y) {
             else if (g_mouseMClickButton || (g_mouseLClickButton && g_mouseRClickButton)) {
                 // middle of both button click
                 m = RigTForm::makeTranslation(Cvec3(0, 0, -dy) * g_arcball.getArcballScale());
-
             }
         }
     }
@@ -343,11 +342,11 @@ static void motion(const int x, const int y) {
 
   if (g_mouseClickDown) {
       // calculate auxiliary frame
-      RigTForm AuxFrame = inv(getPathAccumRbt(g_world, g_currentPickedRbtNode, 1)) * RigTForm(getPathAccumRbt(g_world, g_currentPickedRbtNode).getTranslation(), getPathAccumRbt(g_world, g_currentEyeNode).getRotation());      // apply transform to the object
+      RigTForm AuxFrame = inv(getPathAccumRbt(g_world, g_currentPickedRbtNode, 1)) * RigTForm(getPathAccumRbt(g_world, g_currentPickedRbtNode).getTranslation(), eyeRbt.getRotation());      // apply transform to the object
       
       // apply transform
       g_currentPickedRbtNode->setRbt(doMtoOwrtA(m, g_currentPickedRbtNode->getRbt(), AuxFrame));
-
+      
       glutPostRedisplay(); // we always redraw if we changed the scene
   }
 
