@@ -257,43 +257,92 @@ static void reshape(const int w, const int h) {
   glutPostRedisplay();
 }
 
-/* Forward declaration for motion helpers */
-// static RigTForm ArcballInterfaceRotation(const int x, const int y);
-// static RigTForm ArcballInterfaceTranslation(const int x, const int y);
-// static RigTForm DefaultInterfaceRotation(const int x, const int y);
-// static RigTForm DefaultInterfaceTranslation(const int x, const int y);
-
-// temporarily disabled motion
-/*
 static void motion(const int x, const int y) {
+
+    // TODO: Flip rotation or translation when required
+
+    const double dx = x - g_mouseClickX;
+    const double dy = g_windowHeight - y - 1 - g_mouseClickY;
+
     RigTForm m;
 
-    if (g_VPState.isArcballEnabled()) {
+    // if not ego motion, enable arcball
+    if (g_currentEyeNode != g_currentPickedRbtNode) {
         // rotation when arcball is visible
 
         if (g_mouseLClickButton && !g_mouseRClickButton) {
-            m = ArcballInterfaceRotation(x, y);
+            Quat Rotation = Quat();
+
+            RigTForm eyeRbt = g_currentEyeNode->getRbt();
+            RigTForm invEyeRbt = inv(eyeRbt);
+            Cvec2 arcballScreenCoord = getScreenSpaceCoord((invEyeRbt * g_currentPickedRbtNode->getRbt()).getTranslation(),
+                makeProjectionMatrix(), g_frustNear, g_frustFovY, g_windowWidth, g_windowHeight);
+        
+            // calculate z coordinate of clicked points in screen coordinate
+
+            int v1_x = (int)(g_mouseClickX - arcballScreenCoord(0));
+            int v1_y = (int)(g_mouseClickY - arcballScreenCoord(1));
+            int v1_z = getScreenZ(g_arcball.getScreenRadius(), g_mouseClickX, g_mouseClickY, arcballScreenCoord);
+
+            // !!!!! Caution: Flip y before using it !!!!! -> TODO: implement function for better readability
+            int v2_x = (int)(x - arcballScreenCoord(0));
+            int v2_y = (int)(g_windowHeight - y - 1 - arcballScreenCoord(1));
+            int v2_z = getScreenZ(g_arcball.getScreenRadius(), x, g_windowHeight - y - 1, arcballScreenCoord);
+
+            Cvec3 v1;
+            Cvec3 v2;
+            Cvec3 k;
+
+            if (v1_z < 0 || v2_z < 0) {
+                // user points outside the arcball
+                v1 = normalize(Cvec3(v1_x, v1_y, 0));
+                v2 = normalize(Cvec3(v2_x, v2_y, 0));
+                k = cross(v1, v2);
+
+                Rotation = Quat(dot(v1, v2), k);
+            }
+
+            else {
+                v1 = normalize(Cvec3(v1_x, v1_y, v1_z));
+                v2 = normalize(Cvec3(v2_x, v2_y, v2_z));
+                k = cross(v1, v2);
+
+                Rotation = Quat(dot(v1, v2), k);
+            }
+
+            m = RigTForm(Rotation);
         }
 
         // translation when arcball is visible
         else {
-            m = ArcballInterfaceTranslation(x, y);
+            if (g_mouseRClickButton && !g_mouseLClickButton) {
+                // right click
+                m = RigTForm::makeTranslation(Cvec3(dx, dy, 0) * g_arcball.getArcballScale());
+            }
+
+            else if (g_mouseMClickButton || (g_mouseLClickButton && g_mouseRClickButton)) {
+                // middle of both button click
+                m = RigTForm::makeTranslation(Cvec3(0, 0, -dy) * g_arcball.getArcballScale());
+
+            }
         }
     }
     
     else {
         // interface when arcball is invisible
         if (g_mouseLClickButton && !g_mouseRClickButton) {
+
             // left button down. rotation
-            m = DefaultInterfaceRotation(x, y);
+            m = RigTForm::makeXRotation(dy) * RigTForm::makeYRotation(dx);
         }
         else {
             // right button down. translation on xy plane or along z axis
-            m = DefaultInterfaceTranslation(x, y);
+            m = RigTForm::makeTranslation(Cvec3(0, 0, -dy) * 0.01);
         }
     }
 
   if (g_mouseClickDown) {
+      // apply transform to the object
       g_VPState.transformObjWrtA(m);
       g_VPState.updateAuxFrame();
 
@@ -303,7 +352,6 @@ static void motion(const int x, const int y) {
   g_mouseClickX = x;
   g_mouseClickY = g_windowHeight - y - 1;
 }
-*/
 
 static void motion(const int x, const int y) {
     g_mouseClickX = x;
