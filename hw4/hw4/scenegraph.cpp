@@ -37,7 +37,11 @@ protected:
 public:
     RbtAccumVisitor(SgTransformNode& target)
         : target_(target)
-        , found_(false) {}
+        , found_(false) 
+    {
+        // push identity
+        rbtStack_.push_back(RigTForm());
+    }
 
     const RigTForm getAccumulatedRbt(int offsetFromStackTop = 0) {
         int num_popped = 0;
