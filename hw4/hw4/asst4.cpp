@@ -335,8 +335,13 @@ static void motion(const int x, const int y) {
             m = RigTForm::makeXRotation(dy) * RigTForm::makeYRotation(dx);
         }
         else {
-            // right button down. translation on xy plane or along z axis
-            m = RigTForm::makeTranslation(Cvec3(0, 0, -dy) * 0.01);
+            if (g_mouseRClickButton && !g_mouseLClickButton) {
+                // right button clicked. translation on xy plane
+                m = RigTForm::makeTranslation(Cvec3(dx, dy, 0) * 0.01);
+            }
+            else {
+                m = RigTForm::makeTranslation(Cvec3(0, 0, -dy) * 0.01);
+            }
         }
     }
 
