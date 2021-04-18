@@ -342,20 +342,17 @@ static void motion(const int x, const int y) {
     }
 
   if (g_mouseClickDown) {
-      // apply transform to the object
-      g_VPState.transformObjWrtA(m);
-      g_VPState.updateAuxFrame();
+      // calculate auxiliary frame
+      RigTForm AuxFrame = inv(getPathAccumRbt(g_world, g_currentPickedRbtNode, 1)) * RigTForm(getPathAccumRbt(g_world, g_currentPickedRbtNode).getTranslation(), getPathAccumRbt(g_world, g_currentEyeNode).getRotation());      // apply transform to the object
+      
+      // apply transform
+      g_currentPickedRbtNode->setRbt(doMtoOwrtA(m, g_currentPickedRbtNode->getRbt(), AuxFrame));
 
       glutPostRedisplay(); // we always redraw if we changed the scene
   }
 
   g_mouseClickX = x;
   g_mouseClickY = g_windowHeight - y - 1;
-}
-
-static void motion(const int x, const int y) {
-    g_mouseClickX = x;
-    g_mouseClickY = g_windowHeight - y - 1;
 }
 
 /* Helper functions for motions */
