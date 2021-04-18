@@ -98,7 +98,10 @@ typedef SgGeometryShapeNode<Geometry> MyShapeNode;
 // Scene graph nodes
 static std::shared_ptr<SgRootNode> g_world;
 static std::shared_ptr<SgRbtNode> g_skyNode, g_groundNode, g_robot1Node, g_robot2Node;
+static std::shared_ptr<SgRbtNode> g_currentEyeNode;
 static std::shared_ptr<SgRbtNode> g_currentPickedRbtNode;
+
+static std::vector<std::shared_ptr<SgRbtNode>> Eyes = { g_skyNode, g_robot1Node, g_robot2Node };
 
 // Toggle picking
 static bool g_isPicking = false;
@@ -184,7 +187,7 @@ static void drawStuff(const ShaderState& curSS, bool picking) {
     sendProjectionMatrix(curSS, projmat);
 
     // use the skyRbt as the eyeRbt
-    const RigTForm eyeRbt = g_VPState.getCurrentEye();
+    const RigTForm eyeRbt = g_currentEyeNode->getRbt();
     const RigTForm invEyeRbt = inv(eyeRbt);
 
     const Cvec3 eyeLight1 = Cvec3(invEyeRbt * Cvec4(g_light1, 1)); // g_light1 position in eye coordinates
@@ -197,7 +200,7 @@ static void drawStuff(const ShaderState& curSS, bool picking) {
         g_world->accept(drawer);
 
         // draw arcball
-        if (g_currentPickedRbtNode != nullptr) {
+        if (g_currentPickedRbtNode != nullptr && g_currentEyeNode != g_currentPickedRbtNode) {
             RigTForm MVRigTForm = invEyeRbt * getPathAccumRbt(g_world, g_currentPickedRbtNode);
 
             bool isZMovement = (g_mouseLClickButton && g_mouseRClickButton) || g_mouseMClickButton;
@@ -255,11 +258,13 @@ static void reshape(const int w, const int h) {
 }
 
 /* Forward declaration for motion helpers */
-static RigTForm ArcballInterfaceRotation(const int x, const int y);
-static RigTForm ArcballInterfaceTranslation(const int x, const int y);
-static RigTForm DefaultInterfaceRotation(const int x, const int y);
-static RigTForm DefaultInterfaceTranslation(const int x, const int y);
+// static RigTForm ArcballInterfaceRotation(const int x, const int y);
+// static RigTForm ArcballInterfaceTranslation(const int x, const int y);
+// static RigTForm DefaultInterfaceRotation(const int x, const int y);
+// static RigTForm DefaultInterfaceTranslation(const int x, const int y);
 
+// temporarily disabled motion
+/*
 static void motion(const int x, const int y) {
     RigTForm m;
 
@@ -375,42 +380,20 @@ static void keyboard(const unsigned char key, const int x, const int y) {
     
     case 'v':
         std::cout << "Pressed 'v'! Switching camera\n";
-        /*
         // switch view point
-        g_VPState.switchEye();
-
-        // describe current state
-        g_VPState.describeCurrentStatus();
-        */
-        break;
-
-    case 'm':
-        if (!g_VPState.isSkySkyFrame()) {
-            // current frame is not a sky-sky frame
-            std::cout << "You can use this option ONLY when you're in sky-sky frame\n";
+        if (g_currentEyeNode == g_skyNode) {
+            g_currentEyeNode = g_robot1Node;
+            g_currentPickedRbtNode = g_robot1Node;
         }
+        else if (g_currentEyeNode == g_robot1Node) {
+            g_currentEyeNode = g_robot2Node;
+            g_currentPickedRbtNode = g_robot2Node;
+        } 
         else {
-            // current frame is a sky-sky frame
-            if (!g_VPState.isWorldSkyFrame()) {
-                // current frame is a sky-sky frame -> switching to world-sky frame
-                std::cout << "Switching to World-Sky frame\n";
-                g_VPState.setIsWorldSkyFrame(true);
-                g_VPState.updateAuxFrame();
-                g_VPState.describeCurrentStatus();
-            }
-            else {
-                // current frame is a world-sky frame -> switching to sky-sky frame
-                std::cout << "Switching to Sky-Sky frame\n";
-                g_VPState.setIsWorldSkyFrame(false);
-                g_VPState.updateAuxFrame();
-                g_VPState.describeCurrentStatus();
-            }
+            g_currentEyeNode = g_skyNode;
+            g_currentPickedRbtNode = g_skyNode;
         }
         glutPostRedisplay();
-        break;
-
-    case 'd':
-        g_VPState.describeCurrentStatus();
         break;
 
     case 's':
@@ -583,6 +566,10 @@ static void initScene() {
     g_world->addChild(g_groundNode);
     g_world->addChild(g_robot1Node);
     g_world->addChild(g_robot2Node);
+
+    // initially set eye and object
+    g_currentEyeNode = g_skyNode;
+    g_currentPickedRbtNode = g_skyNode;
 }
 
 static void initArcball() {
