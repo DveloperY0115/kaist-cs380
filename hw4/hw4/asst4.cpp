@@ -454,16 +454,18 @@ static void keyboard(const unsigned char key, const int x, const int y) {
         break;
 
     case 'f':
-        // enable/disenable shader
+        // toggle shader
         g_activeShader ^= 1;
         glutPostRedisplay();
         break;
 
     case 'p':
+        // picking
         std::cout << "Pressed 'p'! ";
         std::cout << "Enabling picking... \n";
         g_activeShader = PICKING_SHADER;
         g_isPicking = true;
+        // pick(); -> For debugging
         break;
     }
 }
