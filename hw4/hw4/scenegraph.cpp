@@ -55,13 +55,8 @@ public:
     }
 
     virtual bool visit(SgTransformNode& node) {
-        // push node to stack at the first visit
-        if (rbtStack_.empty()) {
-            rbtStack_.push_back(node.getRbt());
-        }
-        else {
-            rbtStack_.push_back(rbtStack_.back() * node.getRbt());
-        }
+
+        rbtStack_.push_back(rbtStack_.back() * node.getRbt());
 
         if (target_ == node) {
             found_ = true;
