@@ -39,7 +39,7 @@
 #include "drawer.h"
 #include "picker.h"
 
-using namespace std;      // for string, vector, iostream, and other standard C++ stuff
+using namespace std;
 
 // G L O B A L S ///////////////////////////////////////////////////
 
@@ -221,8 +221,11 @@ static void drawStuff(const ShaderState& curSS, bool picking) {
         g_world->accept(picker);
         glFlush();
         g_currentPickedRbtNode = picker.getRbtNodeAtXY(g_mouseClickX, g_mouseClickY);
-        if (g_currentPickedRbtNode == g_groundNode)
-            g_currentPickedRbtNode = shared_ptr<SgRbtNode>();   // set to NULL
+
+        if (g_currentPickedRbtNode == nullptr) {
+            // if any of robot part is not selected, switch to ego motion
+            g_currentPickedRbtNode = g_currentEyeNode;
+        }       
     }
 }
 
@@ -279,12 +282,10 @@ static void motion(const int x, const int y) {
                 makeProjectionMatrix(), g_frustNear, g_frustFovY, g_windowWidth, g_windowHeight);
         
             // calculate z coordinate of clicked points in screen coordinate
-
             int v1_x = (int)(g_mouseClickX - arcballScreenCoord(0));
             int v1_y = (int)(g_mouseClickY - arcballScreenCoord(1));
             int v1_z = getScreenZ(g_arcball.getScreenRadius(), g_mouseClickX, g_mouseClickY, arcballScreenCoord);
 
-            // !!!!! Caution: Flip y before using it !!!!! -> TODO: implement function for better readability
             int v2_x = (int)(x - arcballScreenCoord(0));
             int v2_y = (int)(g_windowHeight - y - 1 - arcballScreenCoord(1));
             int v2_z = getScreenZ(g_arcball.getScreenRadius(), x, g_windowHeight - y - 1, arcballScreenCoord);
@@ -328,11 +329,11 @@ static void motion(const int x, const int y) {
     }
     
     else {
-        // interface when arcball is invisible
+        // interface when arcball is NOT visible
         if (g_mouseLClickButton && !g_mouseRClickButton) {
 
             // left button down. rotation
-            m = RigTForm::makeXRotation(dy) * RigTForm::makeYRotation(dx);
+            m = RigTForm::makeXRotation(dy) * RigTForm::makeYRotation(-dx);
         }
         else {
             if (g_mouseRClickButton && !g_mouseLClickButton) {
