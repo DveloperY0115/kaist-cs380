@@ -39,6 +39,9 @@
 #include "drawer.h"
 #include "picker.h"
 
+// assignment 5
+#include "sgutils.h"
+
 using namespace std;
 
 // G L O B A L S ///////////////////////////////////////////////////
