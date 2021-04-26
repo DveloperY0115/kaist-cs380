@@ -97,7 +97,6 @@ typedef SgGeometryShapeNode<Geometry> MyShapeNode;
 
 // Scene graph nodes
 static std::shared_ptr<SgRootNode> g_world;
-static std::shared_ptr<SgRbtNode> g_pseudoworld;
 static std::shared_ptr<SgRbtNode> g_skyNode, g_groundNode, g_robot1Node, g_robot2Node;
 static std::shared_ptr<SgRbtNode> g_currentEyeNode;
 static std::shared_ptr<SgRbtNode> g_currentPickedRbtNode;
@@ -223,7 +222,7 @@ static void drawStuff(const ShaderState& curSS, bool picking) {
 
         else {
             // arcball rendering in world-sky frame
-            RigTForm MVRigTForm = invEyeRbt * g_pseudoworld->getRbt();
+            RigTForm MVRigTForm = invEyeRbt * g_world->getRbt();
 
             bool isZMovement = (g_mouseLClickButton && g_mouseRClickButton) || g_mouseMClickButton;
 
@@ -386,7 +385,7 @@ static void motion(const int x, const int y) {
         if (g_mouseLClickButton && !g_mouseRClickButton) {
             Quat Rotation = Quat();
 
-            Cvec2 arcballScreenCoord = getScreenSpaceCoord((invEyeRbt * g_pseudoworld->getRbt()).getTranslation(),
+            Cvec2 arcballScreenCoord = getScreenSpaceCoord((invEyeRbt * g_world->getRbt()).getTranslation(),
                 makeProjectionMatrix(), g_frustNear, g_frustFovY, g_windowWidth, g_windowHeight);
 
             // calculate z coordinate of clicked points in screen coordinate
@@ -437,13 +436,9 @@ static void motion(const int x, const int y) {
 
         if (g_mouseClickDown) {
             // calculate auxiliary frame
-            RigTForm AuxFrame = makeMixedFrame(g_pseudoworld->getRbt(), g_currentEyeNode->getRbt());
-
-            // manipulate objects in the scene except eye
-            g_pseudoworld->setRbt(doMtoOwrtA(m, g_pseudoworld->getRbt(), AuxFrame));
-            g_groundNode->setRbt(doMtoOwrtA(m, g_groundNode->getRbt(), AuxFrame));
-            g_robot1Node->setRbt(doMtoOwrtA(m, g_robot1Node->getRbt(), AuxFrame));
-            g_robot2Node->setRbt(doMtoOwrtA(m, g_robot2Node->getRbt(), AuxFrame));
+            RigTForm AuxFrame = makeMixedFrame(g_world->getRbt(), g_currentEyeNode->getRbt());
+            
+            g_skyNode->setRbt(doMtoOwrtA(inv(m), g_skyNode->getRbt(), AuxFrame));
 
             glutPostRedisplay(); // we always redraw if we changed the scene
         }
@@ -705,7 +700,6 @@ static void constructRobot(shared_ptr<SgTransformNode> base, const Cvec3& color)
 
 static void initScene() {
     g_world.reset(new SgRootNode());
-    g_pseudoworld.reset(new SgRbtNode(RigTForm()));
 
     g_skyNode.reset(new SgRbtNode(RigTForm(Cvec3(0.0, 0.25, 4.0))));
 
