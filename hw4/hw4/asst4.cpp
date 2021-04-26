@@ -97,6 +97,7 @@ typedef SgGeometryShapeNode<Geometry> MyShapeNode;
 
 // Scene graph nodes
 static std::shared_ptr<SgRootNode> g_world;
+static std::shared_ptr<SgRbtNode> g_pseudoworld;
 static std::shared_ptr<SgRbtNode> g_skyNode, g_groundNode, g_robot1Node, g_robot2Node;
 static std::shared_ptr<SgRbtNode> g_currentEyeNode;
 static std::shared_ptr<SgRbtNode> g_currentPickedRbtNode;
@@ -105,6 +106,9 @@ static std::vector<std::shared_ptr<SgRbtNode>> Eyes = { g_skyNode, g_robot1Node,
 
 // Toggle picking
 static bool g_isPicking = false;
+
+// Toggle World-Sky frame
+static bool g_isWorldSky = false;
 
 // Vertex buffer and index buffer associated with the ground and cube geometry
 static shared_ptr<Geometry> g_ground, g_cube, g_sphere;
@@ -199,9 +203,27 @@ static void drawStuff(const ShaderState& curSS, bool picking) {
         Drawer drawer(invEyeRbt, curSS);
         g_world->accept(drawer);
 
-        // draw arcball
-        if (g_currentPickedRbtNode != nullptr && g_currentEyeNode != g_currentPickedRbtNode) {
-            RigTForm MVRigTForm = invEyeRbt * getPathAccumRbt(g_world, g_currentPickedRbtNode);
+        if (!g_isWorldSky) {
+            // arcball rendering in normal situation
+            if (g_currentEyeNode != g_currentPickedRbtNode) {
+                RigTForm MVRigTForm = invEyeRbt * getPathAccumRbt(g_world, g_currentPickedRbtNode);
+
+                bool isZMovement = (g_mouseLClickButton && g_mouseRClickButton) || g_mouseMClickButton;
+
+                g_arcball.updateArcballMVRbt(MVRigTForm);
+
+                if (!isZMovement) {
+                    double z = g_arcball.getArcballMVRbt().getTranslation()(2);
+                    g_arcball.updateArcballScale(getScreenToEyeScale(z, g_frustFovY, g_windowHeight));
+                }
+
+                g_arcball.drawArcball(curSS);
+            }
+        }
+
+        else {
+            // arcball rendering in world-sky frame
+            RigTForm MVRigTForm = invEyeRbt * g_pseudoworld->getRbt();
 
             bool isZMovement = (g_mouseLClickButton && g_mouseRClickButton) || g_mouseMClickButton;
 
@@ -272,15 +294,101 @@ static void motion(const int x, const int y) {
 
     RigTForm m;
 
-    // if not ego motion, enable arcball
-    if (g_currentEyeNode != g_currentPickedRbtNode) {
-        // rotation when arcball is visible
+    // motion callbacks for normal situations
+    if (!g_isWorldSky) {
+        // if not ego motion, enable arcball
+        if (g_currentEyeNode != g_currentPickedRbtNode) {
+            // rotation when arcball is visible
+            if (g_mouseLClickButton && !g_mouseRClickButton) {
+                Quat Rotation = Quat();
+
+                Cvec2 arcballScreenCoord = getScreenSpaceCoord((invEyeRbt * getPathAccumRbt(g_world, g_currentPickedRbtNode)).getTranslation(),
+                    makeProjectionMatrix(), g_frustNear, g_frustFovY, g_windowWidth, g_windowHeight);
+
+                // calculate z coordinate of clicked points in screen coordinate
+                int v1_x = (int)(g_mouseClickX - arcballScreenCoord(0));
+                int v1_y = (int)(g_mouseClickY - arcballScreenCoord(1));
+                int v1_z = getScreenZ(g_arcball.getScreenRadius(), g_mouseClickX, g_mouseClickY, arcballScreenCoord);
+
+                int v2_x = (int)(x - arcballScreenCoord(0));
+                int v2_y = (int)(g_windowHeight - y - 1 - arcballScreenCoord(1));
+                int v2_z = getScreenZ(g_arcball.getScreenRadius(), x, g_windowHeight - y - 1, arcballScreenCoord);
+
+                Cvec3 v1;
+                Cvec3 v2;
+                Cvec3 k;
+
+                if (v1_z < 0 || v2_z < 0) {
+                    // user points outside the arcball
+                    v1 = normalize(Cvec3(v1_x, v1_y, 0));
+                    v2 = normalize(Cvec3(v2_x, v2_y, 0));
+                    k = cross(v1, v2);
+
+                    Rotation = Quat(dot(v1, v2), k);
+                }
+
+                else {
+                    v1 = normalize(Cvec3(v1_x, v1_y, v1_z));
+                    v2 = normalize(Cvec3(v2_x, v2_y, v2_z));
+                    k = cross(v1, v2);
+
+                    Rotation = Quat(dot(v1, v2), k);
+                }
+
+                m = RigTForm(Rotation);
+            }
+
+            // translation when arcball is visible
+            else {
+                if (g_mouseRClickButton && !g_mouseLClickButton) {
+                    // right click
+                    m = RigTForm::makeTranslation(Cvec3(dx, dy, 0) * g_arcball.getArcballScale());
+                }
+
+                else if (g_mouseMClickButton || (g_mouseLClickButton && g_mouseRClickButton)) {
+                    // middle of both button click
+                    m = RigTForm::makeTranslation(Cvec3(0, 0, -dy) * g_arcball.getArcballScale());
+                }
+            }
+        }
+
+        else {
+            // interface when arcball is NOT visible
+            if (g_mouseLClickButton && !g_mouseRClickButton) {
+
+                // left button down. rotation
+                m = RigTForm::makeXRotation(dy) * RigTForm::makeYRotation(-dx);
+            }
+            else {
+                if (g_mouseRClickButton && !g_mouseLClickButton) {
+                    // right button clicked. translation on xy plane
+                    m = RigTForm::makeTranslation(Cvec3(dx, dy, 0) * 0.01);
+                }
+                else {
+                    m = RigTForm::makeTranslation(Cvec3(0, 0, -dy) * 0.01);
+                }
+            }
+        }
+
+        if (g_mouseClickDown) {
+            // calculate auxiliary frame
+            RigTForm AuxFrame = inv(getPathAccumRbt(g_world, g_currentPickedRbtNode, 1)) * RigTForm(getPathAccumRbt(g_world, g_currentPickedRbtNode).getTranslation(), eyeRbt.getRotation());      // apply transform to the object
+
+            // apply transform
+            g_currentPickedRbtNode->setRbt(doMtoOwrtA(m, g_currentPickedRbtNode->getRbt(), AuxFrame));
+
+            glutPostRedisplay(); // we always redraw if we changed the scene
+        }
+    }
+
+    // motion callback for world-sky frame
+    else {
         if (g_mouseLClickButton && !g_mouseRClickButton) {
             Quat Rotation = Quat();
 
-            Cvec2 arcballScreenCoord = getScreenSpaceCoord((invEyeRbt * getPathAccumRbt(g_world, g_currentPickedRbtNode)).getTranslation(),
+            Cvec2 arcballScreenCoord = getScreenSpaceCoord((invEyeRbt * g_pseudoworld->getRbt()).getTranslation(),
                 makeProjectionMatrix(), g_frustNear, g_frustFovY, g_windowWidth, g_windowHeight);
-        
+
             // calculate z coordinate of clicked points in screen coordinate
             int v1_x = (int)(g_mouseClickX - arcballScreenCoord(0));
             int v1_y = (int)(g_mouseClickY - arcballScreenCoord(1));
@@ -326,36 +434,20 @@ static void motion(const int x, const int y) {
                 m = RigTForm::makeTranslation(Cvec3(0, 0, -dy) * g_arcball.getArcballScale());
             }
         }
-    }
-    
-    else {
-        // interface when arcball is NOT visible
-        if (g_mouseLClickButton && !g_mouseRClickButton) {
 
-            // left button down. rotation
-            m = RigTForm::makeXRotation(dy) * RigTForm::makeYRotation(-dx);
-        }
-        else {
-            if (g_mouseRClickButton && !g_mouseLClickButton) {
-                // right button clicked. translation on xy plane
-                m = RigTForm::makeTranslation(Cvec3(dx, dy, 0) * 0.01);
-            }
-            else {
-                m = RigTForm::makeTranslation(Cvec3(0, 0, -dy) * 0.01);
-            }
+        if (g_mouseClickDown) {
+            // calculate auxiliary frame
+            RigTForm AuxFrame = makeMixedFrame(g_pseudoworld->getRbt(), g_currentEyeNode->getRbt());
+
+            // manipulate objects in the scene except eye
+            g_pseudoworld->setRbt(doMtoOwrtA(m, g_pseudoworld->getRbt(), AuxFrame));
+            g_groundNode->setRbt(doMtoOwrtA(m, g_groundNode->getRbt(), AuxFrame));
+            g_robot1Node->setRbt(doMtoOwrtA(m, g_robot1Node->getRbt(), AuxFrame));
+            g_robot2Node->setRbt(doMtoOwrtA(m, g_robot2Node->getRbt(), AuxFrame));
+
+            glutPostRedisplay(); // we always redraw if we changed the scene
         }
     }
-
-  if (g_mouseClickDown) {
-      // calculate auxiliary frame
-      RigTForm AuxFrame = inv(getPathAccumRbt(g_world, g_currentPickedRbtNode, 1)) * RigTForm(getPathAccumRbt(g_world, g_currentPickedRbtNode).getTranslation(), eyeRbt.getRotation());      // apply transform to the object
-      
-      // apply transform
-      g_currentPickedRbtNode->setRbt(doMtoOwrtA(m, g_currentPickedRbtNode->getRbt(), AuxFrame));
-      
-      glutPostRedisplay(); // we always redraw if we changed the scene
-  }
-
   g_mouseClickX = x;
   g_mouseClickY = g_windowHeight - y - 1;
 }
@@ -431,6 +523,7 @@ static void keyboard(const unsigned char key, const int x, const int y) {
     case 'v':
         std::cout << "Pressed 'v'! Switching camera\n";
         // switch view point
+        g_isWorldSky = false;
         if (g_currentEyeNode == g_skyNode) {
             g_currentEyeNode = g_robot1Node;
             g_currentPickedRbtNode = g_robot1Node;
@@ -442,6 +535,16 @@ static void keyboard(const unsigned char key, const int x, const int y) {
         else {
             g_currentEyeNode = g_skyNode;
             g_currentPickedRbtNode = g_skyNode;
+        }
+        glutPostRedisplay();
+        break;
+
+    case 'm':
+        if (g_currentEyeNode != g_skyNode) {
+            std::cout << "You should be in bird-eye view to switch to World-Sky frame\n";
+        }
+        else {
+            g_isWorldSky = true;
         }
         glutPostRedisplay();
         break;
@@ -465,6 +568,7 @@ static void keyboard(const unsigned char key, const int x, const int y) {
         std::cout << "Enabling picking... \n";
         g_activeShader = PICKING_SHADER;
         g_isPicking = true;
+        g_isWorldSky = false;
         // pick(); -> For debugging
         break;
     }
@@ -601,6 +705,7 @@ static void constructRobot(shared_ptr<SgTransformNode> base, const Cvec3& color)
 
 static void initScene() {
     g_world.reset(new SgRootNode());
+    g_pseudoworld.reset(new SgRbtNode(RigTForm()));
 
     g_skyNode.reset(new SgRbtNode(RigTForm(Cvec3(0.0, 0.25, 4.0))));
 
