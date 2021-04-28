@@ -79,21 +79,45 @@ public:
 		}
 	}
 	
-	void sendKeyframeToScene() {
-		if (!keyframes_.empty()) {
-			// copy the current keyframe to the scene graph
+	//! Copy current keyframe to the scene graph
+	void sendCurrentKeyframeToScene(SceneRbtVector& nodes) {
+		if (currentKeyframeIter == keyframes_.end()) {
+			std::cerr << "Current keyframe is undefined!\n";
 		}
 		else {
-			std::cerr << "There's no keyframe!\n";
+			const Keyframe currentKeyframe = *currentKeyframeIter;
+			setSgRbtNodes(nodes, currentKeyframe);
 		}
 	}
 
+	//! Advance to the next keyframe if possible
+	//! If already at the end of the list, do nothing
 	void advanceFrame() {
+		if (currentKeyframeIter == keyframes_.end()) {
+			std::cerr << "Current keyframe is undefined! (list is empty)\n";
+		}
+		else {
+			currentKeyframeIter++;
 
+			if (currentKeyframeIter == keyframes_.end())
+				std::cerr << "There's no next keyframe\n";
+				currentKeyframeIter--;
+		}
 	}
 
+	//! Retreat to the previous keyframe if possible
+	//! If already at the beginning of the list, do nothing
 	void retreatFrame() {
-
+		if (currentKeyframeIter == keyframes_.end()) {
+			std::cerr << "Current keyframe is undefined! (list is empty)\n";
+		}
+		else {
+			if (currentKeyframeIter == keyframes_.begin())
+				std::cerr << "There's no previous keyframe\n";
+			else {
+				currentKeyframeIter--;
+			}
+		}
 	}
 
 	

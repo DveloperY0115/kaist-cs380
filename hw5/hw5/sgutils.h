@@ -39,7 +39,7 @@ inline void dumpSgRbtNodes(std::shared_ptr<SgNode> root, SceneRbtVector& rbtNode
 //!
 //! setSgRbtNodes
 //! Set all RbtNodes in the scene with the values stored in the given vector
-inline void setSgRbtNodes(SceneRbtVector& rbtNodes, Frame& frame) {
+inline void setSgRbtNodes(SceneRbtVector& rbtNodes, const Frame& frame) {
     assert(rbtNodes.size() == frame.size());
     for (int idx = 0; idx < rbtNodes.size(); ++idx) {
         rbtNodes[idx]->setRbt(frame[idx]);
