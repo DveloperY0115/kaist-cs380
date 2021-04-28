@@ -72,14 +72,13 @@ namespace Animation {
 				else {
 					// Case (2) - (ii)
 					if (currentKeyframeIter == keyframes_.begin()) {
-						std::list<Frame>::iterator nextIter = ++currentKeyframeIter;
-						keyframes_.erase(currentKeyframeIter);
-						currentKeyframeIter = nextIter;
+						currentKeyframeIter = keyframes_.erase(currentKeyframeIter);
 					}
 					// Case (2) - (i)
 					else {
-						std::list<Frame>::iterator prevIter = --currentKeyframeIter;
-						keyframes_.erase(currentKeyframeIter);
+						std::list<Frame>::iterator prevIter = currentKeyframeIter;
+						prevIter--;
+						currentKeyframeIter = keyframes_.erase(currentKeyframeIter);
 						currentKeyframeIter = prevIter;
 					}
 					sendCurrentKeyframeToScene(nodes);
