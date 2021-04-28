@@ -13,7 +13,7 @@ class Quat;
 double dot(const Quat& q, const Quat& p);
 double norm2(const Quat& q);
 Quat inv(const Quat& q);
-Quat pow(const Quat& q, const double alpha);
+Quat pow(const Quat& q, const double& alpha);
 Quat normalize(const Quat& q);
 Matrix4 quatToMatrix(const Quat& q);
 
@@ -143,7 +143,7 @@ inline Quat normalize(const Quat& q) {
 /*
 * Power operator for quaternions
 */
-inline Quat pow(const Quat& q, const double& alpha) {
+Quat pow(const Quat& q, const double& alpha) {
     /*
     * Assume input quaternion q is of form
     * [ cos(theta), sin(theta) *k ]
