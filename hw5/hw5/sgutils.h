@@ -5,12 +5,17 @@
 
 #include "scenegraph.h"
 
+//!
+//! RbtNodesScanner for dumping RigTForm objects handled by
+//! each RbtNode in the scene graph
 struct RbtNodesScanner : public SgNodeVisitor {
-  typedef std::vector<std::shared_ptr<SgRbtNode> > SgRbtNodes;
+  typedef std::vector<std::shared_ptr<SgRbtNode>> SgRbtNodes;
 
   SgRbtNodes& nodes_;
 
-  RbtNodesScanner(SgRbtNodes& nodes) : nodes_(nodes) {}
+  RbtNodesScanner(SgRbtNodes& nodes) : nodes_(nodes) {
+      assert(nodes_.empty());
+  }
 
   virtual bool visit(SgTransformNode& node) {
     using namespace std;
@@ -21,7 +26,10 @@ struct RbtNodesScanner : public SgNodeVisitor {
   }
 };
 
-inline void dumpSgRbtNodes(std::shared_ptr<SgNode> root, std::vector<std::shared_ptr<SgRbtNode> >& rbtNodes) {
+//!
+//! dumpSgRbtNodes
+//! Dump all RbtNodes in the scene into a vector
+inline void dumpSgRbtNodes(std::shared_ptr<SgNode> root, std::vector<std::shared_ptr<SgRbtNode>>& rbtNodes) {
   RbtNodesScanner scanner(rbtNodes);
   root->accept(scanner);
 }
