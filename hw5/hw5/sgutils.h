@@ -49,7 +49,7 @@ struct RbtNodesSetter : public SgNodeVisitor {
     }
 
     virtual bool visit(SgTransformNode& node) {
-        shared_ptr<SgRbtNode> rbtPtr = dynamic_pointer_cast<SgRbtNode>(node.shared_from_this());
+        std::shared_ptr<SgRbtNode> rbtPtr = std::dynamic_pointer_cast<SgRbtNode>(node.shared_from_this());
         if (rbtPtr) {
             rbtPtr->setRbt(rbts_[idx_]);
             idx_++;
