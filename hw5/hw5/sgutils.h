@@ -5,17 +5,14 @@
 
 #include "scenegraph.h"
 
-using SceneRbtVector = std::vector<std::shared_ptr<SgRbtNode>>;
-using Frame = std::vector<RigTForm>;
-
 //!
 //! RbtNodesScanner for dumping RigTForm objects handled by
 //! each RbtNode in the scene graph
 struct RbtNodesScanner : public SgNodeVisitor {
 
-  SceneRbtVector& nodes_;
+    std::vector<std::shared_ptr<SgRbtNode>>& nodes_;
 
-  RbtNodesScanner(SceneRbtVector& nodes) : nodes_(nodes) {
+  RbtNodesScanner(std::vector<std::shared_ptr<SgRbtNode>>& nodes) : nodes_(nodes) {
       assert(nodes_.empty());
   }
 
@@ -31,7 +28,7 @@ struct RbtNodesScanner : public SgNodeVisitor {
 //!
 //! dumpSgRbtNodes
 //! Dump all RbtNodes in the scene into a vector
-inline void dumpSgRbtNodes(std::shared_ptr<SgNode> root, SceneRbtVector& rbtNodes) {
+inline void dumpSgRbtNodes(std::shared_ptr<SgNode> root, std::vector<std::shared_ptr<SgRbtNode>>& rbtNodes) {
   RbtNodesScanner scanner(rbtNodes);
   root->accept(scanner);
 }
@@ -39,9 +36,9 @@ inline void dumpSgRbtNodes(std::shared_ptr<SgNode> root, SceneRbtVector& rbtNode
 //!
 //! dumpFrame
 //! Dump all RigTForm kept by SgRbtNodes in the SceneRbtVector into a vector 
-inline void dumpFrame(SceneRbtVector& rbtNodes, Frame& frame) {
+inline void dumpFrame(std::vector<std::shared_ptr<SgRbtNode>>& rbtNodes, std::vector<RigTForm>& frame) {
     assert(frame.empty());
-    for (SceneRbtVector::iterator iter = rbtNodes.begin(); iter != rbtNodes.end(); ++iter) {
+    for (std::vector<std::shared_ptr<SgRbtNode>>::iterator iter = rbtNodes.begin(); iter != rbtNodes.end(); ++iter) {
         frame.push_back((*iter)->getRbt());
     }
 }
@@ -49,7 +46,7 @@ inline void dumpFrame(SceneRbtVector& rbtNodes, Frame& frame) {
 //!
 //! setSgRbtNodes
 //! Set all RbtNodes in the scene with the values stored in the given vector
-inline void setSgRbtNodes(SceneRbtVector& rbtNodes, const Frame& frame) {
+inline void setSgRbtNodes(std::vector<std::shared_ptr<SgRbtNode>>& rbtNodes, const std::vector<RigTForm>& frame) {
     assert(rbtNodes.size() == frame.size());
     for (unsigned int idx = 0; idx < rbtNodes.size(); ++idx) {
         rbtNodes[idx]->setRbt(frame[idx]);

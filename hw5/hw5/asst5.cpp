@@ -123,7 +123,7 @@ static const Cvec3 g_light1(2.0, 3.0, 14.0), g_light2(-2, -3.0, -5.0);  // defin
 static Arcball g_arcball;
 
 // --------- Animation
-static KeyframeList g_keyframes = KeyframeList();
+static Animation::KeyframeList g_keyframes = Animation::KeyframeList();
 static std::vector<std::shared_ptr<SgRbtNode>> g_sceneRbtVector = std::vector<std::shared_ptr<SgRbtNode>>();
 
 ///////////////// END OF G L O B A L S //////////////////////////////////////////////////
@@ -586,7 +586,8 @@ static void keyboard(const unsigned char key, const int x, const int y) {
     case 'u':
         // update the scene graph RBT data to the current keyframe
         // or, add a new keyframe if the keyframe list is empty
-        Frame dumpedFrame = Frame();
+    {
+        Animation::Frame dumpedFrame = Animation::Frame();
         dumpFrame(g_sceneRbtVector, dumpedFrame);
 
         if (g_keyframes.empty()) {
@@ -597,14 +598,15 @@ static void keyboard(const unsigned char key, const int x, const int y) {
             std::cout << "Updating current keyframe...\n";
             g_keyframes.getCurrentKeyframe() = dumpedFrame;
         }
-        
+
         break;
-        /*
-        case 'd':
-            // remove current keyframe from the list
-            g_keyframes.removeCurrentKeyframe();
-            break;
-        */
+    }
+   
+    case 'd':
+        // remove current keyframe from the list
+        std::cout << "Removing current keyframe...\n";
+        g_keyframes.removeCurrentKeyframe(g_sceneRbtVector);
+        break;
     }
 }
 
