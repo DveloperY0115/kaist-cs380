@@ -598,7 +598,7 @@ static void keyboard(const unsigned char key, const int x, const int y) {
             std::cout << "Updating current keyframe...\n";
             g_keyframes.updateCurrentKeyframe(dumpedFrame);
         }
-
+        g_keyframes.printCurrentKeyframeIdx();
         break;
     }
 
@@ -607,16 +607,32 @@ static void keyboard(const unsigned char key, const int x, const int y) {
         std::cout << "Removing current keyframe...\n";
         g_keyframes.removeCurrentKeyframe(g_sceneRbtVector);
         glutPostRedisplay();
+        g_keyframes.printCurrentKeyframeIdx();
         break;
 
 
     case 'n':
         // add new keyframe
+    {
         std::cout << "Adding new keyframe...\n";
-    {   Animation::Frame dumpedFrame = Animation::Frame();
+        Animation::Frame dumpedFrame = Animation::Frame();
         dumpFrame(g_sceneRbtVector, dumpedFrame);
         g_keyframes.addNewKeyframe(dumpedFrame);
+        g_keyframes.printCurrentKeyframeIdx();
+        break;
     }
+
+    case '>':
+        g_keyframes.advanceFrame(g_sceneRbtVector);
+        glutPostRedisplay();
+        g_keyframes.printCurrentKeyframeIdx();
+        break;
+
+    case '<':
+        g_keyframes.retreatFrame(g_sceneRbtVector);
+        glutPostRedisplay();
+        g_keyframes.printCurrentKeyframeIdx();
+        break;
     }
 }
 

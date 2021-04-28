@@ -103,30 +103,35 @@ namespace Animation {
 
 		//! Advance to the next keyframe if possible
 		//! If already at the end of the list, do nothing
-		void advanceFrame() {
+		void advanceFrame(SceneRbtVector& nodes) {
 			if (currentKeyframeIter == keyframes_.end()) {
 				std::cerr << "Current keyframe is undefined! (list is empty)\n";
 			}
 			else {
-				currentKeyframeIter++;
-
-				if (currentKeyframeIter == keyframes_.end())
-					std::cerr << "There's no next keyframe\n";
-				currentKeyframeIter--;
+				std::list<Frame>::iterator lastElem = keyframes_.end();
+				lastElem--;
+				if (currentKeyframeIter == lastElem) {
+					std::cerr << "This is the last keyframe!\n";
+				}
+				else {
+					currentKeyframeIter++;
+					sendCurrentKeyframeToScene(nodes);
+				}
 			}
 		}
 
 		//! Retreat to the previous keyframe if possible
 		//! If already at the beginning of the list, do nothing
-		void retreatFrame() {
+		void retreatFrame(SceneRbtVector& nodes) {
 			if (currentKeyframeIter == keyframes_.end()) {
 				std::cerr << "Current keyframe is undefined! (list is empty)\n";
 			}
 			else {
 				if (currentKeyframeIter == keyframes_.begin())
-					std::cerr << "There's no previous keyframe\n";
+					std::cerr << "This is the first keyframe!\n";
 				else {
 					currentKeyframeIter--;
+					sendCurrentKeyframeToScene(nodes);
 				}
 			}
 		}
