@@ -601,12 +601,22 @@ static void keyboard(const unsigned char key, const int x, const int y) {
 
         break;
     }
-   
+
     case 'd':
         // remove current keyframe from the list
         std::cout << "Removing current keyframe...\n";
         g_keyframes.removeCurrentKeyframe(g_sceneRbtVector);
+        glutPostRedisplay();
         break;
+
+
+    case 'n':
+        // add new keyframe
+        std::cout << "Adding new keyframe...\n";
+    {   Animation::Frame dumpedFrame = Animation::Frame();
+        dumpFrame(g_sceneRbtVector, dumpedFrame);
+        g_keyframes.addNewKeyframe(dumpedFrame);
+    }
     }
 }
 
