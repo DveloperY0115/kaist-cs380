@@ -34,5 +34,36 @@ inline void dumpSgRbtNodes(std::shared_ptr<SgNode> root, std::vector<std::shared
   root->accept(scanner);
 }
 
+//!
+//! RbtNodesSetter for setting the value of RigTForm objects 
+//! kept by RbtNodes in the scene
+struct RbtNodesSetter : public SgNodeVisitor {
+    typedef std::vector<RigTForm> Rbts;
+
+    Rbts& rbts_;
+    int idx_;
+
+    RbtNodesSetter(Rbts& rbts) : rbts_(rbts) {
+        assert(!rbts_.empty());
+        idx_ = 0;
+    }
+
+    virtual bool visit(SgTransformNode& node) {
+        shared_ptr<SgRbtNode> rbtPtr = dynamic_pointer_cast<SgRbtNode>(node.shared_from_this());
+        if (rbtPtr) {
+            rbtPtr->setRbt(rbts_[idx_]);
+            idx_++;
+        }
+        return true;
+    }
+};
+
+//!
+//! setSgRbtNodes
+//! Set all RbtNodes in the scene with the values stored in the given vector
+inline void setSgRbtNodes(std::shared_ptr<SgNode> root, std::vector<RigTForm>& rbts) {
+    RbtNodesSetter setter(rbts);
+    root->accept(setter);
+}
 
 #endif
