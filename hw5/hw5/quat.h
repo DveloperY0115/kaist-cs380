@@ -148,15 +148,13 @@ inline Quat pow(const Quat& q, const double& alpha) {
     * Assume input quaternion q is of form
     * [ cos(theta), sin(theta) *k ]
     */
-    Quat r = q;
 
-    if (r(0) < 0) {
-        // if the first component of 
-    }
+    Cvec3 k = Cvec3(q(1), q(2), q(3));
+    double cosine = q(0);
+    double sine = norm(k);
+    double theta = atan2(sine, cosine);
 
-    double theta = std::acos(r(0));    // calculate theta using arccosine
-    double alpha_theta = alpha * theta;
-
+    return Quat(cos(alpha * theta), normalize(k) * sin(alpha * theta));
 }
 
 inline Matrix4 quatToMatrix(const Quat& q) {
