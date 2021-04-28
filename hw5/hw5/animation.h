@@ -41,11 +41,11 @@ public:
 		}
 		else {
 			// otherwise, insert a new frame next to the current keyframe
-			std::list<Keyframe>::iterator it = keyframes_.begin();
+			std::list<Keyframe>::iterator currentIt = keyframes_.begin();
 			for (int i = 0; i < currentKeyframeIdx; ++i) {
-				it++;
+				currentIt++;
 			}
-			keyframes_.insert(it, keyframe);
+			keyframes_.insert(currentIt, keyframe);
 			currentKeyframeIdx++;
 		}
 	}
@@ -68,8 +68,9 @@ public:
 			for (int i = 0; i < currentKeyframeIdx; ++i) {
 				currentIt++;
 			}
-			keyframes_.remove(*currentIt);
-
+			
+			keyframes_.erase(currentIt);
+			
 			// Case (1)
 			if (keyframes_.empty()) {
 				currentKeyframeIdx = UNDEFINED;
@@ -84,9 +85,10 @@ public:
 					// Do nothing
 				}
 			}
+
 		}
 	}
-
+	
 	void sendKeyframeToScene() {
 		if (!keyframes_.empty()) {
 			// copy the current keyframe to the scene graph
