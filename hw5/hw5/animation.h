@@ -131,10 +131,35 @@ namespace Animation {
 			}
 		}
 
+		/*
+		* Helper functions
+		*/
+
+	public:
+		//! Print the current keyframe index
+		void printCurrentKeyframeIdx() {
+			std::cout << "Current keyframe is keyframe # [" << getCurrentKeyframeIdx() << "]\n";
+		}
+
+	private:
+		//! Calculate the curernt keyframe index
+		int getCurrentKeyframeIdx() {
+			if (currentKeyframeIter == keyframes_.end()) {
+				return -1;
+			}
+			unsigned int idx = 0;
+			std::list<Frame>::iterator iter = keyframes_.begin();
+			while (iter != currentKeyframeIter) {
+				iter++;
+				idx++;
+			}
+			return idx;
+		}
 
 	private:
 		std::list<Frame> keyframes_;
 		std::list<Frame>::iterator currentKeyframeIter;
 	};
 }
+
 #endif
