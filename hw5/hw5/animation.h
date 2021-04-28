@@ -50,14 +50,49 @@ public:
 		}
 	}
 
-	//! Remove keyframe from the list
-	void removeKeyframe() {
+	//! Remove current keyframe from the list, update the scene graph with the new key frame
+	//! The behavior of this function follows the specification
+	//! 
+	//! (1) If the list becomes empty after deletion, set current keyframe to be UNDEFINED
+	//! (2) Otherwise,
+	//!		(i) If the deleted frame was NOT the first frame, set the current frame as the one before it
+	//!		(ii) If the deleted frame was the first frame, then set the current frame as the one next to it
+	void removeCurrentKeyframe() {
+		if (keyframes_.empty()) {
+			std::cerr << "There's no keyframe!\n";
+			return;
+		}
+		else {
+			// Remove the current keyframe from the list
+			std::list<Keyframe>::iterator currentIt = keyframes_.begin();
+			for (int i = 0; i < currentKeyframeIdx; ++i) {
+				currentIt++;
+			}
+			keyframes_.remove(*currentIt);
 
+			// Case (1)
+			if (keyframes_.empty()) {
+				currentKeyframeIdx = UNDEFINED;
+			}
+			else {
+				// Case (2) - (i)
+				if (currentKeyframeIdx != 0) {
+					currentKeyframeIdx -= 1;
+				}
+				// Case (2) - (ii)
+				else {
+					// Do nothing
+				}
+			}
+		}
 	}
 
 	void sendKeyframeToScene() {
 		if (!keyframes_.empty()) {
 			// copy the current keyframe to the scene graph
+		}
+		else {
+			std::cerr << "There's no keyframe!\n";
 		}
 	}
 
