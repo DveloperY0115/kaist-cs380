@@ -115,7 +115,7 @@ namespace Animation {
 				}
 				else {
 					currentKeyframeIter++;
-					sendCurrentKeyframeToScene(nodes);
+					// sendCurrentKeyframeToScene(nodes);
 				}
 			}
 		}
@@ -131,7 +131,7 @@ namespace Animation {
 					std::cerr << "This is the first keyframe!\n";
 				else {
 					currentKeyframeIter--;
-					sendCurrentKeyframeToScene(nodes);
+					// sendCurrentKeyframeToScene(nodes);
 				}
 			}
 		}
