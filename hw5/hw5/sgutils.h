@@ -37,11 +37,21 @@ inline void dumpSgRbtNodes(std::shared_ptr<SgNode> root, SceneRbtVector& rbtNode
 }
 
 //!
+//! dumpFrame
+//! Dump all RigTForm kept by SgRbtNodes in the SceneRbtVector into a vector 
+inline void dumpFrame(SceneRbtVector& rbtNodes, Frame& frame) {
+    assert(frame.empty());
+    for (SceneRbtVector::iterator iter = rbtNodes.begin(); iter != rbtNodes.end(); ++iter) {
+        frame.push_back((*iter)->getRbt());
+    }
+}
+
+//!
 //! setSgRbtNodes
 //! Set all RbtNodes in the scene with the values stored in the given vector
 inline void setSgRbtNodes(SceneRbtVector& rbtNodes, const Frame& frame) {
     assert(rbtNodes.size() == frame.size());
-    for (int idx = 0; idx < rbtNodes.size(); ++idx) {
+    for (unsigned int idx = 0; idx < rbtNodes.size(); ++idx) {
         rbtNodes[idx]->setRbt(frame[idx]);
     }
 }
