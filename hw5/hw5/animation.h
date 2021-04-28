@@ -28,8 +28,12 @@ namespace Animation {
 
 		//! Getter for current keyframe
 		//! Warning: Call on empty list is undefined
-		Frame getCurrentKeyframe() {
+		Frame& getCurrentKeyframe() {
 			return *currentKeyframeIter;
+		}
+
+		void updateCurrentKeyframe(Frame frame) {
+			*currentKeyframeIter = frame;
 		}
 
 		bool empty() {
