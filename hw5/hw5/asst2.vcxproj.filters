@@ -5,9 +5,10 @@
     <ClCompile Include="ppm.cpp">
       <Filter>utils</Filter>
     </ClCompile>
-    <ClCompile Include="asst4.cpp" />
     <ClCompile Include="picker.cpp" />
     <ClCompile Include="scenegraph.cpp" />
+    <ClCompile Include="asst5.cpp" />
+    <ClCompile Include="animation.h" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="geometrymaker.h" />
@@ -33,6 +34,7 @@
     <ClInclude Include="scenegraph.h" />
     <ClInclude Include="arcball.h" />
     <ClInclude Include="geometry.h" />
+    <ClInclude Include="sgutils.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="shaders\basic-gl2.vshader">
