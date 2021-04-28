@@ -9,7 +9,6 @@
 #include "sgutils.h"
 
 using Keyframe = std::vector<RigTForm>;
-static const int UNDEFINED = -3;
 
 class KeyframeList {
 
