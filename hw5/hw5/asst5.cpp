@@ -596,7 +596,7 @@ static void keyboard(const unsigned char key, const int x, const int y) {
         }
         else {
             std::cout << "Updating current keyframe...\n";
-            g_keyframes.getCurrentKeyframe() = dumpedFrame;
+            g_keyframes.updateCurrentKeyframe(dumpedFrame);
         }
 
         break;
