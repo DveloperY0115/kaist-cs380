@@ -21,6 +21,17 @@ public:
 	//! Default destructor
 	~KeyframeList() = default;
 
+	//! Getter for current keyframe
+	//! Warning: Call on empty list is undefined
+	Keyframe getCurrentKeyframe() {
+		assert(!keyframes_.empty());
+		std::list<Keyframe>::iterator it = keyframes_.begin();
+		for (int i = 0; i < currentKeyframeIdx; ++i) {
+			it++;
+		}
+		return *it;
+	}
+
 	//! Add new keyframe to the list
 	void addNewKeyframe(Keyframe& keyframe) {
 		if (keyframes_.empty()) {
