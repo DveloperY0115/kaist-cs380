@@ -5,15 +5,17 @@
 
 #include "scenegraph.h"
 
+using SceneRbtVector = std::vector<std::shared_ptr<SgRbtNode>>;
+using Frame = std::vector<RigTForm>;
+
 //!
 //! RbtNodesScanner for dumping RigTForm objects handled by
 //! each RbtNode in the scene graph
 struct RbtNodesScanner : public SgNodeVisitor {
-  typedef std::vector<std::shared_ptr<SgRbtNode>> SgRbtNodes;
 
-  SgRbtNodes& nodes_;
+  SceneRbtVector& nodes_;
 
-  RbtNodesScanner(SgRbtNodes& nodes) : nodes_(nodes) {
+  RbtNodesScanner(SceneRbtVector& nodes) : nodes_(nodes) {
       assert(nodes_.empty());
   }
 
@@ -29,7 +31,7 @@ struct RbtNodesScanner : public SgNodeVisitor {
 //!
 //! dumpSgRbtNodes
 //! Dump all RbtNodes in the scene into a vector
-inline void dumpSgRbtNodes(std::shared_ptr<SgNode> root, std::vector<std::shared_ptr<SgRbtNode>>& rbtNodes) {
+inline void dumpSgRbtNodes(std::shared_ptr<SgNode> root, SceneRbtVector& rbtNodes) {
   RbtNodesScanner scanner(rbtNodes);
   root->accept(scanner);
 }
@@ -37,10 +39,7 @@ inline void dumpSgRbtNodes(std::shared_ptr<SgNode> root, std::vector<std::shared
 //!
 //! setSgRbtNodes
 //! Set all RbtNodes in the scene with the values stored in the given vector
-
-using Frame = std::vector<RigTForm>;
-
-inline void setSgRbtNodes(std::vector<std::shared_ptr<SgRbtNode>>& rbtNodes, Frame& frame) {
+inline void setSgRbtNodes(SceneRbtVector& rbtNodes, Frame& frame) {
     assert(rbtNodes.size() == frame.size());
     for (int idx = 0; idx < rbtNodes.size(); ++idx) {
         rbtNodes[idx]->setRbt(frame[idx]);
