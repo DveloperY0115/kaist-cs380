@@ -29,6 +29,10 @@ public:
 		return *currentKeyframeIter;
 	}
 
+	bool empty() {
+		return keyframes_.empty();
+	}
+
 	//! Add new keyframe to the list
 	void addNewKeyframe(Keyframe& keyframe) {
 		if (keyframes_.empty()) {

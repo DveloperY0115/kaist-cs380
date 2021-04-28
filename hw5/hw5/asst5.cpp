@@ -40,7 +40,8 @@
 #include "picker.h"
 
 // assignment 5
-#include "sgutils.h"
+#include "animation.h"
+// #include "sgutils.h"
 
 using namespace std;
 
@@ -120,6 +121,10 @@ static shared_ptr<Geometry> g_ground, g_cube, g_sphere;
 static const Cvec3 g_light1(2.0, 3.0, 14.0), g_light2(-2, -3.0, -5.0);  // define two lights positions in world space
 
 static Arcball g_arcball;
+
+// --------- Animation
+static KeyframeList g_keyframes = KeyframeList();
+static std::vector<std::shared_ptr<SgRbtNode>> g_sceneRbtVector = std::vector<std::shared_ptr<SgRbtNode>>();
 
 ///////////////// END OF G L O B A L S //////////////////////////////////////////////////
 
@@ -517,10 +522,10 @@ static void keyboard(const unsigned char key, const int x, const int y) {
             << "drag left mouse to rotate\n" << endl;
         break;
 
-    
+
     case 'v':
-        std::cout << "Pressed 'v'! Switching camera\n";
         // switch view point
+        std::cout << "Pressed 'v'! Switching camera\n";
         g_isWorldSky = false;
         if (g_currentEyeNode == g_skyNode) {
             g_currentEyeNode = g_robot1Node;
@@ -529,7 +534,7 @@ static void keyboard(const unsigned char key, const int x, const int y) {
         else if (g_currentEyeNode == g_robot1Node) {
             g_currentEyeNode = g_robot2Node;
             g_currentPickedRbtNode = g_robot2Node;
-        } 
+        }
         else {
             g_currentEyeNode = g_skyNode;
             g_currentPickedRbtNode = g_skyNode;
@@ -538,6 +543,7 @@ static void keyboard(const unsigned char key, const int x, const int y) {
         break;
 
     case 'm':
+        // toggle world-sky frame if possible
         if (g_currentEyeNode != g_skyNode) {
             std::cout << "You should be in bird-eye view to switch to World-Sky frame\n";
         }
@@ -569,6 +575,36 @@ static void keyboard(const unsigned char key, const int x, const int y) {
         g_isWorldSky = false;
         // pick(); -> For debugging
         break;
+
+    case 32:
+        // copy current keyframe into the scene
+        std::cout << "Copying current keyframe into the scene...\n";
+        g_keyframes.sendCurrentKeyframeToScene(g_sceneRbtVector);
+        glutPostRedisplay();
+        break;
+
+    case 'u':
+        // update the scene graph RBT data to the current keyframe
+        // or, add a new keyframe if the keyframe list is empty
+        Frame dumpedFrame = Frame();
+        dumpFrame(g_sceneRbtVector, dumpedFrame);
+
+        if (g_keyframes.empty()) {
+            std::cout << "Current keyframe is undefined. Adding one...\n";
+            g_keyframes.addNewKeyframe(dumpedFrame);
+        }
+        else {
+            std::cout << "Updating current keyframe...\n";
+            g_keyframes.getCurrentKeyframe() = dumpedFrame;
+        }
+        
+        break;
+        /*
+        case 'd':
+            // remove current keyframe from the list
+            g_keyframes.removeCurrentKeyframe();
+            break;
+        */
     }
 }
 
@@ -724,6 +760,9 @@ static void initScene() {
     // initially set eye and object
     g_currentEyeNode = g_skyNode;
     g_currentPickedRbtNode = g_skyNode;
+
+    // dump current scene to a vector
+    dumpSgRbtNodes(g_world, g_sceneRbtVector);
 }
 
 static void initArcball() {
