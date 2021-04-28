@@ -16,7 +16,10 @@ class KeyframeList {
 public:
 	//! Default constructor
 	//! Creates an empty list of keyframe
-	KeyframeList() = default;
+	KeyframeList() {
+		keyframes_ = std::list<Keyframe>();
+		currentKeyframeIter = keyframes_.end();
+	}
 
 	//! Default destructor
 	~KeyframeList() = default;
@@ -24,29 +27,20 @@ public:
 	//! Getter for current keyframe
 	//! Warning: Call on empty list is undefined
 	Keyframe getCurrentKeyframe() {
-		assert(!keyframes_.empty());
-		std::list<Keyframe>::iterator it = keyframes_.begin();
-		for (int i = 0; i < currentKeyframeIdx; ++i) {
-			it++;
-		}
-		return *it;
+		return *currentKeyframeIter;
 	}
 
 	//! Add new keyframe to the list
 	void addNewKeyframe(Keyframe& keyframe) {
 		if (keyframes_.empty()) {
-			// if empty, push one and set it as current keyframe
 			keyframes_.push_back(keyframe);
-			currentKeyframeIdx = 0;
+			currentKeyframeIter = keyframes_.begin();
 		}
 		else {
 			// otherwise, insert a new frame next to the current keyframe
-			std::list<Keyframe>::iterator currentIt = keyframes_.begin();
-			for (int i = 0; i < currentKeyframeIdx; ++i) {
-				currentIt++;
-			}
-			keyframes_.insert(currentIt, keyframe);
-			currentKeyframeIdx++;
+			currentKeyframeIter++;
+			keyframes_.insert(currentKeyframeIter, keyframe);    // 'insert' will insert new element before the current iterator
+			currentKeyframeIter--;
 		}
 	}
 
@@ -63,29 +57,25 @@ public:
 			return;
 		}
 		else {
-			// Remove the current keyframe from the list
-			std::list<Keyframe>::iterator currentIt = keyframes_.begin();
-			for (int i = 0; i < currentKeyframeIdx; ++i) {
-				currentIt++;
-			}
-			
-			keyframes_.erase(currentIt);
-			
 			// Case (1)
-			if (keyframes_.empty()) {
-				currentKeyframeIdx = UNDEFINED;
+			if (keyframes_.size() == 1) {
+				keyframes_.erase(currentKeyframeIter);
+				currentKeyframeIter = keyframes_.end();
 			}
 			else {
-				// Case (2) - (i)
-				if (currentKeyframeIdx != 0) {
-					currentKeyframeIdx -= 1;
-				}
 				// Case (2) - (ii)
+				if (currentKeyframeIter == keyframes_.begin()) {
+					std::list<Keyframe>::iterator nextIter = ++currentKeyframeIter;
+					keyframes_.erase(currentKeyframeIter);
+					currentKeyframeIter = nextIter;
+				}
+				// Case (2) - (i)
 				else {
-					// Do nothing
+					std::list<Keyframe>::iterator prevIter = --currentKeyframeIter;
+					keyframes_.erase(currentKeyframeIter);
+					currentKeyframeIter = prevIter;
 				}
 			}
-
 		}
 	}
 	
@@ -98,18 +88,18 @@ public:
 		}
 	}
 
-	void moveToNextFrame() {
+	void advanceFrame() {
 
 	}
 
-	void moveToPrevFrame() {
+	void retreatFrame() {
 
 	}
 
 	
 private:
 	std::list<Keyframe> keyframes_;
-	int currentKeyframeIdx = UNDEFINED;
+	std::list<Keyframe>::iterator currentKeyframeIter;
 };
 
 #endif
