@@ -1,6 +1,7 @@
 #ifndef ANIMATION_H
 #define ANIMATION_H
 
+#include <fstream>
 #include <list>
 #include <memory>
 #include <vector>
@@ -115,7 +116,6 @@ namespace Animation {
 				}
 				else {
 					currentKeyframeIter++;
-					// sendCurrentKeyframeToScene(nodes);
 				}
 			}
 		}
@@ -131,9 +131,43 @@ namespace Animation {
 					std::cerr << "This is the first keyframe!\n";
 				else {
 					currentKeyframeIter--;
-					// sendCurrentKeyframeToScene(nodes);
 				}
 			}
+		}
+
+		//! Export the list of keyframes held by this instance
+		void exportKeyframeList(std::string filename) {
+
+			if (keyframes_.empty()) {
+				// Do nothing
+			}
+
+			//! Get number of frames in the list & number of RBTs in one keyframe
+			//! Stored as header (metadata)
+			unsigned int numFrames = keyframes_.size();
+			unsigned int numRbts = (*keyframes_.begin()).size();
+
+			std::ofstream file(filename);
+
+			if (file.is_open()) {
+				file << numFrames << " " << numRbts << "\n";
+
+				for (std::list<Frame>::iterator frameIter = keyframes_.begin(); frameIter != keyframes_.end(); ++frameIter) {
+					Frame currentFrame = *frameIter;
+					for (std::vector<RigTForm>::iterator rbtIter = currentFrame.begin(); rbtIter != currentFrame.end(); ++rbtIter) {
+						RigTForm currentRbt = *rbtIter;
+						Cvec3 t = currentRbt.getTranslation();
+						Quat q = currentRbt.getRotation();
+						file << t[0] << " " << t[1] << " " << t[2] << " " << q[0] << " " << q[1] << " " << q[2] << " " << q[3];
+						file << " ";    // separator between RigTForm data
+					}
+					file << "\n";    // separator between Frame data
+				}
+
+				file.close();
+			}
+
+			std::cout << "Exported file at: " << filename << "\n";
 		}
 
 		/*

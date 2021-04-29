@@ -584,9 +584,9 @@ static void keyboard(const unsigned char key, const int x, const int y) {
         break;
 
     case 'u':
+    {
         // update the scene graph RBT data to the current keyframe
         // or, add a new keyframe if the keyframe list is empty
-    {
         Animation::Frame dumpedFrame = Animation::Frame();
         dumpFrame(g_sceneRbtVector, dumpedFrame);
 
@@ -612,8 +612,8 @@ static void keyboard(const unsigned char key, const int x, const int y) {
 
 
     case 'n':
-        // add new keyframe
     {
+        // add new keyframe
         std::cout << "Adding new keyframe...\n";
         Animation::Frame dumpedFrame = Animation::Frame();
         dumpFrame(g_sceneRbtVector, dumpedFrame);
@@ -623,17 +623,31 @@ static void keyboard(const unsigned char key, const int x, const int y) {
     }
 
     case '>':
+    {
+        // advance to next frame
         g_keyframes.advanceFrame(g_sceneRbtVector);
         glutPostRedisplay();
         g_keyframes.printCurrentKeyframeIdx();
         break;
+    }
 
     case '<':
+    {
+        // retreat to previous frame
         g_keyframes.retreatFrame(g_sceneRbtVector);
         glutPostRedisplay();
         g_keyframes.printCurrentKeyframeIdx();
         break;
     }
+
+    case 'w':
+    {
+        // write current keyframe list to a file
+        std::cout << "Writing current keyframe list...\n";
+        std::string filename = "keyframes.txt";
+        g_keyframes.exportKeyframeList(filename);
+    }
+
 }
 
 /* End of GLUT callbacks */
