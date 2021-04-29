@@ -35,6 +35,9 @@
     <ClInclude Include="arcball.h" />
     <ClInclude Include="geometry.h" />
     <ClInclude Include="sgutils.h" />
+    <ClInclude Include="interpolation.h">
+      <Filter>math</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="shaders\basic-gl2.vshader">
