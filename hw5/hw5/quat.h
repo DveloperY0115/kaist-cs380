@@ -143,7 +143,7 @@ inline Quat normalize(const Quat& q) {
 /*
 * Power operator for quaternions
 */
-Quat pow(const Quat& q, const double& alpha) {
+inline Quat pow(const Quat& q, const double& alpha) {
     /*
     * Assume input quaternion q is of form
     * [ cos(theta), sin(theta) *k ]
