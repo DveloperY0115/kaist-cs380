@@ -22,6 +22,5 @@ namespace Interpolation {
 
 		return pow(base, alpha) * q0;
 	}
-
 }
 #endif

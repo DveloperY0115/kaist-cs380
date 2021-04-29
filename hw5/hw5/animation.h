@@ -1,5 +1,5 @@
-#ifndef ANIMATION
-#define ANIMATION
+#ifndef ANIMATION_H
+#define ANIMATION_H
 
 #include <list>
 #include <memory>

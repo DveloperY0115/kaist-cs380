@@ -705,7 +705,7 @@ static void constructRobot(shared_ptr<SgTransformNode> base, const Cvec3& color)
     JointDesc jointDesc[NUM_JOINTS] = {
         {-1}, // torso
 
-        {0, 0, TORSO_LEN * 4 / 5, 0},  // head
+        {0, 0, TORSO_LEN * 2 / 3, 0},  // head
 
         {0, TORSO_WIDTH / 2, TORSO_LEN / 2, 0}, // right shoulder
         {0, -TORSO_WIDTH / 2, TORSO_LEN / 2, 0}, // left shoulder
@@ -729,7 +729,7 @@ static void constructRobot(shared_ptr<SgTransformNode> base, const Cvec3& color)
     ShapeDesc shapeDesc[NUM_SHAPES] = {
         {0, 0, 0, 0, TORSO_WIDTH, TORSO_LEN, TORSO_THICK, g_cube}, // torso
 
-        {1, 0, 0, 0, HEAD_RADIUS, HEAD_RADIUS, HEAD_RADIUS, g_sphere},  // head
+        {1, 0, HEAD_RADIUS, 0, HEAD_RADIUS, HEAD_RADIUS, HEAD_RADIUS, g_sphere},  // head
 
         {2, ARM_LEN / 2, 0, 0, ARM_LEN, ARM_THICK, ARM_THICK, g_cube}, // upper right arm (<- right shoulder)
         {3, -ARM_LEN / 2, 0, 0, ARM_LEN, ARM_THICK, ARM_THICK, g_cube},  // upper left arm (<- left shoulder)
