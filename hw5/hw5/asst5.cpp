@@ -265,7 +265,12 @@ static void drawStuff(const ShaderState& curSS, bool picking) {
 
 static void animateTimerCallback(int ms) {
     float t = static_cast<float>(ms) / static_cast<float>(g_msBetweenKeyFrames);
-    bool endReached = g_keyframes.interpolateKeyframes(t);
+    Animation::Frame interFrame = Animation::Frame();
+    bool endReached = g_keyframes.interpolateKeyframes(t, interFrame);
+
+    // update current scene using interpolated frame
+    setSgRbtNodes(g_sceneRbtVector, interFrame);
+    glutPostRedisplay();
 
     if (!endReached) {
         glutTimerFunc(1000 / g_animationFramesPerSecond,
@@ -604,6 +609,7 @@ static void keyboard(const unsigned char key, const int x, const int y) {
             break;
         }
         animateTimerCallback(0);
+        break;
     }
 
     case 32:

@@ -9,6 +9,7 @@
 #include <vector>
 
 #include "io.h"
+#include "interpolation.h"
 #include "scenegraph.h"
 #include "sgutils.h"
 
@@ -280,6 +281,35 @@ namespace Animation {
 			}
 		}
 
+		//! Interpolate between keyframes
+		//! Return false when reached the end of the keyframes
+		//! Return true otherwise (making animation proceed)
+		bool interpolateKeyframes(float t, Frame& interFrame) {
+			assert(interFrame.empty());
+
+			int startFrameIdx = floor(t);
+			int endFrameIdx = floor(t + 1);
+			float alpha = t - floor(t);    // what if t = floor(t)?
+
+			if (endFrameIdx == keyframes_.size() - 1) {
+				interFrame = getFrameByIdx(endFrameIdx);
+				return true;
+			}
+
+			Frame startFrame = getFrameByIdx(startFrameIdx);
+			Frame endFrame = getFrameByIdx(endFrameIdx);
+
+			Frame::iterator startIter = startFrame.begin();
+			Frame::iterator endIter = endFrame.begin();
+
+			while (startIter != startFrame.end() && endIter != endFrame.end()) {
+				interFrame.push_back(Interpolation::Linear(*startIter, *endIter, alpha));
+				startIter++;
+				endIter++;
+			}
+
+			return false;
+		}
 		/*
 		* Helper functions
 		*/

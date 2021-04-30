@@ -27,7 +27,6 @@ namespace Interpolation {
 	inline RigTForm Linear(const RigTForm& rbt0, const RigTForm& rbt1, const double& alpha) {
 		Cvec3 interTrans = lerp(rbt0.getTranslation(), rbt1.getTranslation(), alpha);
 		Quat interRot = slerp(rbt0.getRotation(), rbt1.getRotation(), alpha);
-
 		return RigTForm(interTrans, interRot);
 	}
 }
