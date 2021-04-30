@@ -36,10 +36,33 @@ namespace Animation {
 			return *currentKeyframeIter;
 		}
 
+		//! Replace the RBT of currently selected keyframe with the input
 		void updateCurrentKeyframe(Frame frame) {
 			*currentKeyframeIter = frame;
 		}
 
+		//! Replace the current keyframe iterator with the input
+		void setCurrentKeyframeAs(std::list<Frame>::iterator iter) {
+			currentKeyframeIter = iter;
+		}
+
+		//! Returns the iterator pointing at the first keyframe
+		std::list<Frame>::iterator begin() {
+			return keyframes_.begin();
+		}
+
+		//! Returns the iterator pointing at the last keyframe
+		std::list<Frame>::iterator end() {
+			return keyframes_.end();
+		}
+
+		//! Returns the length of keyframe list
+		int size() {
+			return keyframes_.size();
+		}
+
+		//! Returns true if the keyframe list is empty,
+		//! false otherwise
 		bool empty() {
 			return keyframes_.empty();
 		}
