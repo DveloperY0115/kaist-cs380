@@ -36,6 +36,18 @@ namespace Animation {
 			return *currentKeyframeIter;
 		}
 
+		//! Get frame by index
+		//! Index should be in range [-1, n] 
+		//! where n = length of keyframes - 1
+		Frame getFrameByIdx(int idx) {
+			assert(idx >= -1 && idx < keyframes_.size() - 1);
+			std::list<Frame>::iterator iter = keyframes_.begin();
+			for (int i = -1; i < idx; ++i) {
+				iter++;
+			}
+			return *iter;
+		}
+
 		//! Replace the RBT of currently selected keyframe with the input
 		void updateCurrentKeyframe(Frame frame) {
 			*currentKeyframeIter = frame;
