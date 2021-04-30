@@ -1,12 +1,14 @@
 #ifndef ANIMATION_H
 #define ANIMATION_H
 
+#include <algorithm>
 #include <fstream>
 #include <list>
 #include <memory>
 #include <string>
 #include <vector>
 
+#include "io.h"
 #include "scenegraph.h"
 #include "sgutils.h"
 
@@ -168,28 +170,79 @@ namespace Animation {
 				file.close();
 			}
 
-			std::cout << "Exported file at: " << filename << "\n";
+			std::cout << "Exported file located at: " << filename << "\n";
 		}
 
 		//! Import the list of keyframes stored in the disk
 		void importKeyframeList(std::string filename) {
 
 			std::ifstream file(filename); 
+			std::string line;
+
+			std::list<Frame> keyframes_in = std::list<Frame>();
 
 			if (file.is_open()) {
 
-				std::string line;
-
-				// read the first line containing header in our convention
+				int numFrames = -1;
+				int numRbts = -1;
 				
-				while (std::getline(file, line)) {
-					printf("%s", line.c_str());
+				// read the first line containing header in our convention
+				if (std::getline(file, line)) {
+					std::vector<std::string> header = split<std::string>(line, ' ');
+					numFrames = std::stoi(header[0]);
+					numRbts = std::stoi(header[1]);
+					assert(numFrames > 0 && numRbts > 0);
 				}
 
+				while (std::getline(file, line)) {
+					std::vector<std::string> data = split<std::string>(line, ' ');
+					std::reverse(data.begin(), data.end());    // reverse vector to use pop_back iteratively
+
+					Frame frame = std::vector<RigTForm>();
+
+					for (int i = 0; i < numRbts; ++i) {
+
+						// extract translation
+						float t_x = std::stof(data.back());
+						data.pop_back();
+						float t_y = std::stof(data.back());
+						data.pop_back();
+						float t_z = std::stof(data.back());
+						data.pop_back();
+
+						// extract rotation
+						float q_0 = std::stof(data.back());
+						data.pop_back();
+						float q_1 = std::stof(data.back());
+						data.pop_back();
+						float q_2 = std::stof(data.back());
+						data.pop_back();
+						float q_3 = std::stof(data.back());
+						data.pop_back();
+
+						Cvec3 t = Cvec3(t_x, t_y, t_z);
+						Quat q = Quat(q_0, q_1, q_2, q_3);
+						RigTForm rbt = RigTForm(t, q);
+
+						frame.push_back(rbt);
+					}
+
+					keyframes_in.push_back(frame);
+					numFrames--;
+				}
+
+				assert(numFrames == 0);    // check whether the reader consumed all data in the file
 				file.close();
 			}
 
-			std::cout << "Imported file at: " << filename << "\n";
+			if (keyframes_in.empty()) {
+				std::cout << "Something went wrong! Doing nothing...\n";
+			}
+			else {
+				std::cout << "Imported file located at: " << filename << "\n";
+				keyframes_ = keyframes_in;
+				currentKeyframeIter = keyframes_.begin();
+			}
 		}
 
 		/*

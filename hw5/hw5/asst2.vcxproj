@@ -112,6 +112,7 @@
     <ClInclude Include="geometrymaker.h" />
     <ClInclude Include="glsupport.h" />
     <ClInclude Include="interpolation.h" />
+    <ClInclude Include="io.h" />
     <ClInclude Include="matrix4.h" />
     <ClInclude Include="picker.h" />
     <ClInclude Include="ppm.h" />
