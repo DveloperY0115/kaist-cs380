@@ -126,6 +126,9 @@ static Arcball g_arcball;
 static Animation::KeyframeList g_keyframes = Animation::KeyframeList();
 static std::vector<std::shared_ptr<SgRbtNode>> g_sceneRbtVector = std::vector<std::shared_ptr<SgRbtNode>>();
 
+static int g_msBetweenKeyFrames = 2000;    // 2 seconds between keyframes
+static int g_animationFramesPerSecond = 60;    // frames to render per second during animation
+
 ///////////////// END OF G L O B A L S //////////////////////////////////////////////////
 
 static void initGround() {
@@ -259,6 +262,23 @@ static void drawStuff(const ShaderState& curSS, bool picking) {
 }
 
 /* GLUT callbacks */
+
+static void animateTimerCallback(int ms) {
+    float t = static_cast<float>(ms) / static_cast<float>(g_msBetweenKeyFrames);
+    bool endReached = g_keyframes.interpolateKeyframes(t);
+
+    if (!endReached) {
+        glutTimerFunc(1000 / g_animationFramesPerSecond,
+            animateTimerCallback,
+            ms + 1000 / g_animationFramesPerSecond);
+    }
+    else {
+        // when reached the end of keyframes, set (n-1)th frame
+        // as the current frame
+        std::list<Animation::Frame>::iterator last = --g_keyframes.end();
+        g_keyframes.setCurrentKeyframeAs(last);
+    }
+}
 
 static void display() {
   glUseProgram(g_shaderStates[g_activeShader]->program);
@@ -575,6 +595,16 @@ static void keyboard(const unsigned char key, const int x, const int y) {
         g_isWorldSky = false;
         // pick(); -> For debugging
         break;
+
+    case 'y':
+    {
+        // play animation
+        if (g_keyframes.size() < 4) {
+            std::cerr << "We need at least 4 keyframes to play animation!\n";
+            break;
+        }
+        animateTimerCallback(0);
+    }
 
     case 32:
         // copy current keyframe into the scene
