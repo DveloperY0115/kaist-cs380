@@ -241,7 +241,7 @@ namespace Animation {
 			else {
 				std::cout << "Imported file located at: " << filename << "\n";
 				keyframes_ = keyframes_in;
-				currentKeyframeIter = keyframes_.begin();
+				currentKeyframeIter = keyframes_.begin();    // set the first frame as the current keyframe
 			}
 		}
 

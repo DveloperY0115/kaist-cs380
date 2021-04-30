@@ -646,6 +646,7 @@ static void keyboard(const unsigned char key, const int x, const int y) {
         std::cout << "Writing current keyframe list...\n";
         std::string filename = "keyframes.txt";
         g_keyframes.exportKeyframeList(filename);
+        break;
     }
 
     case 'i':
@@ -654,6 +655,7 @@ static void keyboard(const unsigned char key, const int x, const int y) {
         std::cout << "Reading keyframe list from the file...\n";
         std::string filename = "keyframes.txt";
         g_keyframes.importKeyframeList(filename);
+        break;
     }
 
     }
