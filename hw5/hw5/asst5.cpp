@@ -648,6 +648,15 @@ static void keyboard(const unsigned char key, const int x, const int y) {
         g_keyframes.exportKeyframeList(filename);
     }
 
+    case 'i':
+    {
+        // read keyframe data from a file
+        std::cout << "Reading keyframe list from the file...\n";
+        std::string filename = "keyframes.txt";
+        g_keyframes.importKeyframeList(filename);
+    }
+
+    }
 }
 
 /* End of GLUT callbacks */

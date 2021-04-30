@@ -4,6 +4,7 @@
 #include <fstream>
 #include <list>
 #include <memory>
+#include <string>
 #include <vector>
 
 #include "scenegraph.h"
@@ -168,6 +169,27 @@ namespace Animation {
 			}
 
 			std::cout << "Exported file at: " << filename << "\n";
+		}
+
+		//! Import the list of keyframes stored in the disk
+		void importKeyframeList(std::string filename) {
+
+			std::ifstream file(filename); 
+
+			if (file.is_open()) {
+
+				std::string line;
+
+				// read the first line containing header in our convention
+				
+				while (std::getline(file, line)) {
+					printf("%s", line.c_str());
+				}
+
+				file.close();
+			}
+
+			std::cout << "Imported file at: " << filename << "\n";
 		}
 
 		/*
