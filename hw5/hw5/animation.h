@@ -294,9 +294,9 @@ namespace Animation {
 		//! Calculate the curernt keyframe index
 		int getCurrentKeyframeIdx() {
 			if (currentKeyframeIter == keyframes_.end()) {
-				return -1;
+				return -100;
 			}
-			unsigned int idx = 0;
+			int idx = -1;
 			std::list<Frame>::iterator iter = keyframes_.begin();
 			while (iter != currentKeyframeIter) {
 				iter++;
