@@ -154,7 +154,7 @@ inline Quat pow(const Quat& q, const double& alpha) {
     double sine = norm(k);
     double theta = atan2(sine, cosine);
 
-    if (sine == 0) {
+    if (sine < CS175_EPS2) {
         return Quat(cos(alpha * theta), 0, 0, 0);
     }
 
