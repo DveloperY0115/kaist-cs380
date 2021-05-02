@@ -128,6 +128,7 @@ static std::vector<std::shared_ptr<SgRbtNode>> g_sceneRbtVector = std::vector<st
 
 static int g_msBetweenKeyFrames = 2000;    // 2 seconds between keyframes
 static int g_animationFramesPerSecond = 60;    // frames to render per second during animation
+static bool g_playing = false;
 
 ///////////////// END OF G L O B A L S //////////////////////////////////////////////////
 
@@ -264,24 +265,28 @@ static void drawStuff(const ShaderState& curSS, bool picking) {
 /* GLUT callbacks */
 
 static void animateTimerCallback(int ms) {
-    float t = static_cast<float>(ms) / static_cast<float>(g_msBetweenKeyFrames);
-    Animation::Frame interFrame = Animation::Frame();
-    bool endReached = g_keyframes.interpolateKeyframes(t, interFrame);
+    if (g_playing) {
+        float t = static_cast<float>(ms) / static_cast<float>(g_msBetweenKeyFrames);
+        Animation::Frame interFrame = Animation::Frame();
+        bool endReached = g_keyframes.interpolateKeyframes(t, interFrame);
 
-    // update current scene using interpolated frame
-    setSgRbtNodes(g_sceneRbtVector, interFrame);
-    glutPostRedisplay();
+        // update current scene using interpolated frame
+        setSgRbtNodes(g_sceneRbtVector, interFrame);
+        glutPostRedisplay();
 
-    if (!endReached) {
-        glutTimerFunc(1000 / g_animationFramesPerSecond,
-            animateTimerCallback,
-            ms + 1000 / g_animationFramesPerSecond);
-    }
-    else {
-        // when reached the end of keyframes, set (n-1)th frame
-        // as the current frame
-        std::list<Animation::Frame>::iterator last = --g_keyframes.end();
-        g_keyframes.setCurrentKeyframeAs(last);
+    
+        if (!endReached) {
+            glutTimerFunc(1000 / g_animationFramesPerSecond,
+                animateTimerCallback,
+                ms + 1000 / g_animationFramesPerSecond);
+        }
+        else {
+            // when reached the end of keyframes, set (n-1)th frame
+            // as the current frame
+            std::list<Animation::Frame>::iterator last = --g_keyframes.end();
+            g_keyframes.setCurrentKeyframeAs(last);
+            g_playing = false;
+        }
     }
 }
 
@@ -604,11 +609,20 @@ static void keyboard(const unsigned char key, const int x, const int y) {
     case 'y':
     {
         // play animation
-        if (g_keyframes.size() < 4) {
-            std::cerr << "We need at least 4 keyframes to play animation!\n";
-            break;
+        if (!g_playing) {
+            if (g_keyframes.size() < 4) {
+                std::cerr << "We need at least 4 keyframes to play animation!\n";
+                break;
+            }
+            g_playing = true;
+            animateTimerCallback(0);
         }
-        animateTimerCallback(0);
+        else {
+            // stop playing animation
+            g_playing = false;
+            g_keyframes.sendCurrentKeyframeToScene(g_sceneRbtVector);
+            glutPostRedisplay();
+        }
         break;
     }
 
