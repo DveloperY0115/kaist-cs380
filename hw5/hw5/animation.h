@@ -293,8 +293,7 @@ namespace Animation {
 			int endFrameIdx = floor(t + 1);
 			float alpha = t - floor(t);
 
-			if (endFrameIdx == keyframes_.size() - 2) {
-				interFrame = getFrameByIdx(endFrameIdx);
+			if (endFrameIdx >= keyframes_.size() - 2) {
 				return true;
 			}
 

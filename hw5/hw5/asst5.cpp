@@ -269,18 +269,19 @@ static void animateTimerCallback(int ms) {
         float t = static_cast<float>(ms) / static_cast<float>(g_msBetweenKeyFrames);
         Animation::Frame interFrame = Animation::Frame();
         bool endReached = g_keyframes.interpolateKeyframes(t, interFrame);
-
-        // update current scene using interpolated frame
-        setSgRbtNodes(g_sceneRbtVector, interFrame);
-        glutPostRedisplay();
-
     
         if (!endReached) {
+            // update current scene using interpolated frame
+            setSgRbtNodes(g_sceneRbtVector, interFrame);
+            glutPostRedisplay();
+
+            // register another timer callback
             glutTimerFunc(1000 / g_animationFramesPerSecond,
                 animateTimerCallback,
                 ms + 1000 / g_animationFramesPerSecond);
         }
         else {
+            std::cout << "Animation playback is finished...\n";
             // when reached the end of keyframes, set (n-1)th frame
             // as the current frame
             std::list<Animation::Frame>::iterator last = --g_keyframes.end();
@@ -623,6 +624,25 @@ static void keyboard(const unsigned char key, const int x, const int y) {
             g_keyframes.sendCurrentKeyframeToScene(g_sceneRbtVector);
             glutPostRedisplay();
         }
+        break;
+    }
+
+    case '+':
+    {
+        if (g_msBetweenKeyFrames >= 200) {
+            g_msBetweenKeyFrames -= 100;
+        }
+        else {
+            std::cout << "Time between each frame should be greater than 100!\n";
+        }
+        std::cout << "Time between each frame is now: " << g_msBetweenKeyFrames << "\n";
+        break;
+    }
+
+    case '-':
+    {
+        g_msBetweenKeyFrames += 100;
+        std::cout << "Time between each frame is now: " << g_msBetweenKeyFrames << "\n";
         break;
     }
 
