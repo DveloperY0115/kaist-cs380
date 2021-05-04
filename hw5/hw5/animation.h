@@ -155,6 +155,7 @@ namespace Animation {
 				}
 				else {
 					currentKeyframeIter++;
+					setSgRbtNodes(nodes, *currentKeyframeIter);
 				}
 			}
 		}
@@ -170,6 +171,7 @@ namespace Animation {
 					std::cerr << "This is the first keyframe!\n";
 				else {
 					currentKeyframeIter--;
+					setSgRbtNodes(nodes, *currentKeyframeIter);
 				}
 			}
 		}
