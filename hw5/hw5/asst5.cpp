@@ -575,6 +575,12 @@ static void keyboard(const unsigned char key, const int x, const int y) {
 
     case 'm':
         // toggle world-sky frame if possible
+        if (g_isWorldSky) {
+            g_isWorldSky = false;
+            glutPostRedisplay();
+            break;
+        }
+
         if (g_currentEyeNode != g_skyNode) {
             std::cout << "You should be in bird-eye view to switch to World-Sky frame\n";
         }
