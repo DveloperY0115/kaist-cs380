@@ -294,7 +294,7 @@ namespace Animation {
 			const int endFrameIdx = floor(t + 1);
 			const float alpha = t - floor(t);
 
-			if (endFrameIdx > keyframes_.size() - 2) {
+			if (endFrameIdx >= keyframes_.size() - 2) {
 				return true;
 			}
 
