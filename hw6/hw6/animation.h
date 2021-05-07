@@ -298,14 +298,20 @@ namespace Animation {
 				return true;
 			}
 
+			Frame interpolantFrame0 = getFrameByIdx(startFrameIdx - 1);
+			Frame interpolantFrame1 = getFrameByIdx(endFrameIdx + 1);
 			Frame startFrame = getFrameByIdx(startFrameIdx);
 			Frame endFrame = getFrameByIdx(endFrameIdx);
 
+			Frame::iterator interpolantIter0 = interpolantFrame0.begin();
+			Frame::iterator interpolantIter1 = interpolantFrame1.begin();
 			Frame::iterator startIter = startFrame.begin();
 			Frame::iterator endIter = endFrame.begin();
 
 			while (startIter != startFrame.end() && endIter != endFrame.end()) {
-				interFrame.push_back(Interpolation::Linear(*startIter, *endIter, alpha));
+				interFrame.push_back(Interpolation::CatmullRom(*interpolantIter0, *startIter, *endIter, *interpolantIter1, alpha));
+				interpolantIter0++;
+				interpolantIter1++;
 				startIter++;
 				endIter++;
 			}
