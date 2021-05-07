@@ -80,7 +80,9 @@ static bool g_mouseLClickButton, g_mouseRClickButton, g_mouseMClickButton;
 static int g_mouseClickX, g_mouseClickY; // coordinates for mouse click event
 
 static const int DEFAULT_SHADER = 0;
+static const int SOLID_SHADER = 1;
 static const int PICKING_SHADER = 2;
+static const int PHONG_SHADER = 3;
 static int g_activeShader = DEFAULT_SHADER;
 
 static const int g_numShaders = 4;
@@ -305,7 +307,7 @@ static void display() {
   }
   else {
       g_isPicking = false;
-      g_activeShader = DEFAULT_SHADER;
+      g_activeShader = DEFAULT_SHADER;    // return to normal shader after picking
   }
 
   checkGlErrors();
@@ -600,8 +602,17 @@ static void keyboard(const unsigned char key, const int x, const int y) {
         break;
 
     case 'f':
-        // toggle shader
-        g_activeShader ^= 1;
+        // cycle around shaders
+        if (g_activeShader == DEFAULT_SHADER) {
+            g_activeShader = SOLID_SHADER;
+        }
+        else if (g_activeShader == SOLID_SHADER) {
+            g_activeShader = PHONG_SHADER;
+        }
+        else {
+            g_activeShader = DEFAULT_SHADER;
+        }
+
         glutPostRedisplay();
         break;
 
@@ -735,14 +746,6 @@ static void keyboard(const unsigned char key, const int x, const int y) {
         g_keyframes.importKeyframeList(filename);
         break;
     }
-
-    case '_':
-    {
-        //! "We live in a twilight world"
-        //! "And there's no friend of dusk"
-
-    }
-
     }
 }
 
