@@ -97,7 +97,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="animation.h" />
-    <ClCompile Include="asst5.cpp" />
+    <ClCompile Include="asst6.cpp" />
     <ClCompile Include="glsupport.cpp" />
     <ClCompile Include="picker.cpp" />
     <ClCompile Include="ppm.cpp" />

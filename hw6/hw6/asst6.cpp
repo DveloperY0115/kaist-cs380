@@ -258,7 +258,7 @@ static void drawStuff(const ShaderState& curSS, bool picking) {
         if (g_currentPickedRbtNode == nullptr) {
             // if any of robot part is not selected, switch to ego motion
             g_currentPickedRbtNode = g_currentEyeNode;
-        }       
+        }
     }
 }
 
@@ -269,7 +269,7 @@ static void animateTimerCallback(int ms) {
         float t = static_cast<float>(ms) / static_cast<float>(g_msBetweenKeyFrames);
         Animation::Frame interFrame = Animation::Frame();
         bool endReached = g_keyframes.interpolateKeyframes(t, interFrame);
-    
+
         if (!endReached) {
             // update current scene using interpolated frame
             setSgRbtNodes(g_sceneRbtVector, interFrame);
@@ -476,7 +476,7 @@ static void motion(const int x, const int y) {
         if (g_mouseClickDown) {
             // calculate auxiliary frame
             RigTForm AuxFrame = makeMixedFrame(g_world->getRbt(), g_currentEyeNode->getRbt());
-            
+
             g_skyNode->setRbt(doMtoOwrtA(inv(m), g_skyNode->getRbt(), AuxFrame));
 
             glutPostRedisplay(); // we always redraw if we changed the scene
@@ -738,7 +738,7 @@ static void keyboard(const unsigned char key, const int x, const int y) {
     {
         //! "We live in a twilight world"
         //! "And there's no friend of dusk"
-        
+
     }
 
     }
@@ -752,7 +752,7 @@ static void initGlutState(int argc, char* argv[]) {
     glutInit(&argc, argv);                                  // initialize Glut based on cmd-line args
     glutInitDisplayMode(GLUT_RGBA | GLUT_DOUBLE | GLUT_DEPTH);  //  RGBA pixel channels and double buffering
     glutInitWindowSize(g_windowWidth, g_windowHeight);      // create a window
-    glutCreateWindow("Assignment 3");                       // title the window
+    glutCreateWindow("Assignment 6");                       // title the window
 
     glutDisplayFunc(display);                               // display rendering callback
     glutReshapeFunc(reshape);                               // window reshape callback

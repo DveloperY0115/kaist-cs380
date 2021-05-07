@@ -7,7 +7,7 @@
     </ClCompile>
     <ClCompile Include="picker.cpp" />
     <ClCompile Include="scenegraph.cpp" />
-    <ClCompile Include="asst5.cpp" />
+    <ClCompile Include="asst6.cpp" />
     <ClCompile Include="animation.h" />
   </ItemGroup>
   <ItemGroup>
