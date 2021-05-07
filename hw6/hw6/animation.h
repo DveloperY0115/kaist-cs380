@@ -38,7 +38,7 @@ namespace Animation {
 		}
 
 		//! Get frame by index
-		//! Index should be in range [-1, n] 
+		//! Index should be in range [-1, n]
 		//! where n = length of keyframes - 1
 		Frame getFrameByIdx(int idx) {
 			assert(idx >= -1 && idx < keyframes_.size() - 1);
@@ -96,7 +96,7 @@ namespace Animation {
 
 		//! Remove current keyframe from the list, update the scene graph with the new key frame
 		//! The behavior of this function follows the specification
-		//! 
+		//!
 		//! (1) If the list becomes empty after deletion, set current keyframe to be UNDEFINED
 		//! (2) Otherwise,
 		//!		(i) If the deleted frame was NOT the first frame, set the current frame as the one before it
@@ -214,7 +214,7 @@ namespace Animation {
 		//! Import the list of keyframes stored in the disk
 		void importKeyframeList(std::string filename) {
 
-			std::ifstream file(filename); 
+			std::ifstream file(filename);
 			std::string line;
 
 			std::list<Frame> keyframes_in = std::list<Frame>();
@@ -223,7 +223,7 @@ namespace Animation {
 
 				int numFrames = -1;
 				int numRbts = -1;
-				
+
 				// read the first line containing header in our convention
 				if (std::getline(file, line)) {
 					std::vector<std::string> header = split<std::string>(line, ' ');
@@ -284,14 +284,15 @@ namespace Animation {
 		}
 
 		//! Interpolate between keyframes
+		//! following Catmull-Rom spline
 		//! Return false when reached the end of the keyframes
 		//! Return true otherwise (making animation proceed)
 		bool interpolateKeyframes(float t, Frame& interFrame) {
 			assert(interFrame.empty());
 
-			int startFrameIdx = floor(t);
-			int endFrameIdx = floor(t + 1);
-			float alpha = t - floor(t);
+			const int startFrameIdx = floor(t);
+			const int endFrameIdx = floor(t + 1);
+			const float alpha = t - floor(t);
 
 			if (endFrameIdx >= keyframes_.size() - 2) {
 				return true;
