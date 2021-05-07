@@ -83,16 +83,18 @@ static const int DEFAULT_SHADER = 0;
 static const int PICKING_SHADER = 2;
 static int g_activeShader = DEFAULT_SHADER;
 
-static const int g_numShaders = 3;
+static const int g_numShaders = 4;
 static const char * const g_shaderFiles[g_numShaders][2] = {
   {"./shaders/basic-gl3.vshader", "./shaders/diffuse-gl3.fshader"},
   {"./shaders/basic-gl3.vshader", "./shaders/solid-gl3.fshader"},
-  {"./shaders/basic-gl3.vshader", "./shaders/pick-gl3.fshader"}
+  {"./shaders/basic-gl3.vshader", "./shaders/pick-gl3.fshader"},
+  {"./shaders/basic-gl3.vshader", "./shaders/phong-gl3.fshader"}
 };
 static const char * const g_shaderFilesGl2[g_numShaders][2] = {
   {"./shaders/basic-gl2.vshader", "./shaders/diffuse-gl2.fshader"},
   {"./shaders/basic-gl2.vshader", "./shaders/solid-gl2.fshader"},
-  {"./shaders/basic-gl2.vshader", "./shaders/pick-gl2.fshader"}
+  {"./shaders/basic-gl2.vshader", "./shaders/pick-gl2.fshader"},
+  {"./shaders/basic-gl2.vshader", "./shaders/phong-gl2.fshader"}
 };
 static vector<shared_ptr<ShaderState> > g_shaderStates; // our global shader states
 

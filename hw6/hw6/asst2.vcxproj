@@ -126,6 +126,8 @@
     <None Include="shaders\basic-gl3.vshader" />
     <None Include="shaders\diffuse-gl2.fshader" />
     <None Include="shaders\diffuse-gl3.fshader" />
+    <None Include="shaders\phong-gl2.fshader" />
+    <None Include="shaders\phong-gl3.fshader" />
     <None Include="shaders\pick-gl2.fshader" />
     <None Include="shaders\pick-gl3.fshader" />
     <None Include="shaders\solid-gl2.fshader" />
