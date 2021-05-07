@@ -41,7 +41,7 @@ namespace Animation {
 		//! Index should be in range [-1, n]
 		//! where n = length of keyframes - 1
 		Frame getFrameByIdx(int idx) {
-			assert(idx >= -1 && idx < keyframes_.size() - 1);
+			// assert(idx >= -1 && idx < keyframes_.size() - 1);
 			std::list<Frame>::iterator iter = keyframes_.begin();
 			for (int i = -1; i < idx; ++i) {
 				iter++;
