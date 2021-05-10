@@ -57,8 +57,5 @@
     <Filter Include="utils">
       <UniqueIdentifier>{05f41f68-9eaf-44af-b5c3-3738d9a0e8cb}</UniqueIdentifier>
     </Filter>
-    <Filter Include="shaders">
-      <UniqueIdentifier>{9a036ac5-f94d-4cb2-8a19-a1906f651d18}</UniqueIdentifier>
-    </Filter>
   </ItemGroup>
 </Project>

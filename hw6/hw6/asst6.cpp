@@ -304,9 +304,15 @@ static void animateTimerCallback(int ms) {
 static void display() {
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);                   // clear framebuffer color&depth
 
-  drawStuff(false);
+  drawStuff(g_isPicking);
 
-  glutSwapBuffers();
+  if (!g_isPicking) {
+      glutSwapBuffers();
+  }
+
+  else {
+      g_isPicking = false;
+  }
 
   checkGlErrors();
 }
@@ -315,7 +321,6 @@ static void reshape(const int w, const int h) {
   g_windowWidth = w;
   g_windowHeight = h;
   glViewport(0, 0, w, h);
-  // update the size of the arcball
   g_arcballScreenRadius = 0.25 * std::min(g_windowWidth, g_windowHeight);
   cerr << "Size of window is now " << w << "x" << h << endl;
   updateFrustFovY();
@@ -601,7 +606,8 @@ static void keyboard(const unsigned char key, const int x, const int y) {
         // picking
         std::cout << "Pressed 'p'! ";
         std::cout << "Enabling picking... \n";
-        pick();
+        // pick();
+        g_isPicking = true;
         g_isWorldSky = false;
         break;
 
