@@ -6,9 +6,13 @@
       <Filter>utils</Filter>
     </ClCompile>
     <ClCompile Include="picker.cpp" />
-    <ClCompile Include="scenegraph.cpp" />
-    <ClCompile Include="asst5.cpp" />
     <ClCompile Include="animation.h" />
+    <ClCompile Include="geometry.cpp" />
+    <ClCompile Include="material.cpp" />
+    <ClCompile Include="renderstates.cpp" />
+    <ClCompile Include="texture.cpp" />
+    <ClCompile Include="asst6.cpp" />
+    <ClCompile Include="scenegraph.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="geometrymaker.h" />
@@ -31,9 +35,7 @@
     <ClInclude Include="asstcommon.h" />
     <ClInclude Include="drawer.h" />
     <ClInclude Include="picker.h" />
-    <ClInclude Include="scenegraph.h" />
     <ClInclude Include="arcball.h" />
-    <ClInclude Include="geometry.h" />
     <ClInclude Include="sgutils.h" />
     <ClInclude Include="interpolation.h">
       <Filter>math</Filter>
@@ -41,6 +43,12 @@
     <ClInclude Include="io.h">
       <Filter>utils</Filter>
     </ClInclude>
+    <ClInclude Include="geometry.h" />
+    <ClInclude Include="material.h" />
+    <ClInclude Include="renderstates.h" />
+    <ClInclude Include="texture.h" />
+    <ClInclude Include="uniforms.h" />
+    <ClInclude Include="scenegraph.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="shaders\basic-gl2.vshader">
