@@ -39,7 +39,6 @@ public:
 
         glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
-
         MVM = RigTFormToMatrix(ArcballMVRbt);
 
         double scale = ArcballScale * ArcballScreenRadius;
