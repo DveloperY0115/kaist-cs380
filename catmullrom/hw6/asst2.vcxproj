@@ -97,7 +97,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="animation.h" />
-    <ClCompile Include="asst5.cpp" />
+    <ClCompile Include="asst6.cpp" />
     <ClCompile Include="glsupport.cpp" />
     <ClCompile Include="picker.cpp" />
     <ClCompile Include="ppm.cpp" />
@@ -126,6 +126,8 @@
     <None Include="shaders\basic-gl3.vshader" />
     <None Include="shaders\diffuse-gl2.fshader" />
     <None Include="shaders\diffuse-gl3.fshader" />
+    <None Include="shaders\phong-gl2.fshader" />
+    <None Include="shaders\phong-gl3.fshader" />
     <None Include="shaders\pick-gl2.fshader" />
     <None Include="shaders\pick-gl3.fshader" />
     <None Include="shaders\solid-gl2.fshader" />

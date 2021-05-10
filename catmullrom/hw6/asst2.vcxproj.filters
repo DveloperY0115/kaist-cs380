@@ -7,7 +7,7 @@
     </ClCompile>
     <ClCompile Include="picker.cpp" />
     <ClCompile Include="scenegraph.cpp" />
-    <ClCompile Include="asst5.cpp" />
+    <ClCompile Include="asst6.cpp" />
     <ClCompile Include="animation.h" />
   </ItemGroup>
   <ItemGroup>
@@ -65,6 +65,12 @@
       <Filter>shaders</Filter>
     </None>
     <None Include="shaders\solid-gl3.fshader">
+      <Filter>shaders</Filter>
+    </None>
+    <None Include="shaders\phong-gl2.fshader">
+      <Filter>shaders</Filter>
+    </None>
+    <None Include="shaders\phong-gl3.fshader">
       <Filter>shaders</Filter>
     </None>
   </ItemGroup>
