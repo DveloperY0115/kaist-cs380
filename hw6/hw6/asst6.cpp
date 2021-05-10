@@ -45,6 +45,7 @@
 // assignment 6
 #include "geometry.h"    // revised
 #include "material.h"
+#include "uniforms.h"
 
 using namespace std;
 
@@ -164,10 +165,8 @@ static void initSpheres() {
 }
 
 // takes a projection matrix and send to the the shaders
-static void sendProjectionMatrix(const ShaderState& curSS, const Matrix4& projMatrix) {
-  GLfloat glmatrix[16];
-  projMatrix.writeToColumnMajorMatrix(glmatrix); // send projection matrix
-  safe_glUniformMatrix4fv(curSS.h_uProjMatrix, glmatrix);
+inline void sendProjectionMatrix(Uniforms& uniforms, const Matrix4& projMatrix) {
+    uniforms.put("uProjMatrix", projMatrix);
 }
 
 // update g_frustFovY from g_frustMinFov, g_windowWidth, and g_windowHeight
