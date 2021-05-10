@@ -1,3 +1,6 @@
+# keyframe files
+*.txt
+
 # Binary, Build directories
 *dll
 *lib
