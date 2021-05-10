@@ -129,16 +129,6 @@
     <ClInclude Include="texture.h" />
     <ClInclude Include="uniforms.h" />
   </ItemGroup>
-  <ItemGroup>
-    <None Include="shaders\basic-gl2.vshader" />
-    <None Include="shaders\basic-gl3.vshader" />
-    <None Include="shaders\diffuse-gl2.fshader" />
-    <None Include="shaders\diffuse-gl3.fshader" />
-    <None Include="shaders\pick-gl2.fshader" />
-    <None Include="shaders\pick-gl3.fshader" />
-    <None Include="shaders\solid-gl2.fshader" />
-    <None Include="shaders\solid-gl3.fshader" />
-  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>

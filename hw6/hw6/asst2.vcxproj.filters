@@ -5,7 +5,6 @@
     <ClCompile Include="ppm.cpp">
       <Filter>utils</Filter>
     </ClCompile>
-    <ClCompile Include="picker.cpp" />
     <ClCompile Include="animation.h" />
     <ClCompile Include="geometry.cpp" />
     <ClCompile Include="material.cpp" />
@@ -13,6 +12,7 @@
     <ClCompile Include="texture.cpp" />
     <ClCompile Include="asst6.cpp" />
     <ClCompile Include="scenegraph.cpp" />
+    <ClCompile Include="picker.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="geometrymaker.h" />
@@ -32,10 +32,6 @@
     <ClInclude Include="ppm.h">
       <Filter>utils</Filter>
     </ClInclude>
-    <ClInclude Include="asstcommon.h" />
-    <ClInclude Include="drawer.h" />
-    <ClInclude Include="picker.h" />
-    <ClInclude Include="arcball.h" />
     <ClInclude Include="sgutils.h" />
     <ClInclude Include="interpolation.h">
       <Filter>math</Filter>
@@ -49,42 +45,20 @@
     <ClInclude Include="texture.h" />
     <ClInclude Include="uniforms.h" />
     <ClInclude Include="scenegraph.h" />
+    <ClInclude Include="drawer.h" />
+    <ClInclude Include="asstcommon.h" />
+    <ClInclude Include="picker.h" />
+    <ClInclude Include="arcball.h" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="shaders\basic-gl2.vshader">
-      <Filter>shaders</Filter>
-    </None>
-    <None Include="shaders\basic-gl3.vshader">
-      <Filter>shaders</Filter>
-    </None>
-    <None Include="shaders\diffuse-gl2.fshader">
-      <Filter>shaders</Filter>
-    </None>
-    <None Include="shaders\diffuse-gl3.fshader">
-      <Filter>shaders</Filter>
-    </None>
-    <None Include="shaders\pick-gl2.fshader">
-      <Filter>shaders</Filter>
-    </None>
-    <None Include="shaders\pick-gl3.fshader">
-      <Filter>shaders</Filter>
-    </None>
-    <None Include="shaders\solid-gl2.fshader">
-      <Filter>shaders</Filter>
-    </None>
-    <None Include="shaders\solid-gl3.fshader">
-      <Filter>shaders</Filter>
-    </None>
-  </ItemGroup>
-  <ItemGroup>
-    <Filter Include="shaders">
-      <UniqueIdentifier>{a98a1878-fe77-463a-abaf-2f3b30bb7098}</UniqueIdentifier>
-    </Filter>
     <Filter Include="math">
       <UniqueIdentifier>{9d0c5b06-326c-46ab-911b-ef8d4ed98ea6}</UniqueIdentifier>
     </Filter>
     <Filter Include="utils">
       <UniqueIdentifier>{05f41f68-9eaf-44af-b5c3-3738d9a0e8cb}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="shaders">
+      <UniqueIdentifier>{9a036ac5-f94d-4cb2-8a19-a1906f651d18}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
 </Project>

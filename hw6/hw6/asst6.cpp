@@ -28,10 +28,9 @@
 #include "matrix4.h"
 
 // assignment 3
-#include "arcball.h"
-
 #include "geometrymaker.h"
 #include "rigtform.h"
+#include "arcball.h"
 
 // assignment 4
 #include "asstcommon.h"
@@ -99,6 +98,11 @@ static std::shared_ptr<SgRbtNode> g_currentPickedRbtNode;
 
 static std::vector<std::shared_ptr<SgRbtNode>> Eyes = { g_skyNode, g_robot1Node, g_robot2Node };
 
+// Arcball
+static Cvec3 g_arcballColor = Cvec3(0, 1, 0);
+static float g_arcballScreenRadius = 0.25 * std::min(g_windowWidth, g_windowHeight);
+static float g_arcballScale = 0.01;
+
 // Toggle picking
 static bool g_isPicking = false;
 
@@ -109,10 +113,8 @@ static bool g_isWorldSky = false;
 static shared_ptr<Geometry> g_ground, g_cube, g_sphere;
 
 // --------- Scene
-
 static const Cvec3 g_light1(2.0, 3.0, 14.0), g_light2(-2, -3.0, -5.0);  // define two lights positions in world space
 
-static Arcball g_arcball;
 
 // --------- Animation
 static Animation::KeyframeList g_keyframes = Animation::KeyframeList();
@@ -124,6 +126,7 @@ static bool g_playing = false;
 
 ///////////////// END OF G L O B A L S //////////////////////////////////////////////////
 
+//! Geometry primitives initialization
 static void initGround() {
     int ibLen, vbLen;
     getPlaneVbIbLen(vbLen, ibLen);
@@ -163,7 +166,8 @@ static void initSpheres() {
     makeSphere(1.0, slices, stacks, vtx.begin(), idx.begin());
     g_sphere.reset(new SimpleIndexedGeometryPNTBX(&vtx[0], &idx[0], vbLen, ibLen));
 }
-
+//! End of Geometry primitives initialization
+//! 
 // takes a projection matrix and send to the the shaders
 inline void sendProjectionMatrix(Uniforms& uniforms, const Matrix4& projMatrix) {
     uniforms.put("uProjMatrix", projMatrix);
@@ -185,23 +189,26 @@ static Matrix4 makeProjectionMatrix() {
            g_frustNear, g_frustFar);
 }
 
-static void drawStuff(const ShaderState& curSS, bool picking) {
+static void drawStuff(bool picking) {
+
+    Uniforms uniforms;
 
     // build & send proj. matrix to vshader
     const Matrix4 projmat = makeProjectionMatrix();
-    sendProjectionMatrix(curSS, projmat);
+    sendProjectionMatrix(uniforms, projmat);
 
-    // use the skyRbt as the eyeRbt
+    // use the RBT of current eye node as the eyeRbt
     const RigTForm eyeRbt = g_currentEyeNode->getRbt();
     const RigTForm invEyeRbt = inv(eyeRbt);
 
     const Cvec3 eyeLight1 = Cvec3(invEyeRbt * Cvec4(g_light1, 1)); // g_light1 position in eye coordinates
     const Cvec3 eyeLight2 = Cvec3(invEyeRbt * Cvec4(g_light2, 1)); // g_light2 position in eye coordinates
-    safe_glUniform3f(curSS.h_uLight, eyeLight1[0], eyeLight1[1], eyeLight1[2]);
-    safe_glUniform3f(curSS.h_uLight2, eyeLight2[0], eyeLight2[1], eyeLight2[2]);
+
+    uniforms.put("uLight", eyeLight1);
+    uniforms.put("uLight2", eyeLight2);
 
     if (!picking) {
-        Drawer drawer(invEyeRbt, curSS);
+        Drawer drawer(invEyeRbt, uniforms);
         g_world->accept(drawer);
 
         if (!g_isWorldSky) {
@@ -209,16 +216,21 @@ static void drawStuff(const ShaderState& curSS, bool picking) {
             if (g_currentEyeNode != g_currentPickedRbtNode) {
                 RigTForm MVRigTForm = invEyeRbt * getPathAccumRbt(g_world, g_currentPickedRbtNode);
 
-                bool isZMovement = (g_mouseLClickButton && g_mouseRClickButton) || g_mouseMClickButton;
-
-                g_arcball.updateArcballMVRbt(MVRigTForm);
-
-                if (!isZMovement) {
-                    double z = g_arcball.getArcballMVRbt().getTranslation()(2);
-                    g_arcball.updateArcballScale(getScreenToEyeScale(z, g_frustFovY, g_windowHeight));
+                if (!((g_mouseLClickButton && g_mouseRClickButton) || g_mouseMClickButton)) {
+                    double z = MVRigTForm.getTranslation()(2);
+                    g_arcballScale = getScreenToEyeScale(z, g_frustFovY, g_windowHeight);
                 }
 
-                g_arcball.drawArcball(curSS);
+                // set uniform variables for arcball
+                Matrix4 MVM, NMVM;
+                double scale = g_arcballScale * g_arcballScreenRadius;
+                Matrix4 scale_mat = Matrix4::makeScale(Cvec3(scale, scale, scale));
+
+                MVM *= scale_mat;
+                NMVM = normalMatrix(MVM);
+                sendModelViewNormalMatrix(uniforms, MVM, NMVM);
+
+                g_arcballMat->draw(*g_sphere, uniforms);
             }
         }
 
@@ -226,22 +238,31 @@ static void drawStuff(const ShaderState& curSS, bool picking) {
             // arcball rendering in world-sky frame
             RigTForm MVRigTForm = invEyeRbt * g_world->getRbt();
 
-            bool isZMovement = (g_mouseLClickButton && g_mouseRClickButton) || g_mouseMClickButton;
-
-            g_arcball.updateArcballMVRbt(MVRigTForm);
-
-            if (!isZMovement) {
-                double z = g_arcball.getArcballMVRbt().getTranslation()(2);
-                g_arcball.updateArcballScale(getScreenToEyeScale(z, g_frustFovY, g_windowHeight));
+            if (!((g_mouseLClickButton && g_mouseRClickButton) || g_mouseMClickButton)) {
+                double z = MVRigTForm.getTranslation()(2);
+                g_arcballScale = getScreenToEyeScale(z, g_frustFovY, g_windowHeight);
             }
 
-            g_arcball.drawArcball(curSS);
+            // set uniform variables for arcball
+            Matrix4 MVM, NMVM;
+            double scale = g_arcballScale * g_arcballScreenRadius;
+            Matrix4 scale_mat = Matrix4::makeScale(Cvec3(scale, scale, scale));
+
+            MVM *= scale_mat;
+            NMVM = normalMatrix(MVM);
+            sendModelViewNormalMatrix(uniforms, MVM, NMVM);
+
+            g_arcballMat->draw(*g_sphere, uniforms);
         }
     }
     else {
-        Picker picker(invEyeRbt, curSS);
+        Picker picker(invEyeRbt, uniforms);
+        
+        g_overridingMaterial = g_pickingMat;
         g_world->accept(picker);
+        g_overridingMaterial.reset();
         glFlush();
+
         g_currentPickedRbtNode = picker.getRbtNodeAtXY(g_mouseClickX, g_mouseClickY);
 
         if (g_currentPickedRbtNode == nullptr) {
@@ -281,19 +302,11 @@ static void animateTimerCallback(int ms) {
 }
 
 static void display() {
-  glUseProgram(g_shaderStates[g_activeShader]->program);
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);                   // clear framebuffer color&depth
 
-  drawStuff(*g_shaderStates[g_activeShader], g_isPicking);
+  drawStuff(false);
 
-  if (!g_isPicking) {
-      // DO NOT swap buffers when picking is on
-      glutSwapBuffers();
-  }
-  else {
-      g_isPicking = false;
-      g_activeShader = DEFAULT_SHADER;
-  }
+  glutSwapBuffers();
 
   checkGlErrors();
 }
@@ -303,7 +316,7 @@ static void reshape(const int w, const int h) {
   g_windowHeight = h;
   glViewport(0, 0, w, h);
   // update the size of the arcball
-  g_arcball.updateScreenRadius(0.25 * std::min(g_windowWidth, g_windowHeight));
+  g_arcballScreenRadius = 0.25 * std::min(g_windowWidth, g_windowHeight);
   cerr << "Size of window is now " << w << "x" << h << endl;
   updateFrustFovY();
   glutPostRedisplay();
@@ -335,11 +348,11 @@ static void motion(const int x, const int y) {
                 // calculate z coordinate of clicked points in screen coordinate
                 int v1_x = (int)(g_mouseClickX - arcballScreenCoord(0));
                 int v1_y = (int)(g_mouseClickY - arcballScreenCoord(1));
-                int v1_z = getScreenZ(g_arcball.getScreenRadius(), g_mouseClickX, g_mouseClickY, arcballScreenCoord);
+                int v1_z = getScreenZ(g_arcballScreenRadius, g_mouseClickX, g_mouseClickY, arcballScreenCoord);
 
                 int v2_x = (int)(x - arcballScreenCoord(0));
                 int v2_y = (int)(g_windowHeight - y - 1 - arcballScreenCoord(1));
-                int v2_z = getScreenZ(g_arcball.getScreenRadius(), x, g_windowHeight - y - 1, arcballScreenCoord);
+                int v2_z = getScreenZ(g_arcballScreenRadius, x, g_windowHeight - y - 1, arcballScreenCoord);
 
                 Cvec3 v1;
                 Cvec3 v2;
@@ -369,12 +382,12 @@ static void motion(const int x, const int y) {
             else {
                 if (g_mouseRClickButton && !g_mouseLClickButton) {
                     // right click
-                    m = RigTForm::makeTranslation(Cvec3(dx, dy, 0) * g_arcball.getArcballScale());
+                    m = RigTForm::makeTranslation(Cvec3(dx, dy, 0) * g_arcballScale);
                 }
 
                 else if (g_mouseMClickButton || (g_mouseLClickButton && g_mouseRClickButton)) {
                     // middle of both button click
-                    m = RigTForm::makeTranslation(Cvec3(0, 0, -dy) * g_arcball.getArcballScale());
+                    m = RigTForm::makeTranslation(Cvec3(0, 0, -dy) * g_arcballScale);
                 }
             }
         }
@@ -419,11 +432,11 @@ static void motion(const int x, const int y) {
             // calculate z coordinate of clicked points in screen coordinate
             int v1_x = (int)(g_mouseClickX - arcballScreenCoord(0));
             int v1_y = (int)(g_mouseClickY - arcballScreenCoord(1));
-            int v1_z = getScreenZ(g_arcball.getScreenRadius(), g_mouseClickX, g_mouseClickY, arcballScreenCoord);
+            int v1_z = getScreenZ(g_arcballScreenRadius, g_mouseClickX, g_mouseClickY, arcballScreenCoord);
 
             int v2_x = (int)(x - arcballScreenCoord(0));
             int v2_y = (int)(g_windowHeight - y - 1 - arcballScreenCoord(1));
-            int v2_z = getScreenZ(g_arcball.getScreenRadius(), x, g_windowHeight - y - 1, arcballScreenCoord);
+            int v2_z = getScreenZ(g_arcballScreenRadius, x, g_windowHeight - y - 1, arcballScreenCoord);
 
             Cvec3 v1;
             Cvec3 v2;
@@ -453,12 +466,12 @@ static void motion(const int x, const int y) {
         else {
             if (g_mouseRClickButton && !g_mouseLClickButton) {
                 // right click
-                m = RigTForm::makeTranslation(Cvec3(dx, dy, 0) * g_arcball.getArcballScale());
+                m = RigTForm::makeTranslation(Cvec3(dx, dy, 0) * g_arcballScale);
             }
 
             else if (g_mouseMClickButton || (g_mouseLClickButton && g_mouseRClickButton)) {
                 // middle of both button click
-                m = RigTForm::makeTranslation(Cvec3(0, 0, -dy) * g_arcball.getArcballScale());
+                m = RigTForm::makeTranslation(Cvec3(0, 0, -dy) * g_arcballScale);
             }
         }
 
@@ -501,15 +514,13 @@ static void pick() {
 
     glClearColor(0, 0, 0, 0);
 
-    // using PICKING_SHADER as the shader
-    glUseProgram(g_shaderStates[PICKING_SHADER]->program);
-
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-    drawStuff(*g_shaderStates[PICKING_SHADER], true);
+
+    drawStuff(true);
 
     // Uncomment below and comment out the glutPostRedisplay in mouse(...) call back
     // to see result of the pick rendering pass
-    glutSwapBuffers();
+    // glutSwapBuffers();
 
     //Now set back the clear color
     glClearColor(clearColor[0], clearColor[1], clearColor[2], clearColor[3]);
@@ -586,20 +597,12 @@ static void keyboard(const unsigned char key, const int x, const int y) {
         glutPostRedisplay();
         break;
 
-    case 'f':
-        // toggle shader
-        g_activeShader ^= 1;
-        glutPostRedisplay();
-        break;
-
     case 'p':
         // picking
         std::cout << "Pressed 'p'! ";
         std::cout << "Enabling picking... \n";
-        g_activeShader = PICKING_SHADER;
-        g_isPicking = true;
+        pick();
         g_isWorldSky = false;
-        // pick(); -> For debugging
         break;
 
     case 'y':
@@ -756,14 +759,35 @@ static void initGLState() {
         glEnable(GL_FRAMEBUFFER_SRGB);
 }
 
-static void initShaders() {
-    g_shaderStates.resize(g_numShaders);
-    for (int i = 0; i < g_numShaders; ++i) {
-        if (g_Gl2Compatible)
-            g_shaderStates[i].reset(new ShaderState(g_shaderFilesGl2[i][0], g_shaderFilesGl2[i][1]));
-        else
-            g_shaderStates[i].reset(new ShaderState(g_shaderFiles[i][0], g_shaderFiles[i][1]));
-    }
+static void initMaterials() {
+    // Create some prototype materials
+    Material diffuse("./shaders/basic-gl3.vshader", "./shaders/diffuse-gl3.fshader");
+    Material solid("./shaders/basic-gl3.vshader", "./shaders/solid-gl3.fshader");
+
+    // copy diffuse prototype and set red color
+    g_redDiffuseMat.reset(new Material(diffuse));
+    g_redDiffuseMat->getUniforms().put("uColor", Cvec3f(1, 0, 0));
+
+    // copy diffuse prototype and set blue color
+    g_blueDiffuseMat.reset(new Material(diffuse));
+    g_blueDiffuseMat->getUniforms().put("uColor", Cvec3f(0, 0, 1));
+
+    // normal mapping material
+    g_bumpFloorMat.reset(new Material("./shaders/normal-gl3.vshader", "./shaders/normal-gl3.fshader"));
+    g_bumpFloorMat->getUniforms().put("uTexColor", shared_ptr<ImageTexture>(new ImageTexture("Fieldstone.ppm", true)));
+    g_bumpFloorMat->getUniforms().put("uTexNormal", shared_ptr<ImageTexture>(new ImageTexture("FieldstoneNormal.ppm", false)));
+
+    // copy solid prototype, and set to wireframed rendering
+    g_arcballMat.reset(new Material(solid));
+    g_arcballMat->getUniforms().put("uColor", Cvec3f(0.27f, 0.82f, 0.35f));
+    g_arcballMat->getRenderStates().polygonMode(GL_FRONT_AND_BACK, GL_LINE);
+
+    // copy solid prototype, and set to color white
+    g_lightMat.reset(new Material(solid));
+    g_lightMat->getUniforms().put("uColor", Cvec3f(1, 1, 1));
+
+    // pick shader
+    g_pickingMat.reset(new Material("./shaders/basic-gl3.vshader", "./shaders/pick-gl3.fshader"));
 }
 
 static void initGeometry() {
@@ -772,7 +796,7 @@ static void initGeometry() {
     initSpheres();
 }
 
-static void constructRobot(shared_ptr<SgTransformNode> base, const Cvec3& color) {
+static void constructRobot(shared_ptr<SgTransformNode> base, std::shared_ptr<Material> material) {
 
     const double ARM_LEN = 0.7;
     const double ARM_THICK = 0.25;
@@ -846,7 +870,7 @@ static void constructRobot(shared_ptr<SgTransformNode> base, const Cvec3& color)
     for (int i = 0; i < NUM_SHAPES; ++i) {
         shared_ptr<MyShapeNode> shape(
             new MyShapeNode(shapeDesc[i].geometry,
-                color,
+                material,
                 Cvec3(shapeDesc[i].x, shapeDesc[i].y, shapeDesc[i].z),
                 Cvec3(0, 0, 0),
                 Cvec3(shapeDesc[i].sx, shapeDesc[i].sy, shapeDesc[i].sz)));
@@ -861,13 +885,13 @@ static void initScene() {
 
     g_groundNode.reset(new SgRbtNode());
     g_groundNode->addChild(shared_ptr<MyShapeNode>(
-        new MyShapeNode(g_ground, Cvec3(0.1, 0.95, 0.1))));
+        new MyShapeNode(g_ground, g_bumpFloorMat, Cvec3(0, g_groundY, 0))));
 
     g_robot1Node.reset(new SgRbtNode(RigTForm(Cvec3(-2, 1, 0))));
     g_robot2Node.reset(new SgRbtNode(RigTForm(Cvec3(2, 1, 0))));
 
-    constructRobot(g_robot1Node, Cvec3(1, 0, 0)); // a Red robot
-    constructRobot(g_robot2Node, Cvec3(0, 0, 1)); // a Blue robot
+    constructRobot(g_robot1Node, g_redDiffuseMat); // a Red robot
+    constructRobot(g_robot2Node, g_blueDiffuseMat); // a Blue robot
 
     g_world->addChild(g_skyNode);
     g_world->addChild(g_groundNode);
@@ -880,10 +904,6 @@ static void initScene() {
 
     // dump current scene to a vector
     dumpSgRbtNodes(g_world, g_sceneRbtVector);
-}
-
-static void initArcball() {
-    g_arcball = Arcball(g_sphere, Cvec3(0, 1, 0), 0.25 * std::min(g_windowWidth, g_windowHeight), 0.01);
 }
 
 int main(int argc, char* argv[]) {
@@ -899,9 +919,8 @@ int main(int argc, char* argv[]) {
             throw runtime_error("Error: card/driver does not support OpenGL Shading Language v1.0");
 
         initGLState();
-        initShaders();
+        initMaterials();
         initGeometry();
-        initArcball();
         initScene();
         glutMainLoop();
         return 0;
