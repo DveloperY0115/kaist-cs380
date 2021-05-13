@@ -93,6 +93,7 @@ typedef SgGeometryShapeNode MyShapeNode;
 // Scene graph nodes
 static std::shared_ptr<SgRootNode> g_world;
 static std::shared_ptr<SgRbtNode> g_skyNode, g_groundNode, g_robot1Node, g_robot2Node;
+static std::shared_ptr<SgRbtNode> g_light1Node, g_light2Node;
 static std::shared_ptr<SgRbtNode> g_currentEyeNode;
 static std::shared_ptr<SgRbtNode> g_currentPickedRbtNode;
 
@@ -111,10 +112,6 @@ static bool g_isWorldSky = false;
 
 // Vertex buffer and index buffer associated with the ground and cube geometry
 static shared_ptr<Geometry> g_ground, g_cube, g_sphere;
-
-// --------- Scene
-static const Cvec3 g_light1(2.0, 3.0, 14.0), g_light2(-2, -3.0, -5.0);  // define two lights positions in world space
-
 
 // --------- Animation
 static Animation::KeyframeList g_keyframes = Animation::KeyframeList();
@@ -201,8 +198,8 @@ static void drawStuff(bool picking) {
     const RigTForm eyeRbt = g_currentEyeNode->getRbt();
     const RigTForm invEyeRbt = inv(eyeRbt);
 
-    const Cvec3 eyeLight1 = Cvec3(invEyeRbt * Cvec4(g_light1, 1)); // g_light1 position in eye coordinates
-    const Cvec3 eyeLight2 = Cvec3(invEyeRbt * Cvec4(g_light2, 1)); // g_light2 position in eye coordinates
+    const Cvec3 eyeLight1 = Cvec3(invEyeRbt * Cvec4(getPathAccumRbt(g_world, g_light1Node).getTranslation(), 1)); // g_light1 position in eye coordinates
+    const Cvec3 eyeLight2 = Cvec3(invEyeRbt * Cvec4(getPathAccumRbt(g_world, g_light2Node).getTranslation(), 1)); // g_light2 position in eye coordinates
 
     uniforms.put("uLight", eyeLight1);
     uniforms.put("uLight2", eyeLight2);
@@ -875,6 +872,14 @@ static void initScene() {
     g_groundNode->addChild(shared_ptr<MyShapeNode>(
         new MyShapeNode(g_ground, g_bumpFloorMat, Cvec3(0, g_groundY, 0))));
 
+    g_light1Node.reset(new SgRbtNode(RigTForm(Cvec3(2.0, 3.0, 14.0))));
+    g_light1Node->addChild(std::shared_ptr<MyShapeNode>(
+        new MyShapeNode(g_sphere, g_lightMat, Cvec3(0, 0, 0))));
+
+    g_light2Node.reset(new SgRbtNode(RigTForm(Cvec3(-2, -3.0, -5.0))));
+    g_light2Node->addChild(std::shared_ptr<MyShapeNode>(
+        new MyShapeNode(g_sphere, g_lightMat, Cvec3(0, 0, 0))));
+
     g_robot1Node.reset(new SgRbtNode(RigTForm(Cvec3(-2, 1, 0))));
     g_robot2Node.reset(new SgRbtNode(RigTForm(Cvec3(2, 1, 0))));
 
@@ -883,6 +888,8 @@ static void initScene() {
 
     g_world->addChild(g_skyNode);
     g_world->addChild(g_groundNode);
+    g_world->addChild(g_light1Node);
+    g_world->addChild(g_light2Node);
     g_world->addChild(g_robot1Node);
     g_world->addChild(g_robot2Node);
 
