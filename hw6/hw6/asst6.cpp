@@ -211,46 +211,29 @@ static void drawStuff(bool picking) {
         Drawer drawer(invEyeRbt, uniforms);
         g_world->accept(drawer);
 
+        RigTForm MVRigTForm;
         if (!g_isWorldSky) {
             // arcball rendering in normal situation
-            if (g_currentEyeNode != g_currentPickedRbtNode) {
-                RigTForm MVRigTForm = invEyeRbt * getPathAccumRbt(g_world, g_currentPickedRbtNode);
-
-                if (!((g_mouseLClickButton && g_mouseRClickButton) || g_mouseMClickButton)) {
-                    double z = MVRigTForm.getTranslation()(2);
-                    g_arcballScale = getScreenToEyeScale(z, g_frustFovY, g_windowHeight);
-                }
-
-                // set uniform variables for arcball
-                Matrix4 MVM, NMVM;
-                double scale = g_arcballScale * g_arcballScreenRadius;
-                Matrix4 scale_mat = Matrix4::makeScale(Cvec3(scale, scale, scale));
-
-                MVM *= scale_mat;
-                NMVM = normalMatrix(MVM);
-                sendModelViewNormalMatrix(uniforms, MVM, NMVM);
-
-                g_arcballMat->draw(*g_sphere, uniforms);
-            }
+            MVRigTForm = invEyeRbt * getPathAccumRbt(g_world, g_currentPickedRbtNode);
         }
-
         else {
             // arcball rendering in world-sky frame
-            RigTForm MVRigTForm = invEyeRbt * g_world->getRbt();
+            MVRigTForm = invEyeRbt * g_world->getRbt();
+        }
 
-            if (!((g_mouseLClickButton && g_mouseRClickButton) || g_mouseMClickButton)) {
-                double z = MVRigTForm.getTranslation()(2);
-                g_arcballScale = getScreenToEyeScale(z, g_frustFovY, g_windowHeight);
-            }
+        if (!((g_mouseLClickButton && g_mouseRClickButton) || g_mouseMClickButton)) {
+            // calculate scale if z-motion
+            double z = MVRigTForm.getTranslation()(2);
+            g_arcballScale = getScreenToEyeScale(z, g_frustFovY, g_windowHeight);
+        }
 
-            // set uniform variables for arcball
-            Matrix4 MVM, NMVM;
+        if (g_currentEyeNode != g_currentPickedRbtNode || g_isWorldSky) {
+            Matrix4 MVM = rigTFormToMatrix(MVRigTForm);
             double scale = g_arcballScale * g_arcballScreenRadius;
             Matrix4 scale_mat = Matrix4::makeScale(Cvec3(scale, scale, scale));
 
             MVM *= scale_mat;
-            NMVM = normalMatrix(MVM);
-            sendModelViewNormalMatrix(uniforms, MVM, NMVM);
+            sendModelViewNormalMatrix(uniforms, MVM, normalMatrix(MVM));
 
             g_arcballMat->draw(*g_sphere, uniforms);
         }
@@ -273,7 +256,6 @@ static void drawStuff(bool picking) {
 }
 
 /* GLUT callbacks */
-
 static void animateTimerCallback(int ms) {
     if (g_playing) {
         float t = static_cast<float>(ms) / static_cast<float>(g_msBetweenKeyFrames);
