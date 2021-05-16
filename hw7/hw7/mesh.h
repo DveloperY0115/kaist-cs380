@@ -97,21 +97,31 @@ class Mesh {
     f >> nv >> nt >> nq;
     vertex_.resize(nv);
     face_.resize(nt+nq);
+
+    // read vertex information one by one
     for (int i = 0; i < nv; ++i) {
       f >> vertex_[i].position_[0] >> vertex_[i].position_[1] >> vertex_[i].position_[2];
     }
+
+    // read triplet of vertex indices forming each triangle
     for (int i = 0; i < nt; ++i) {
       f >> face_[i].vertex_[0] >> face_[i].vertex_[1] >> face_[i].vertex_[2];
       face_[i].vertex_[3] = -1;
     }
+
+    // read quadruplet of vertex indices forming each quad
     for (int i = 0; i < nq; ++i) {
       f >> face_[nt+i].vertex_[0] >> face_[nt+i].vertex_[1] >> face_[nt+i].vertex_[2] >> face_[nt+i].vertex_[3];
     }
+
+    //
     for (int i = 0; i < nt; ++i) {
       for (int j = 0; j < 3; ++j) {
         vertex_[face_[i].vertex_[j]].halfedge_ = i | (j<<28);
       }
     }
+
+    //
     for (int i = 0; i < nq; ++i) {
       for (int j = 0; j < 4; ++j) {
         vertex_[face_[nt+i].vertex_[j]].halfedge_ = i | (j<<28);
@@ -139,6 +149,7 @@ class Mesh {
       vertex_[i].normal_[0] = -5e37;
     }
   }
+  
   void subdivide__() {
     if (not_manifold_)
       throw std::runtime_error("Subdivision does not support non manifold mesh yet.");

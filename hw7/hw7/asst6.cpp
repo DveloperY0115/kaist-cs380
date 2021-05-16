@@ -87,16 +87,20 @@ static int g_mouseClickX, g_mouseClickY; // coordinates for mouse click event
 
 // Materials
 static std::shared_ptr<Material> g_redDiffuseMat, g_blueDiffuseMat, g_bumpFloorMat, 
-                                g_arcballMat, g_pickingMat, g_lightMat, g_greenSpecularMat;
+                                g_arcballMat, g_pickingMat, g_lightMat, g_purpleSpecularMat;
 std::shared_ptr<Material> g_overridingMaterial;    // used for uniform material'ing' in picking mode
 
 // Geometry
 typedef SgGeometryShapeNode MyShapeNode;
 
+// Meshes
+static std::shared_ptr<Mesh> g_Mesh, g_dynamicMesh;
+
 // Scene graph nodes
 static std::shared_ptr<SgRootNode> g_world;
 static std::shared_ptr<SgRbtNode> g_skyNode, g_groundNode, g_robot1Node, g_robot2Node;
 static std::shared_ptr<SgRbtNode> g_light1Node, g_light2Node;
+static std::shared_ptr<SgRbtNode> g_dynamicCubeNode;
 static std::shared_ptr<SgRbtNode> g_currentEyeNode;
 static std::shared_ptr<SgRbtNode> g_currentPickedRbtNode;
 
@@ -115,6 +119,7 @@ static bool g_isWorldSky = false;
 
 // Vertex buffer and index buffer associated with the ground and cube geometry
 static shared_ptr<Geometry> g_ground, g_cube, g_sphere;
+static shared_ptr<SimpleGeometryPN> g_refCube, g_dynamicCube;
 
 // --------- Animation
 static Animation::KeyframeList g_keyframes = Animation::KeyframeList();
@@ -792,11 +797,38 @@ static void initMaterials() {
     g_lightMat->getUniforms().put("uColor", Cvec3f(1, 1, 1));
 
     // copy specular prototype, and set to color green
-    g_greenSpecularMat.reset(new Material(specular));
-    g_greenSpecularMat->getUniforms().put("uColor", Cvec3f(0.35f, 0.27f, 0.82f));
+    g_purpleSpecularMat.reset(new Material(specular));
+    g_purpleSpecularMat->getUniforms().put("uColor", Cvec3f(0.35f, 0.27f, 0.82f));
 
     // pick shader
     g_pickingMat.reset(new Material("./shaders/basic-gl3.vshader", "./shaders/pick-gl3.fshader"));
+}
+
+static void loadMeshs() {
+    // assume that each face of mesh is triangle
+    g_Mesh.reset(new Mesh());
+    g_Mesh->load("./cube_tri.mesh");
+    g_dynamicMesh.reset(new Mesh(*g_Mesh));
+}
+
+static void convertMeshToGeometry() {
+    // Convert Mesh into drawable Geometry
+    std::vector<VertexPN> vtx;
+
+    // iterate over faces, put associated vertex & normal in the vector
+    for (int i = 0; i < g_Mesh->getNumFaces(); ++i) {
+        Mesh::Face face = g_Mesh->getFace(i);
+
+        for (int j = 0; j < face.getNumVertices(); ++j) {
+            vtx.push_back(
+                VertexPN(face.getVertex(j).getPosition(), face.getNormal()));    // use uniform normal for now
+        }
+    }
+
+    int vbLen = vtx.size();
+
+    g_refCube.reset(new SimpleGeometryPN());
+    g_refCube->upload(&vtx[0], vbLen);
 }
 
 static void initGeometry() {
@@ -904,16 +936,22 @@ static void initScene() {
     g_light2Node->addChild(std::shared_ptr<MyShapeNode>(
         new MyShapeNode(g_sphere, g_lightMat, Cvec3(0, 0, 0))));
 
+    g_dynamicCubeNode.reset(new SgRbtNode(RigTForm(Cvec3(0, 0, 0))));
+    g_dynamicCubeNode->addChild(std::shared_ptr<MyShapeNode>(
+        new MyShapeNode(g_refCube, g_purpleSpecularMat, Cvec3(0, 0, 0))));
+
     g_robot1Node.reset(new SgRbtNode(RigTForm(Cvec3(-2, 1, 0))));
     g_robot2Node.reset(new SgRbtNode(RigTForm(Cvec3(2, 1, 0))));
 
     constructRobot(g_robot1Node, g_redDiffuseMat); // a Red robot
     constructRobot(g_robot2Node, g_blueDiffuseMat); // a Blue robot
 
+    // Add all nodes under the scene root
     g_world->addChild(g_skyNode);
     g_world->addChild(g_groundNode);
     g_world->addChild(g_light1Node);
     g_world->addChild(g_light2Node);
+    g_world->addChild(g_dynamicCubeNode);
     g_world->addChild(g_robot1Node);
     g_world->addChild(g_robot2Node);
 
@@ -939,6 +977,8 @@ int main(int argc, char* argv[]) {
 
         initGLState();
         initMaterials();
+        loadMeshs();
+        convertMeshToGeometry();
         initGeometry();
         initScene();
         glutMainLoop();
