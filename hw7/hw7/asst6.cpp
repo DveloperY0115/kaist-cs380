@@ -122,7 +122,10 @@ static bool g_isWorldSky = false;
 
 // Vertex buffer and index buffer associated with the ground and cube geometry
 static shared_ptr<Geometry> g_ground, g_cube, g_sphere;
+
+// Subdivision
 static shared_ptr<SimpleGeometryPN> g_refCube, g_dynamicCube;
+static int g_subdivisionStep = 0;
 static bool g_isSmooth = false;
 
 // --------- Animation
@@ -674,6 +677,53 @@ static void keyboard(const unsigned char key, const int x, const int y) {
         glutPostRedisplay();
         break;
     }
+
+    case '0':
+    {
+        g_subdivisionStep++;
+        if (g_subdivisionStep > 7) {
+            g_subdivisionStep = 7;
+        }
+        std::cout << "Subdivision steps: " << g_subdivisionStep << "\n";
+        g_dynamicMesh.reset(new Mesh(*g_Mesh));
+
+        for (int i = 0; i < g_subdivisionStep; ++i) {
+            g_dynamicMesh->subdivide();
+        }
+
+        dumpMeshToGeometry(g_dynamicMesh, g_dynamicCube, g_isSmooth);
+        glutPostRedisplay();
+        break;
+    }
+
+    case '9':
+    {
+        g_subdivisionStep--;
+        if (g_subdivisionStep < 0) {
+            g_subdivisionStep = 0;
+        }
+        std::cout << "Subdivision steps: " << g_subdivisionStep << "\n";
+        g_dynamicMesh.reset(new Mesh(*g_Mesh));
+
+        for (int i = 0; i < g_subdivisionStep; ++i) {
+            g_dynamicMesh->subdivide();
+        }
+
+        dumpMeshToGeometry(g_dynamicMesh, g_dynamicCube, g_isSmooth);
+        glutPostRedisplay();
+        break;
+    }
+
+    case '7':
+    {
+        break;
+    }
+
+    case '8':
+    {
+        break;
+    }
+
     case 'z':
     {
         // play animation
