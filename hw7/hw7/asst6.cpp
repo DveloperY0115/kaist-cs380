@@ -123,6 +123,7 @@ static bool g_isWorldSky = false;
 // Vertex buffer and index buffer associated with the ground and cube geometry
 static shared_ptr<Geometry> g_ground, g_cube, g_sphere;
 static shared_ptr<SimpleGeometryPN> g_refCube, g_dynamicCube;
+static bool g_isSmooth = false;
 
 // --------- Animation
 static Animation::KeyframeList g_keyframes = Animation::KeyframeList();
@@ -137,7 +138,7 @@ static bool g_playing = false;
 //! Function forward declaration
 static void dumpMeshToGeometry(std::shared_ptr<Mesh> mesh,
                                 std::shared_ptr<SimpleGeometryPN> geometry,
-                                bool smooth);
+                                bool isSmooth);
 
 //! Geometry primitives initialization
 static void initGround() {
@@ -325,7 +326,7 @@ static void randomScaleTimerCallback(int ms) {
         }
 
         // Update geometry
-        dumpMeshToGeometry(g_dynamicMesh, g_dynamicCube, true);
+        dumpMeshToGeometry(g_dynamicMesh, g_dynamicCube, g_isSmooth);
 
         // Render scene again
         glutPostRedisplay();
@@ -666,6 +667,13 @@ static void keyboard(const unsigned char key, const int x, const int y) {
         break;
     }
 
+    case 'f':
+    {
+        g_isSmooth = !g_isSmooth;
+        dumpMeshToGeometry(g_dynamicMesh, g_dynamicCube, g_isSmooth);
+        glutPostRedisplay();
+        break;
+    }
     case 'z':
     {
         // play animation
@@ -678,7 +686,7 @@ static void keyboard(const unsigned char key, const int x, const int y) {
             g_playing = false;
             std::cout << "Stop playing animation...\n";
             g_dynamicMesh.reset(new Mesh(*g_Mesh));
-            dumpMeshToGeometry(g_dynamicMesh, g_dynamicCube, true);
+            dumpMeshToGeometry(g_dynamicMesh, g_dynamicCube, g_isSmooth);
             glutPostRedisplay();
         }
         break;
@@ -863,12 +871,12 @@ static void loadMeshs() {
 
 static void dumpMeshToGeometry(std::shared_ptr<Mesh> mesh, 
                                 std::shared_ptr<SimpleGeometryPN> geometry, 
-                                bool smooth = true) {
+                                bool isSmooth) {
 
     // Convert Mesh into drawable Geometry
     std::vector<VertexPN> vtx;
 
-    if (!smooth) {
+    if (!isSmooth) {
         // Iterate over faces, put associated vertex & normal in the vector
         for (int i = 0; i < mesh->getNumFaces(); ++i) {
             Mesh::Face face = mesh->getFace(i);
@@ -937,7 +945,7 @@ static void initGeometry() {
     initSpheres();
     g_refCube.reset(new SimpleGeometryPN());
     g_dynamicCube.reset(new SimpleGeometryPN());
-    dumpMeshToGeometry(g_dynamicMesh, g_dynamicCube);
+    dumpMeshToGeometry(g_dynamicMesh, g_dynamicCube, g_isSmooth);
 
 }
 
