@@ -811,20 +811,69 @@ static void loadMeshs() {
     g_dynamicMesh.reset(new Mesh(*g_Mesh));
 }
 
-static void convertMeshToGeometry() {
+static void convertMeshToGeometry(bool smooth = false) {
+
     // Convert Mesh into drawable Geometry
     std::vector<VertexPN> vtx;
 
-    // iterate over faces, put associated vertex & normal in the vector
-    for (int i = 0; i < g_Mesh->getNumFaces(); ++i) {
-        Mesh::Face face = g_Mesh->getFace(i);
+    if (!smooth) {
+        // Iterate over faces, put associated vertex & normal in the vector
+        for (int i = 0; i < g_dynamicMesh->getNumFaces(); ++i) {
+            Mesh::Face face = g_dynamicMesh->getFace(i);
 
-        for (int j = 0; j < face.getNumVertices(); ++j) {
-            vtx.push_back(
-                VertexPN(face.getVertex(j).getPosition(), face.getNormal()));    // use uniform normal for now
+            for (int j = 0; j < face.getNumVertices(); ++j) {
+                vtx.push_back(
+                    VertexPN(face.getVertex(j).getPosition(), face.getNormal()));    // use uniform normal for now
+            }
         }
     }
 
+    else {
+        // Smooth shading. 
+        // Normal of each vertex will be calculated by 
+        // averaging adjacent faces' normals
+
+        // container for accumulating valence for each vertex;
+        std::vector<int> vertexValence(g_dynamicMesh->getNumVertices());
+
+        // Step 1. Zero out all normals
+        for (int i = 0; i < g_dynamicMesh->getNumVertices(); ++i) {
+            g_dynamicMesh->getVertex(i).setNormal(Cvec3(0, 0, 0));
+        }
+
+        // Step 2. Iterate through the faces, accumulate normal to adjacent vertices
+        for (int i = 0; i < g_dynamicMesh->getNumFaces(); ++i) {
+            Mesh::Face face = g_dynamicMesh->getFace(i);
+
+            for (int j = 0; j < face.getNumVertices(); ++j) {
+                Mesh::Vertex currentVertex = face.getVertex(j);
+                Cvec3 currentVertexNormal = currentVertex.getNormal();
+                currentVertexNormal += face.getNormal();
+                currentVertex.setNormal(currentVertexNormal);
+
+                vertexValence[currentVertex.getIndex()] += 1;
+            }
+        }
+
+        // Step 3. Visit each vertex and divide normal by valence
+        for (int i = 0; i < g_dynamicMesh->getNumVertices(); ++i) {
+            Mesh::Vertex currentVertex = g_dynamicMesh->getVertex(i);
+            Cvec3 currentVertexNormal = currentVertex.getNormal();
+            currentVertexNormal /= vertexValence[currentVertex.getIndex()];
+            currentVertex.setNormal(currentVertexNormal);
+        }
+
+        // Iterate over faces, put associated vertex & normal in the vector
+        for (int i = 0; i < g_dynamicMesh->getNumFaces(); ++i) {
+            Mesh::Face face = g_dynamicMesh->getFace(i);
+
+            for (int j = 0; j < face.getNumVertices(); ++j) {
+                vtx.push_back(
+                    VertexPN(face.getVertex(j).getPosition(), face.getVertex(j).getNormal()));    // use uniform normal for now
+            }
+        }
+    }
+    
     int vbLen = vtx.size();
 
     g_refCube.reset(new SimpleGeometryPN());
@@ -978,7 +1027,7 @@ int main(int argc, char* argv[]) {
         initGLState();
         initMaterials();
         loadMeshs();
-        convertMeshToGeometry();
+        convertMeshToGeometry(true);
         initGeometry();
         initScene();
         glutMainLoop();
