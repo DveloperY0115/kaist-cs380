@@ -10,6 +10,7 @@
 #include <string>
 #include <memory>
 #include <stdexcept>
+#include <cstdlib>
 #include <cmath>
 
 #include <GL/glew.h>
@@ -48,6 +49,8 @@
 
 // assignment 7
 #include "mesh.h"
+
+#define PI 3.141592
 
 using namespace std;
 
@@ -130,6 +133,11 @@ static int g_animationFramesPerSecond = 60;    // frames to render per second du
 static bool g_playing = false;
 
 ///////////////// END OF G L O B A L S //////////////////////////////////////////////////
+
+//! Function forward declaration
+static void dumpMeshToGeometry(std::shared_ptr<Mesh> mesh,
+                                std::shared_ptr<SimpleGeometryPN> geometry,
+                                bool smooth);
 
 //! Geometry primitives initialization
 static void initGround() {
@@ -302,6 +310,30 @@ static void animateTimerCallback(int ms) {
             g_playing = false;
         }
     }
+}
+
+static void randomScaleTimerCallback(int ms) {
+    // Introduce noise per vertex
+    float t = static_cast<float>(ms) / static_cast<float>(g_msBetweenKeyFrames);
+
+    g_dynamicMesh.reset(new Mesh(*g_Mesh));
+
+    for (int i = 0; i < g_dynamicMesh->getNumVertices(); ++i) {
+        Cvec3 vertexPos = g_dynamicMesh->getVertex(i).getPosition();
+        float noise = ((static_cast<float>(std::rand()) / static_cast<float>(RAND_MAX)) + 1.0) * 10 * std::sin(t * (PI / 180)); 
+        vertexPos *= (noise + 1.0);
+        g_dynamicMesh->getVertex(i).setPosition(vertexPos);
+    }
+
+    // Update geometry
+    dumpMeshToGeometry(g_dynamicMesh, g_dynamicCube, true);
+
+    // Render scene again
+    glutPostRedisplay();
+
+    glutTimerFunc(1000 / g_animationFramesPerSecond,
+        randomScaleTimerCallback,
+        ms + 1000 / g_animationFramesPerSecond);
 }
 
 static void display() {
@@ -634,6 +666,14 @@ static void keyboard(const unsigned char key, const int x, const int y) {
         break;
     }
 
+    case 'z':
+    {
+        // play animation
+        std::cout << "Start playing animation...\n";
+        randomScaleTimerCallback(0);
+        break;
+    }
+
     case '+':
     {
         if (g_msBetweenKeyFrames >= 200) {
@@ -811,15 +851,17 @@ static void loadMeshs() {
     g_dynamicMesh.reset(new Mesh(*g_Mesh));
 }
 
-static void convertMeshToGeometry(bool smooth = false) {
+static void dumpMeshToGeometry(std::shared_ptr<Mesh> mesh, 
+                                std::shared_ptr<SimpleGeometryPN> geometry, 
+                                bool smooth = true) {
 
     // Convert Mesh into drawable Geometry
     std::vector<VertexPN> vtx;
 
     if (!smooth) {
         // Iterate over faces, put associated vertex & normal in the vector
-        for (int i = 0; i < g_dynamicMesh->getNumFaces(); ++i) {
-            Mesh::Face face = g_dynamicMesh->getFace(i);
+        for (int i = 0; i < mesh->getNumFaces(); ++i) {
+            Mesh::Face face = mesh->getFace(i);
 
             for (int j = 0; j < face.getNumVertices(); ++j) {
                 vtx.push_back(
@@ -834,16 +876,16 @@ static void convertMeshToGeometry(bool smooth = false) {
         // averaging adjacent faces' normals
 
         // container for accumulating valence for each vertex;
-        std::vector<int> vertexValence(g_dynamicMesh->getNumVertices());
+        std::vector<int> vertexValence(mesh->getNumVertices());
 
         // Step 1. Zero out all normals
-        for (int i = 0; i < g_dynamicMesh->getNumVertices(); ++i) {
-            g_dynamicMesh->getVertex(i).setNormal(Cvec3(0, 0, 0));
+        for (int i = 0; i < mesh->getNumVertices(); ++i) {
+            mesh->getVertex(i).setNormal(Cvec3(0, 0, 0));
         }
 
         // Step 2. Iterate through the faces, accumulate normal to adjacent vertices
-        for (int i = 0; i < g_dynamicMesh->getNumFaces(); ++i) {
-            Mesh::Face face = g_dynamicMesh->getFace(i);
+        for (int i = 0; i < mesh->getNumFaces(); ++i) {
+            Mesh::Face face = mesh->getFace(i);
 
             for (int j = 0; j < face.getNumVertices(); ++j) {
                 Mesh::Vertex currentVertex = face.getVertex(j);
@@ -856,16 +898,16 @@ static void convertMeshToGeometry(bool smooth = false) {
         }
 
         // Step 3. Visit each vertex and divide normal by valence
-        for (int i = 0; i < g_dynamicMesh->getNumVertices(); ++i) {
-            Mesh::Vertex currentVertex = g_dynamicMesh->getVertex(i);
+        for (int i = 0; i < mesh->getNumVertices(); ++i) {
+            Mesh::Vertex currentVertex = mesh->getVertex(i);
             Cvec3 currentVertexNormal = currentVertex.getNormal();
             currentVertexNormal /= vertexValence[currentVertex.getIndex()];
             currentVertex.setNormal(currentVertexNormal);
         }
 
         // Iterate over faces, put associated vertex & normal in the vector
-        for (int i = 0; i < g_dynamicMesh->getNumFaces(); ++i) {
-            Mesh::Face face = g_dynamicMesh->getFace(i);
+        for (int i = 0; i < mesh->getNumFaces(); ++i) {
+            Mesh::Face face = mesh->getFace(i);
 
             for (int j = 0; j < face.getNumVertices(); ++j) {
                 vtx.push_back(
@@ -876,14 +918,17 @@ static void convertMeshToGeometry(bool smooth = false) {
     
     int vbLen = vtx.size();
 
-    g_refCube.reset(new SimpleGeometryPN());
-    g_refCube->upload(&vtx[0], vbLen);
+    geometry->upload(&vtx[0], vbLen);
 }
 
 static void initGeometry() {
     initGround();
     initCubes();
     initSpheres();
+    g_refCube.reset(new SimpleGeometryPN());
+    g_dynamicCube.reset(new SimpleGeometryPN());
+    dumpMeshToGeometry(g_dynamicMesh, g_dynamicCube);
+
 }
 
 static void constructRobot(shared_ptr<SgTransformNode> base, std::shared_ptr<Material> material) {
@@ -987,7 +1032,7 @@ static void initScene() {
 
     g_dynamicCubeNode.reset(new SgRbtNode(RigTForm(Cvec3(0, 0, 0))));
     g_dynamicCubeNode->addChild(std::shared_ptr<MyShapeNode>(
-        new MyShapeNode(g_refCube, g_purpleSpecularMat, Cvec3(0, 0, 0))));
+        new MyShapeNode(g_dynamicCube, g_purpleSpecularMat, Cvec3(0, 0, 0))));
 
     g_robot1Node.reset(new SgRbtNode(RigTForm(Cvec3(-2, 1, 0))));
     g_robot2Node.reset(new SgRbtNode(RigTForm(Cvec3(2, 1, 0))));
@@ -1027,7 +1072,6 @@ int main(int argc, char* argv[]) {
         initGLState();
         initMaterials();
         loadMeshs();
-        convertMeshToGeometry(true);
         initGeometry();
         initScene();
         glutMainLoop();
