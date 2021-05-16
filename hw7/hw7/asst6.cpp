@@ -314,13 +314,11 @@ static void animateTimerCallback(int ms) {
 
 static void randomScaleTimerCallback(int ms) {
     // Introduce noise per vertex
-    float t = static_cast<float>(ms) / static_cast<float>(g_msBetweenKeyFrames);
-
     g_dynamicMesh.reset(new Mesh(*g_Mesh));
 
     for (int i = 0; i < g_dynamicMesh->getNumVertices(); ++i) {
         Cvec3 vertexPos = g_dynamicMesh->getVertex(i).getPosition();
-        float noise = ((static_cast<float>(std::rand()) / static_cast<float>(RAND_MAX)) + 1.0) * 10 * std::sin(t * (PI / 180)); 
+        float noise = ((static_cast<float>(std::rand()) / static_cast<float>(RAND_MAX)) + 1.0) * std::sin(ms * (PI / 180)); 
         vertexPos *= (noise + 1.0);
         g_dynamicMesh->getVertex(i).setPosition(vertexPos);
     }
