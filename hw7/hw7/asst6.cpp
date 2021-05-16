@@ -313,25 +313,27 @@ static void animateTimerCallback(int ms) {
 }
 
 static void randomScaleTimerCallback(int ms) {
-    // Introduce noise per vertex
-    g_dynamicMesh.reset(new Mesh(*g_Mesh));
+    if (g_playing) {
+        // Introduce noise per vertex
+        g_dynamicMesh.reset(new Mesh(*g_Mesh));
 
-    for (int i = 0; i < g_dynamicMesh->getNumVertices(); ++i) {
-        Cvec3 vertexPos = g_dynamicMesh->getVertex(i).getPosition();
-        float noise = ((static_cast<float>(std::rand()) / static_cast<float>(RAND_MAX)) + 1.0) * std::sin(ms * (PI / 180)); 
-        vertexPos *= (noise + 1.0);
-        g_dynamicMesh->getVertex(i).setPosition(vertexPos);
+        for (int i = 0; i < g_dynamicMesh->getNumVertices(); ++i) {
+            Cvec3 vertexPos = g_dynamicMesh->getVertex(i).getPosition();
+            float noise = ((static_cast<float>(std::rand()) / static_cast<float>(RAND_MAX)) + 1.0) * std::sin(ms * (PI / 180));
+            vertexPos *= (noise + 1.0);
+            g_dynamicMesh->getVertex(i).setPosition(vertexPos);
+        }
+
+        // Update geometry
+        dumpMeshToGeometry(g_dynamicMesh, g_dynamicCube, true);
+
+        // Render scene again
+        glutPostRedisplay();
+
+        glutTimerFunc(1000 / g_animationFramesPerSecond,
+            randomScaleTimerCallback,
+            ms + 1000 / g_animationFramesPerSecond);
     }
-
-    // Update geometry
-    dumpMeshToGeometry(g_dynamicMesh, g_dynamicCube, true);
-
-    // Render scene again
-    glutPostRedisplay();
-
-    glutTimerFunc(1000 / g_animationFramesPerSecond,
-        randomScaleTimerCallback,
-        ms + 1000 / g_animationFramesPerSecond);
 }
 
 static void display() {
@@ -667,8 +669,18 @@ static void keyboard(const unsigned char key, const int x, const int y) {
     case 'z':
     {
         // play animation
-        std::cout << "Start playing animation...\n";
-        randomScaleTimerCallback(0);
+        if (!g_playing) {
+            g_playing = true;
+            std::cout << "Start playing animation...\n";
+            randomScaleTimerCallback(0);
+        }
+        else {
+            g_playing = false;
+            std::cout << "Stop playing animation...\n";
+            g_dynamicMesh.reset(new Mesh(*g_Mesh));
+            dumpMeshToGeometry(g_dynamicMesh, g_dynamicCube, true);
+            glutPostRedisplay();
+        }
         break;
     }
 
