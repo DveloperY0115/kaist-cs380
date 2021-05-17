@@ -84,7 +84,7 @@ public:
 
   /*
   * Apply rotation expressed in quaternion to a 4-vector
-  * 
+  *
   * Input: Cvec4 object (either coordinate or vector)
   * Output: Cvec4 object (rotated by quaternion)
   */
@@ -152,13 +152,15 @@ inline Quat pow(const Quat& q, const double& alpha) {
     Cvec3 k = Cvec3(q(1), q(2), q(3));
     double cosine = q(0);
     double sine = norm(k);
-    double theta = atan2(sine, cosine);
+    double theta = atan2(sine, cosine) ;
+
 
     if (sine < CS175_EPS) {
         return Quat(cos(alpha * theta), 0, 0, 0);
     }
 
-    return Quat(cos(alpha * theta), normalize(k) * sin(alpha * theta));
+
+    return normalize(Quat(cos(alpha * theta), normalize(k) * sin(alpha * theta)));
 }
 
 inline Matrix4 quatToMatrix(const Quat& q) {

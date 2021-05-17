@@ -20,7 +20,7 @@ namespace Interpolation {
 			base *= -1;
 		}
 
-		return normalize(pow(base, alpha) * q0);
+		return pow(base, alpha) * q0;
 	}
 
 	//! Linear interpolation of two RigTForms
@@ -63,15 +63,15 @@ namespace Interpolation {
 		// translation interpolation
 		const Cvec3 c0 = rbt0.getTranslation();
 		const Cvec3 c1 = rbt1.getTranslation();
-		const Cvec3 d0_vec = (rbt1.getTranslation() - rbt_i.getTranslation()) * (1 / 6) + rbt0.getTranslation();
-		const Cvec3 e0_vec = (rbt_f.getTranslation() - rbt0.getTranslation()) * (-1 / 6) + rbt1.getTranslation();
+		const Cvec3 d0_vec = (c1 - rbt_i.getTranslation()) * (1 / static_cast<double>(6)) + c0;
+		const Cvec3 e0_vec = (rbt_f.getTranslation() - c0) * (-1 / static_cast<double>(6)) + c1;
 		interTrans = Bezier(c0, d0_vec, e0_vec, c1, alpha);
 
 		// rotation interpolation
 		const Quat q0 = rbt0.getRotation();
 		const Quat q1 = rbt1.getRotation();
-		const Quat d0_quat = normalize(pow(q1 * inv(rbt_i.getRotation()), 1 / 6) * q0);
-		const Quat e0_quat = normalize(pow(rbt_f.getRotation() * inv(q0), -1 / 6) * q1);
+		const Quat d0_quat = pow(q1 * inv(rbt_i.getRotation()), 1 / static_cast<double>(6)) * q0;
+		const Quat e0_quat = pow(rbt_f.getRotation() * inv(q0), -1 / static_cast<double>(6)) * q1;
 
 		interRot = Bezier(q0, d0_quat, e0_quat, q1, alpha);
 
