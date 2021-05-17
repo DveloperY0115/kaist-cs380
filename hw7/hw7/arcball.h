@@ -14,6 +14,93 @@ inline Cvec2 getScreenSpaceCoord(const Cvec3& p, const Matrix4& projection,
 inline double getScreenToEyeScale(double z, double frustFovY, int screenHeight);
 inline int getScreenZ(double screenRadius, int x, int y, Cvec2 centerCoord);
 
+class Arcball {
+public:
+    Arcball() {
+        return;
+    }
+
+    Arcball(std::shared_ptr<Geometry> geometry,
+        Cvec3 color,
+        double screenRadius,
+        double scale) {
+        ArcballGeometry = geometry;
+        ArcballColor = color;
+        ArcballScreenRadius = screenRadius;
+        ArcballScale = scale;
+    }
+
+    /*
+    * drawArcball
+    */
+    void drawArcball(const ShaderState& curSS) {
+
+        Matrix4 MVM, NMVM;
+
+        glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+
+
+        MVM = RigTFormToMatrix(ArcballMVRbt);
+
+        double scale = ArcballScale * ArcballScreenRadius;
+        Matrix4 scale_mat = Matrix4::makeScale(Cvec3(scale, scale, scale));
+
+        MVM *= scale_mat;
+        NMVM = normalMatrix(MVM);
+        sendModelViewNormalMatrix(curSS, MVM, NMVM);
+
+        safe_glUniform3f(curSS.h_uColor, ArcballColor(0), ArcballColor(1), ArcballColor(2));
+        ArcballGeometry->draw(curSS);
+
+        glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);  // end wireframe mode
+    }
+
+    /*
+    * isVisible
+    * 
+    * Arcball is visible when
+    * 1) Cube is controlled but not ego motion
+    * 2) World-Sky frame is controlled
+    * 
+    * Most importantly, the z coordinate of the arcball must be smaller than 0
+    */
+    bool isVisible() {
+        return ArcballMVRbt.getTranslation()(2) < -CS175_EPS;
+    }
+
+    double getScreenRadius() {
+        return ArcballScreenRadius;
+    }
+
+    RigTForm getArcballMVRbt() {
+        return ArcballMVRbt;
+    }
+
+    double getArcballScale() {
+        return ArcballScale;
+    }
+
+    void updateScreenRadius(const double new_radius) {
+        ArcballScreenRadius = new_radius;
+    }
+
+    void updateArcballMVRbt(const RigTForm new_Rbt) {
+        ArcballMVRbt = new_Rbt;
+    }
+
+    void updateArcballScale(const double new_scale) {
+        ArcballScale = new_scale;
+    }
+
+private:
+    std::shared_ptr<Geometry> ArcballGeometry;
+    RigTForm ArcballMVRbt;
+    Cvec3 ArcballColor;
+    double ArcballScreenRadius;
+    double ArcballScale;
+};
+
+
 // Return the screen space projection in terms of pixels of a 3d point
 // given in eye-frame coordinates. 
 //

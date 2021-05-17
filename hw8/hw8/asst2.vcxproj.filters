@@ -1,0 +1,65 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="glsupport.cpp" />
+    <ClCompile Include="ppm.cpp">
+      <Filter>utils</Filter>
+    </ClCompile>
+    <ClCompile Include="animation.h" />
+    <ClCompile Include="geometry.cpp" />
+    <ClCompile Include="material.cpp" />
+    <ClCompile Include="renderstates.cpp" />
+    <ClCompile Include="texture.cpp" />
+    <ClCompile Include="asst6.cpp" />
+    <ClCompile Include="scenegraph.cpp" />
+    <ClCompile Include="picker.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="geometrymaker.h" />
+    <ClInclude Include="glsupport.h" />
+    <ClInclude Include="cvec.h">
+      <Filter>math</Filter>
+    </ClInclude>
+    <ClInclude Include="matrix4.h">
+      <Filter>math</Filter>
+    </ClInclude>
+    <ClInclude Include="quat.h">
+      <Filter>math</Filter>
+    </ClInclude>
+    <ClInclude Include="rigtform.h">
+      <Filter>math</Filter>
+    </ClInclude>
+    <ClInclude Include="ppm.h">
+      <Filter>utils</Filter>
+    </ClInclude>
+    <ClInclude Include="sgutils.h" />
+    <ClInclude Include="interpolation.h">
+      <Filter>math</Filter>
+    </ClInclude>
+    <ClInclude Include="io.h">
+      <Filter>utils</Filter>
+    </ClInclude>
+    <ClInclude Include="geometry.h" />
+    <ClInclude Include="material.h" />
+    <ClInclude Include="renderstates.h" />
+    <ClInclude Include="texture.h" />
+    <ClInclude Include="uniforms.h" />
+    <ClInclude Include="scenegraph.h" />
+    <ClInclude Include="drawer.h" />
+    <ClInclude Include="asstcommon.h" />
+    <ClInclude Include="picker.h" />
+    <ClInclude Include="arcball.h" />
+    <ClInclude Include="mesh.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="math">
+      <UniqueIdentifier>{9d0c5b06-326c-46ab-911b-ef8d4ed98ea6}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="utils">
+      <UniqueIdentifier>{05f41f68-9eaf-44af-b5c3-3738d9a0e8cb}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="mesh.interface" />
+  </ItemGroup>
+</Project>

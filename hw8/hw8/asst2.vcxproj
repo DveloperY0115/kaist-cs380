@@ -98,10 +98,14 @@
   <ItemGroup>
     <ClCompile Include="animation.h" />
     <ClCompile Include="asst6.cpp" />
+    <ClCompile Include="geometry.cpp" />
     <ClCompile Include="glsupport.cpp" />
+    <ClCompile Include="material.cpp" />
     <ClCompile Include="picker.cpp" />
     <ClCompile Include="ppm.cpp" />
+    <ClCompile Include="renderstates.cpp" />
     <ClCompile Include="scenegraph.cpp" />
+    <ClCompile Include="texture.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="arcball.h" />
@@ -113,25 +117,21 @@
     <ClInclude Include="glsupport.h" />
     <ClInclude Include="interpolation.h" />
     <ClInclude Include="io.h" />
+    <ClInclude Include="material.h" />
     <ClInclude Include="matrix4.h" />
+    <ClInclude Include="mesh.h" />
     <ClInclude Include="picker.h" />
     <ClInclude Include="ppm.h" />
     <ClInclude Include="quat.h" />
+    <ClInclude Include="renderstates.h" />
     <ClInclude Include="rigtform.h" />
     <ClInclude Include="scenegraph.h" />
     <ClInclude Include="sgutils.h" />
+    <ClInclude Include="texture.h" />
+    <ClInclude Include="uniforms.h" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="shaders\basic-gl2.vshader" />
-    <None Include="shaders\basic-gl3.vshader" />
-    <None Include="shaders\diffuse-gl2.fshader" />
-    <None Include="shaders\diffuse-gl3.fshader" />
-    <None Include="shaders\phong-gl2.fshader" />
-    <None Include="shaders\phong-gl3.fshader" />
-    <None Include="shaders\pick-gl2.fshader" />
-    <None Include="shaders\pick-gl3.fshader" />
-    <None Include="shaders\solid-gl2.fshader" />
-    <None Include="shaders\solid-gl3.fshader" />
+    <None Include="mesh.interface" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

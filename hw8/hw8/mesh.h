@@ -397,6 +397,9 @@ public:
   }
 };
 
+void convertQuadToTri(const char filename[]) {
+    // TODO
+}
 
 
 #endif

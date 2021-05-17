@@ -20,20 +20,17 @@ class Picker : public SgNodeVisitor {
 
   int idCounter_;
   bool srgbFrameBuffer_;
-  bool isRobot;
-  std::shared_ptr<SgRbtNode> robot_1, robot_2;
 
   Drawer drawer_;
 
-  void describeStack();
-  void describeMap();
   void addToMap(int id, std::shared_ptr<SgRbtNode> node);
   std::shared_ptr<SgRbtNode> find(int id);
+
   Cvec3 idToColor(int id);
   int colorToId(const PackedPixel& p);
 
 public:
-  Picker(const RigTForm& initialRbt, const ShaderState& curSS, std::vector<std::shared_ptr<SgRbtNode>> robots);
+  Picker(const RigTForm& initialRbt, Uniforms& uniforms);
 
   virtual bool visit(SgTransformNode& node);
   virtual bool postVisit(SgTransformNode& node);

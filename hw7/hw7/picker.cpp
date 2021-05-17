@@ -1,62 +1,113 @@
 #include <GL/glew.h>
 
-#include "uniforms.h"
 #include "picker.h"
 
 using namespace std;
 
-Picker::Picker(const RigTForm& initialRbt, Uniforms& uniforms)
-  : drawer_(initialRbt, uniforms)
-  , idCounter_(0)
-  , srgbFrameBuffer_(!g_Gl2Compatible) {}
+Picker::Picker(const RigTForm& initialRbt, const ShaderState& curSS, std::vector<std::shared_ptr<SgRbtNode>> robots)
+  : drawer_(initialRbt, curSS), idCounter_(0), isRobot(false), srgbFrameBuffer_(!g_Gl2Compatible) {
+    robot_1 = robots[0];
+    robot_2 = robots[1];
+}
 
 bool Picker::visit(SgTransformNode& node) {
-  nodeStack_.push_back(node.shared_from_this());
-  return drawer_.visit(node);
+    if (node.shared_from_this() == robot_1 || node.shared_from_this() == robot_2) {
+        isRobot = true;
+    }
+
+    if (isRobot) {
+        // add node to stack only if it belongs to robot graph
+        nodeStack_.push_back(node.shared_from_this());
+    }
+
+    return drawer_.visit(node);
 }
 
 bool Picker::postVisit(SgTransformNode& node) {
-  nodeStack_.pop_back();
-  return drawer_.postVisit(node);
-}
-
-bool Picker::visit(SgShapeNode& node) {
-  idCounter_++;
-  for (int i = nodeStack_.size() - 1; i >= 0; --i) {
-    shared_ptr<SgRbtNode> asRbtNode = dynamic_pointer_cast<SgRbtNode>(nodeStack_[i]);
-    if (asRbtNode) {
-      addToMap(idCounter_, asRbtNode);
-      break;
+    if (isRobot) {
+        nodeStack_.pop_back();
     }
-  }
-  const Cvec3 idColor = idToColor(idCounter_);
 
-  // DEBUG OUTPUT
-  cerr << idCounter_ << " => " << idColor[0] << ' ' << idColor[1] << ' ' << idColor[2] << endl;
+    if (node.shared_from_this() == robot_1 || node.shared_from_this() == robot_2) {
+        isRobot = false;
+    }
 
-  drawer_.getUniforms().put("uIdColor", idColor);
-  return drawer_.visit(node);
+    return drawer_.postVisit(node);
 }
 
+/*
+* Picker::visit
+* When reached ShapeNode, find its parent node containing rigid body transform
+* associated with it. Then map its unique ID and reference to the 'idToRbtNode'.
+*/
+bool Picker::visit(SgShapeNode& node) {
+    
+    if (isRobot) {
+        // map its parent representing RBT
+        idCounter_ += 1;
+        std::shared_ptr<SgRbtNode> parent = std::dynamic_pointer_cast<SgRbtNode>(nodeStack_.back());
+        addToMap(idCounter_, parent);
+
+        // set the color of the geometry uniquely
+        Cvec3 color = idToColor(idCounter_);
+
+        safe_glUniform3f(drawer_.getCurSS().h_uIdColor, color(0), color(1), color(2));
+    }
+    return drawer_.visit(node);
+}
+
+/*
+* Picker::postVisit
+* Clean up uniform variable after draw call
+*/
 bool Picker::postVisit(SgShapeNode& node) {
-  return drawer_.postVisit(node);
+    safe_glUniform3f(drawer_.getCurSS().h_uIdColor, 0, 0, 0);
+    return drawer_.postVisit(node);
 }
 
 shared_ptr<SgRbtNode> Picker::getRbtNodeAtXY(int x, int y) {
-  PackedPixel query;
-  glReadPixels(x, y, 1, 1, GL_RGB, GL_UNSIGNED_BYTE, &query);
-  const int id = colorToId(query);
+    PackedPixel color;
+    glReadPixels(x, y, 1, 1, GL_RGB, GL_UNSIGNED_BYTE, &color);
+    int id = colorToId(color);
 
-  // DEBUG OUTPUT
-  cerr << int(query.r) << ' ' << int(query.g) << ' ' << int(query.b) << " => " << id << endl;
+    std::cout << "Picked color: " << (unsigned int)color.r << " " << (unsigned int)color.g << " " << (unsigned int)color.b << "||";
+    std::cout << "ID: " << id << "\n";
+    describeMap();
 
-  return find(id);
+    shared_ptr<SgRbtNode> rbt_node = find(id);
+    return rbt_node;
 }
 
 //------------------
 // Helper functions
 //------------------
 //
+
+/*
+* describeStack
+* 
+* Describes the current stack (used for debugging)
+* 
+* Prints out the ID and associated nodes in the stack
+*/
+void Picker::describeStack() {
+    for (auto& node : nodeStack_) {
+        std::cout << "ID: " << idCounter_ << node.get() << "\n";
+    }
+}
+
+/*
+* describeMap
+* 
+* Describes the current status of map (ID - SgRbtNode)
+*/
+void Picker::describeMap() {
+    for (auto const& x : idToRbtNode_) {
+        std::cout << "ID: " << x.first << "||";
+        std::cout << "Color: " << idToColor(x.first)(0) << " " << idToColor(x.first)(1) << " " << idToColor(x.first)(2) << "\n";
+    }
+}
+
 void Picker::addToMap(int id, shared_ptr<SgRbtNode> node) {
   idToRbtNode_[id] = node;
 }
