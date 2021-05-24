@@ -13,8 +13,7 @@ void main() {
   // TODO: replace the following line with loading of normal from uTexNormal
   //       transforming to eye space, and normalizing
   // vec3 normal = vec3(0, 0, 1);
-  vec3 normal_sampled = texture2D(uTexNormal, vTexCoord).xyz;
-  vec3 normal = vec3(2 * normal_sampled[0] - 1, 2 * normal_sampled[1] - 1, 2 * normal_sampled[2] - 1);    // n = [n_r, n_g, n_b]
+  vec3 normal = texture2D(uTexNormal, vTexCoord).xyz * 2.0 - 1.0;
 
   normal = normalize(vNTMat * normal);
 
@@ -22,13 +21,13 @@ void main() {
   vec3 lightDir = normalize(uLight - vEyePos);
   vec3 lightDir2 = normalize(uLight2 - vEyePos);
 
-  float nDotL = normalize(dot(normal, lightDir));
+  float nDotL = dot(normal, lightDir);
   vec3 reflection = normalize( 2.0 * normal * nDotL - lightDir);
   float rDotV = max(0.0, dot(reflection, viewDir));
   float specular = pow(rDotV, 32.0);
   float diffuse = max(nDotL, 0.0);
 
-  nDotL = normalize(dot(normal, lightDir2));
+  nDotL = dot(normal, lightDir2);
   reflection = normalize( 2.0 * normal * nDotL - lightDir2);
   rDotV = max(0.0, dot(reflection, viewDir));
   specular += pow(rDotV, 32.0);

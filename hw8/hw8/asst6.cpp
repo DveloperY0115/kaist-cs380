@@ -12,6 +12,7 @@
 #include <stdexcept>
 #include <cstdlib>
 #include <cmath>
+#include <random>
 
 #include <GL/glew.h>
 #ifdef __APPLE__
@@ -135,7 +136,6 @@ static std::vector<std::shared_ptr<SgRbtNode>> g_sceneRbtVector = std::vector<st
 static int g_msBetweenKeyFrames = 2000;    // 2 seconds between keyframes
 static int g_animationFramesPerSecond = 60;    // frames to render per second during animation
 static bool g_playing = false;
-
 ///////////////// END OF G L O B A L S //////////////////////////////////////////////////
 
 //! Function forward declaration
@@ -317,14 +317,15 @@ static void animateTimerCallback(int ms) {
 }
 
 static void randomScaleTimerCallback(int ms) {
-    if (g_playing) {
         // Introduce noise per vertex
         g_dynamicMesh.reset(new Mesh(*g_Mesh));
 
+        float t = static_cast<float>(ms) / static_cast<float>(500);
+
         for (int i = 0; i < g_dynamicMesh->getNumVertices(); ++i) {
             Cvec3 vertexPos = g_dynamicMesh->getVertex(i).getPosition();
-            float noise = ((static_cast<float>(std::rand()) / static_cast<float>(RAND_MAX)) + 1.0) * std::sin(ms * (PI / 180));
-            vertexPos *= (noise + 1.0);
+            float noise = 2.0 * ((1 / 2.0) * std::sin(i + t) + 1.0);
+            vertexPos *= noise;
             g_dynamicMesh->getVertex(i).setPosition(vertexPos);
         }
 
@@ -334,10 +335,10 @@ static void randomScaleTimerCallback(int ms) {
         // Render scene again
         glutPostRedisplay();
 
-        glutTimerFunc(1000 / g_animationFramesPerSecond,
-            randomScaleTimerCallback,
+        // Register another callback
+        glutTimerFunc(1000 / g_animationFramesPerSecond, 
+            randomScaleTimerCallback, 
             ms + 1000 / g_animationFramesPerSecond);
-    }
 }
 
 static void display() {
@@ -580,10 +581,6 @@ static void keyboard(const unsigned char key, const int x, const int y) {
         // quit application
         exit(0);                                  // ESC
 
-    case 'q':
-        // quit application
-        exit(0);                                  // Quit on 'q'
-
     case 'h':
         // print out help
         cout << " ============== H E L P ==============\n\n"
@@ -721,24 +718,6 @@ static void keyboard(const unsigned char key, const int x, const int y) {
 
     case '8':
     {
-        break;
-    }
-
-    case 'z':
-    {
-        // play animation
-        if (!g_playing) {
-            g_playing = true;
-            std::cout << "Start playing animation...\n";
-            randomScaleTimerCallback(0);
-        }
-        else {
-            g_playing = false;
-            std::cout << "Stop playing animation...\n";
-            g_dynamicMesh.reset(new Mesh(*g_Mesh));
-            dumpMeshToGeometry(g_dynamicMesh, g_dynamicCube, g_isSmooth);
-            glutPostRedisplay();
-        }
         break;
     }
 
@@ -1102,8 +1081,8 @@ static void initScene() {
     g_dynamicCubeNode->addChild(std::shared_ptr<MyShapeNode>(
         new MyShapeNode(g_dynamicCube, g_purpleSpecularMat, Cvec3(0, 0, 0))));
 
-    g_robot1Node.reset(new SgRbtNode(RigTForm(Cvec3(-2, 1, 0))));
-    g_robot2Node.reset(new SgRbtNode(RigTForm(Cvec3(2, 1, 0))));
+    g_robot1Node.reset(new SgRbtNode(RigTForm(Cvec3(-10, 1, 0))));
+    g_robot2Node.reset(new SgRbtNode(RigTForm(Cvec3(10, 1, 0))));
 
     constructRobot(g_robot1Node, g_redDiffuseMat); // a Red robot
     constructRobot(g_robot2Node, g_blueDiffuseMat); // a Blue robot
@@ -1142,6 +1121,7 @@ int main(int argc, char* argv[]) {
         loadMeshs();
         initGeometry();
         initScene();
+        glutTimerFunc(1000 / g_animationFramesPerSecond, randomScaleTimerCallback, 0);
         glutMainLoop();
         return 0;
     }
