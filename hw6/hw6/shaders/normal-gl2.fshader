@@ -23,7 +23,7 @@ void main() {
   vec3 lightDir2 = normalize(uLight2 - vEyePos);
 
   float nDotL = normalize(dot(normal, lightDir));
-  vec3 reflection = normalize( 2.0 * normal * nDotL - lightDir);
+  vec3 reflection = normalize(2.0 * normal * nDotL - lightDir);
   float rDotV = max(0.0, dot(reflection, viewDir));
   float specular = pow(rDotV, 32.0);
   float diffuse = max(nDotL, 0.0);
