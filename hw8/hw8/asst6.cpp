@@ -317,28 +317,34 @@ static void animateTimerCallback(int ms) {
 }
 
 static void randomScaleTimerCallback(int ms) {
-        // Introduce noise per vertex
-        g_dynamicMesh.reset(new Mesh(*g_Mesh));
 
-        float t = static_cast<float>(ms) / static_cast<float>(500);
+    // Copy reference mesh
+    *g_dynamicMesh = Mesh(*g_Mesh);
 
-        for (int i = 0; i < g_dynamicMesh->getNumVertices(); ++i) {
-            Cvec3 vertexPos = g_dynamicMesh->getVertex(i).getPosition();
-            float noise = 2.0 * ((1 / 2.0) * std::sin(i + t) + 1.0);
-            vertexPos *= noise;
-            g_dynamicMesh->getVertex(i).setPosition(vertexPos);
-        }
+    float t = static_cast<float>(ms) / static_cast<float>(500);
 
-        // Update geometry
-        dumpMeshToGeometry(g_dynamicMesh, g_dynamicCube, g_isSmooth);
+    for (int i = 0; i < g_dynamicMesh->getNumVertices(); ++i) {
+        Cvec3 vertexPos = g_dynamicMesh->getVertex(i).getPosition();
+        float noise = 2.0 * ((1 / 2.0) * std::sin(i + t) + 1.0);
+        vertexPos *= noise;
+        g_dynamicMesh->getVertex(i).setPosition(vertexPos);
+    }
 
-        // Render scene again
-        glutPostRedisplay();
+    // Subdivision
+    for (int i = 0; i < g_subdivisionStep; ++i) {
+        g_dynamicMesh->subdivide();
+    }
 
-        // Register another callback
-        glutTimerFunc(1000 / g_animationFramesPerSecond, 
-            randomScaleTimerCallback, 
-            ms + 1000 / g_animationFramesPerSecond);
+    // Update geometry
+    dumpMeshToGeometry(g_dynamicMesh, g_dynamicCube, g_isSmooth);
+
+    // Render scene again
+    glutPostRedisplay();
+
+    // Register another callback
+    glutTimerFunc(1000 / g_animationFramesPerSecond,
+        randomScaleTimerCallback,
+        ms + 1000 / g_animationFramesPerSecond);
 }
 
 static void display() {
@@ -682,13 +688,6 @@ static void keyboard(const unsigned char key, const int x, const int y) {
             g_subdivisionStep = 7;
         }
         std::cout << "Subdivision steps: " << g_subdivisionStep << "\n";
-        g_dynamicMesh.reset(new Mesh(*g_Mesh));
-
-        for (int i = 0; i < g_subdivisionStep; ++i) {
-            g_dynamicMesh->subdivide();
-        }
-
-        dumpMeshToGeometry(g_dynamicMesh, g_dynamicCube, g_isSmooth);
         glutPostRedisplay();
         break;
     }
@@ -700,13 +699,6 @@ static void keyboard(const unsigned char key, const int x, const int y) {
             g_subdivisionStep = 0;
         }
         std::cout << "Subdivision steps: " << g_subdivisionStep << "\n";
-        g_dynamicMesh.reset(new Mesh(*g_Mesh));
-
-        for (int i = 0; i < g_subdivisionStep; ++i) {
-            g_dynamicMesh->subdivide();
-        }
-
-        dumpMeshToGeometry(g_dynamicMesh, g_dynamicCube, g_isSmooth);
         glutPostRedisplay();
         break;
     }

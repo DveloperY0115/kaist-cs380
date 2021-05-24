@@ -149,7 +149,7 @@ class Mesh {
       vertex_[i].normal_[0] = -5e37;
     }
   }
-  
+
   void subdivide__() {
     if (not_manifold_)
       throw std::runtime_error("Subdivision does not support non manifold mesh yet.");
@@ -390,7 +390,52 @@ public:
   }
 
   void subdivide() {
-    subdivide__();
+
+      // Step 1. Compute faceVertex values
+      for (int i = 0; i < getNumFaces(); ++i) {
+          const Face f = getFace(i);
+          int numVertices = f.getNumVertices();
+          Cvec3 faceVertex = Cvec3();
+
+          for (int j = 0; j < numVertices; ++j) {
+              faceVertex += f.getVertex(j).getPosition();
+          }
+
+          setNewFaceVertex(f, faceVertex / static_cast<float>(numVertices));
+      }
+
+      // Step 2. Compute edgeVertex values
+      for (int i = 0; i < getNumEdges(); ++i) {
+          const Edge e = getEdge(i);
+
+          Cvec3 edgeVertex = (e.getVertex(0).getPosition() + e.getVertex(1).getPosition() +
+              getNewFaceVertex(e.getFace(0)) + getNewFaceVertex(e.getFace(1))) * (1 / static_cast<float>(4));
+
+          setNewEdgeVertex(e, edgeVertex);
+      }
+
+      // Step 3. Compute vertexVertex values
+      for (int i = 0; i < getNumVertices(); ++i) {
+          const Vertex v = getVertex(i);
+
+          VertexIterator it(v.getIterator()), it0(it);
+
+          // initialize values to compute
+          int n_v = 0;
+          Cvec3 sumAdjacentVertex = Cvec3();
+          Cvec3 sumAdjacentFaceVertex = Cvec3();
+          do {
+              sumAdjacentFaceVertex += getNewFaceVertex(it.getFace()); // hmm...?
+              sumAdjacentVertex += it.getVertex().getPosition();
+              n_v++;
+          } while (++it != it0);
+
+          setNewVertexVertex(v, v.getPosition() * (n_v - 2) / static_cast<float>(n_v) +
+              sumAdjacentVertex * (1 / static_cast<float>(n_v * n_v)) +
+              sumAdjacentFaceVertex * (1 / static_cast<float>(n_v * n_v)));
+      }
+
+      subdivide__();
   }
   void load(const char filename[]) {
     load__(filename);
