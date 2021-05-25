@@ -90,7 +90,7 @@ static bool g_mouseLClickButton, g_mouseRClickButton, g_mouseMClickButton;
 static int g_mouseClickX, g_mouseClickY; // coordinates for mouse click event
 
 // Materials
-static std::shared_ptr<Material> g_redDiffuseMat, g_blueDiffuseMat, g_bumpFloorMat, 
+static std::shared_ptr<Material> g_redDiffuseMat, g_blueDiffuseMat, g_bumpFloorMat,
                                 g_arcballMat, g_pickingMat, g_lightMat, g_purpleSpecularMat;
 std::shared_ptr<Material> g_overridingMaterial;    // used for uniform material'ing' in picking mode
 
@@ -184,7 +184,7 @@ static void initSpheres() {
     g_sphere.reset(new SimpleIndexedGeometryPNTBX(&vtx[0], &idx[0], vbLen, ibLen));
 }
 //! End of Geometry primitives initialization
-//! 
+//!
 // takes a projection matrix and send to the the shaders
 inline void sendProjectionMatrix(Uniforms& uniforms, const Matrix4& projMatrix) {
     uniforms.put("uProjMatrix", projMatrix);
@@ -273,7 +273,7 @@ static void drawStuff(bool picking) {
     }
     else {
         Picker picker(invEyeRbt, uniforms);
-        
+
         g_overridingMaterial = g_pickingMat;
         g_world->accept(picker);
         g_overridingMaterial.reset();
@@ -284,7 +284,7 @@ static void drawStuff(bool picking) {
         if (g_currentPickedRbtNode == nullptr) {
             // if any of robot part is not selected, switch to ego motion
             g_currentPickedRbtNode = g_currentEyeNode;
-        }       
+        }
     }
 }
 
@@ -294,7 +294,7 @@ static void animateTimerCallback(int ms) {
         float t = static_cast<float>(ms) / static_cast<float>(g_msBetweenKeyFrames);
         Animation::Frame interFrame = Animation::Frame();
         bool endReached = g_keyframes.interpolateKeyframes(t, interFrame);
-    
+
         if (!endReached) {
             // update current scene using interpolated frame
             setSgRbtNodes(g_sceneRbtVector, interFrame);
@@ -529,7 +529,7 @@ static void motion(const int x, const int y) {
         if (g_mouseClickDown) {
             // calculate auxiliary frame
             RigTForm AuxFrame = makeMixedFrame(g_world->getRbt(), g_currentEyeNode->getRbt());
-            
+
             g_skyNode->setRbt(doMtoOwrtA(inv(m), g_skyNode->getRbt(), AuxFrame));
 
             glutPostRedisplay(); // we always redraw if we changed the scene
@@ -886,12 +886,12 @@ static void initMaterials() {
 static void loadMeshs() {
     // assume that each face of mesh is triangle
     g_Mesh.reset(new Mesh());
-    g_Mesh->load("./cube_tri.mesh");
+    g_Mesh->load("./cube.mesh");
     g_dynamicMesh.reset(new Mesh(*g_Mesh));
 }
 
-static void dumpMeshToGeometry(std::shared_ptr<Mesh> mesh, 
-                                std::shared_ptr<SimpleGeometryPN> geometry, 
+static void dumpMeshToGeometry(std::shared_ptr<Mesh> mesh,
+                                std::shared_ptr<SimpleGeometryPN> geometry,
                                 bool isSmooth) {
 
     // Convert Mesh into drawable Geometry
@@ -910,8 +910,8 @@ static void dumpMeshToGeometry(std::shared_ptr<Mesh> mesh,
     }
 
     else {
-        // Smooth shading. 
-        // Normal of each vertex will be calculated by 
+        // Smooth shading.
+        // Normal of each vertex will be calculated by
         // averaging adjacent faces' normals
 
         // container for accumulating valence for each vertex;
@@ -954,7 +954,7 @@ static void dumpMeshToGeometry(std::shared_ptr<Mesh> mesh,
             }
         }
     }
-    
+
     int vbLen = vtx.size();
 
     geometry->upload(&vtx[0], vbLen);
