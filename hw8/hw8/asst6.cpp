@@ -687,6 +687,7 @@ static void keyboard(const unsigned char key, const int x, const int y) {
         if (g_subdivisionStep > 7) {
             g_subdivisionStep = 7;
         }
+
         std::cout << "Subdivision steps: " << g_subdivisionStep << "\n";
         glutPostRedisplay();
         break;
@@ -698,6 +699,7 @@ static void keyboard(const unsigned char key, const int x, const int y) {
         if (g_subdivisionStep < 0) {
             g_subdivisionStep = 0;
         }
+
         std::cout << "Subdivision steps: " << g_subdivisionStep << "\n";
         glutPostRedisplay();
         break;
@@ -902,10 +904,15 @@ static void dumpMeshToGeometry(std::shared_ptr<Mesh> mesh,
         for (int i = 0; i < mesh->getNumFaces(); ++i) {
             Mesh::Face face = mesh->getFace(i);
 
-            for (int j = 0; j < face.getNumVertices(); ++j) {
-                vtx.push_back(
-                    VertexPN(face.getVertex(j).getPosition(), face.getNormal()));    // use uniform normal for now
-            }
+            // first triangle
+            vtx.push_back(VertexPN(face.getVertex(0).getPosition(), face.getNormal()));
+            vtx.push_back(VertexPN(face.getVertex(1).getPosition(), face.getNormal()));
+            vtx.push_back(VertexPN(face.getVertex(2).getPosition(), face.getNormal()));
+
+            // second triangle
+            vtx.push_back(VertexPN(face.getVertex(0).getPosition(), face.getNormal()));
+            vtx.push_back(VertexPN(face.getVertex(2).getPosition(), face.getNormal()));
+            vtx.push_back(VertexPN(face.getVertex(3).getPosition(), face.getNormal()));
         }
     }
 
@@ -948,10 +955,15 @@ static void dumpMeshToGeometry(std::shared_ptr<Mesh> mesh,
         for (int i = 0; i < mesh->getNumFaces(); ++i) {
             Mesh::Face face = mesh->getFace(i);
 
-            for (int j = 0; j < face.getNumVertices(); ++j) {
-                vtx.push_back(
-                    VertexPN(face.getVertex(j).getPosition(), face.getVertex(j).getNormal()));    // use uniform normal for now
-            }
+            // first triangle
+            vtx.push_back(VertexPN(face.getVertex(0).getPosition(), face.getVertex(0).getNormal()));
+            vtx.push_back(VertexPN(face.getVertex(1).getPosition(), face.getVertex(1).getNormal()));
+            vtx.push_back(VertexPN(face.getVertex(2).getPosition(), face.getVertex(2).getNormal()));
+
+            // second triangle
+            vtx.push_back(VertexPN(face.getVertex(0).getPosition(), face.getVertex(0).getNormal()));
+            vtx.push_back(VertexPN(face.getVertex(2).getPosition(), face.getVertex(2).getNormal()));
+            vtx.push_back(VertexPN(face.getVertex(3).getPosition(), face.getVertex(3).getNormal()));
         }
     }
 
@@ -967,7 +979,6 @@ static void initGeometry() {
     g_refCube.reset(new SimpleGeometryPN());
     g_dynamicCube.reset(new SimpleGeometryPN());
     dumpMeshToGeometry(g_dynamicMesh, g_dynamicCube, g_isSmooth);
-
 }
 
 static void constructRobot(shared_ptr<SgTransformNode> base, std::shared_ptr<Material> material) {

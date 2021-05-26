@@ -92,7 +92,6 @@ class Mesh {
     // Sets bits to report IO error using exception
     f.exceptions(ios::eofbit | ios::failbit | ios::badbit);
 
-
     int nv, nt, nq;  // number of: vertices, tris, quads
     f >> nv >> nt >> nq;
     vertex_.resize(nv);
@@ -254,7 +253,7 @@ public:
     Mesh& m_;
     const int v_;
 
-    Vertex(Mesh& m, const int v) : m_(m), v_(v)                 {}
+    Vertex(Mesh& m, const int v) : m_(m), v_(v) {}
     Cvec3 getPosition() const {
       return m_.vertex_[v_].position_;
     }
@@ -390,52 +389,52 @@ public:
   }
 
   void subdivide() {
+          // Step 1. Compute faceVertex values
+          for (int i = 0; i < getNumFaces(); ++i) {
+              const Face f = getFace(i);
+              int numVertices = f.getNumVertices();
+              Cvec3 faceVertex = Cvec3();
 
-      // Step 1. Compute faceVertex values
-      for (int i = 0; i < getNumFaces(); ++i) {
-          const Face f = getFace(i);
-          int numVertices = f.getNumVertices();
-          Cvec3 faceVertex = Cvec3();
+              for (int j = 0; j < numVertices; ++j) {
+                  faceVertex += f.getVertex(j).getPosition();
+              }
 
-          for (int j = 0; j < numVertices; ++j) {
-              faceVertex += f.getVertex(j).getPosition();
+              setNewFaceVertex(f, faceVertex / static_cast<double>(numVertices));
           }
 
-          setNewFaceVertex(f, faceVertex / static_cast<float>(numVertices));
-      }
+          // Step 2. Compute edgeVertex values
+          for (int i = 0; i < getNumEdges(); ++i) {
+              const Edge e = getEdge(i);
 
-      // Step 2. Compute edgeVertex values
-      for (int i = 0; i < getNumEdges(); ++i) {
-          const Edge e = getEdge(i);
+              Cvec3 edgeVertex = (e.getVertex(0).getPosition() + e.getVertex(1).getPosition() +
+                  getNewFaceVertex(e.getFace(0)) + getNewFaceVertex(e.getFace(1))) * (1 / static_cast<double>(4));
 
-          Cvec3 edgeVertex = (e.getVertex(0).getPosition() + e.getVertex(1).getPosition() +
-              getNewFaceVertex(e.getFace(0)) + getNewFaceVertex(e.getFace(1))) * (1 / static_cast<float>(4));
+              setNewEdgeVertex(e, edgeVertex);
+          }
 
-          setNewEdgeVertex(e, edgeVertex);
-      }
+          // TODO: Fix here!
+          // Step 3. Compute vertexVertex values
+          for (int i = 0; i < getNumVertices(); ++i) {
+              const Vertex v = getVertex(i);
 
-      // Step 3. Compute vertexVertex values
-      for (int i = 0; i < getNumVertices(); ++i) {
-          const Vertex v = getVertex(i);
+              VertexIterator it(v.getIterator()), it0(it);
 
-          VertexIterator it(v.getIterator()), it0(it);
+              // initialize values to compute
+              int n_v = 0;
+              Cvec3 sumAdjacentVertex = Cvec3();
+              Cvec3 sumAdjacentFaceVertex = Cvec3();
+              do {
+                  sumAdjacentFaceVertex += getNewFaceVertex(it.getFace());
+                  sumAdjacentVertex += it.getVertex().getPosition();
+                  n_v++;
+              } while (++it != it0);
 
-          // initialize values to compute
-          int n_v = 0;
-          Cvec3 sumAdjacentVertex = Cvec3();
-          Cvec3 sumAdjacentFaceVertex = Cvec3();
-          do {
-              sumAdjacentFaceVertex += getNewFaceVertex(it.getFace()); // hmm...?
-              sumAdjacentVertex += it.getVertex().getPosition();
-              n_v++;
-          } while (++it != it0);
+              setNewVertexVertex(v, v.getPosition() * ((n_v - 2) / static_cast<double>(n_v)) +
+                  sumAdjacentVertex * (1 / static_cast<double>(n_v * n_v)) +
+                  sumAdjacentFaceVertex * (1 / static_cast<double>(n_v * n_v)));
+          }
 
-          setNewVertexVertex(v, v.getPosition() * (n_v - 2) / static_cast<float>(n_v) +
-              sumAdjacentVertex * (1 / static_cast<float>(n_v * n_v)) +
-              sumAdjacentFaceVertex * (1 / static_cast<float>(n_v * n_v)));
-      }
-
-      subdivide__();
+          subdivide__();
   }
 
   void load(const char filename[]) {
@@ -489,14 +488,14 @@ public:
           f >> x >> y >> z >> w;
           // fTemp << x << " " << y << " " << z << " " << w << "\n";
           fTemp << x << " " << y << " " << z << "\n";
-          fTemp << z << " " << w << " " << x << "\n";
+          fTemp << x << " " << z << " " << w << "\n";
       }
 
       // close files for safety
       f.close();
       fTemp.close();
 
-      load__(tempFile);
+      load__(filename);
 
       // clean up temorary file
       std::remove(tempFile);
