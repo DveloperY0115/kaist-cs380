@@ -134,6 +134,7 @@ static Animation::KeyframeList g_keyframes = Animation::KeyframeList();
 static std::vector<std::shared_ptr<SgRbtNode>> g_sceneRbtVector = std::vector<std::shared_ptr<SgRbtNode>>();
 
 static int g_msBetweenKeyFrames = 2000;    // 2 seconds between keyframes
+static float g_deformSpeed = 500;
 static int g_animationFramesPerSecond = 60;    // frames to render per second during animation
 static bool g_playing = false;
 ///////////////// END OF G L O B A L S //////////////////////////////////////////////////
@@ -321,7 +322,7 @@ static void randomScaleTimerCallback(int ms) {
     // Copy reference mesh
     *g_dynamicMesh = Mesh(*g_Mesh);
 
-    float t = static_cast<float>(ms) / static_cast<float>(500);
+    float t = static_cast<float>(ms) / static_cast<float>(g_deformSpeed);
 
     for (int i = 0; i < g_dynamicMesh->getNumVertices(); ++i) {
         Cvec3 vertexPos = g_dynamicMesh->getVertex(i).getPosition();
@@ -707,11 +708,13 @@ static void keyboard(const unsigned char key, const int x, const int y) {
 
     case '7':
     {
+        g_deformSpeed *= 2;
         break;
     }
 
     case '8':
     {
+        g_deformSpeed /= 2;
         break;
     }
 
@@ -826,7 +829,7 @@ static void initGlutState(int argc, char* argv[]) {
     glutInit(&argc, argv);                                  // initialize Glut based on cmd-line args
     glutInitDisplayMode(GLUT_RGBA | GLUT_DOUBLE | GLUT_DEPTH);  //  RGBA pixel channels and double buffering
     glutInitWindowSize(g_windowWidth, g_windowHeight);      // create a window
-    glutCreateWindow("Assignment 7");                       // title the window
+    glutCreateWindow("Assignment 8");                       // title the window
 
     glutDisplayFunc(display);                               // display rendering callback
     glutReshapeFunc(reshape);                               // window reshape callback
