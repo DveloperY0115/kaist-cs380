@@ -487,10 +487,19 @@ public:
       // split it into two triangles and write it
       for (int i = 0; i < nq; ++i) {
           f >> x >> y >> z >> w;
-          fTemp << x << " " << y << " " << z << " " << w << "\n";
+          // fTemp << x << " " << y << " " << z << " " << w << "\n";
+          fTemp << x << " " << y << " " << z << "\n";
+          fTemp << z << " " << w << " " << x << "\n";
       }
 
-      // load__(tempFile);
+      // close files for safety
+      f.close();
+      fTemp.close();
+
+      load__(tempFile);
+
+      // clean up temorary file
+      std::remove(tempFile);
   }
 };
 #endif
