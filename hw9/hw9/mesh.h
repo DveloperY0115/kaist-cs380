@@ -438,67 +438,7 @@ public:
   }
 
   void load(const char filename[]) {
-      const char tempFile[] = "./temp.mesh";
-
-      // open mesh file
-      std::ifstream f(filename);
-      if (!f) {
-          throw std::runtime_error(std::string("Cannot open file ") + filename);
-      }
-      // Sets bits to report IO error using exception
-      f.exceptions(std::ios::eofbit | std::ios::failbit | std::ios::badbit);
-
-      int nv, nt, nq;
-
-      // read metadata from the mesh file
-      f >> nv >> nt >> nq;
-
-      // open temporary file
-      std::ofstream fTemp(tempFile);
-      if (!fTemp) {
-          throw std::runtime_error(std::string("Cannot open file ") + tempFile);
-      }
-      // Sets bits to report IO error using exception
-      fTemp.exceptions(std::ios::eofbit | std::ios::failbit | std::ios::badbit);
-
-      if (nq > 0) {
-          fTemp << nv << " " << nt + 2 * nq << " " << 0 << "\n";
-      }
-      else {
-          fTemp << nv << " " << nt << " " << nq << "\n";
-      }
-
-      int x, y, z, w;
-
-      // read vertex information one by one and write it
-      for (int i = 0; i < nv; ++i) {
-          f >> x >> y >> z;
-          fTemp << x << " " << y << " " << z << "\n";
-      }
-
-      // read triplet of vertex indices forming each triangle and write it
-      for (int i = 0; i < nt; ++i) {
-          f >> x >> y >> z;
-          fTemp << x << " " << y << " " << z << "\n";
-      }
-
-      // read quadruplet vertex indices forming each quad
-      // split it into two triangles and write it
-      for (int i = 0; i < nq; ++i) {
-          f >> x >> y >> z >> w;
-          // fTemp << x << " " << y << " " << z << " " << w << "\n";
-          fTemp << x << " " << y << " " << z << "\n";
-          fTemp << x << " " << z << " " << w << "\n";
-      }
-
-      // close files for safety
-      f.close();
-      fTemp.close();
-
       load__(filename);
-
-      // clean up temorary file
-      std::remove(tempFile);
   }
 };
 #endif

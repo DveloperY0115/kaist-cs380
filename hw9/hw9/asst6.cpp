@@ -93,18 +93,30 @@ static int g_mouseClickX, g_mouseClickY; // coordinates for mouse click event
 static std::shared_ptr<Material> g_redDiffuseMat, g_blueDiffuseMat, g_bumpFloorMat,
                                 g_arcballMat, g_pickingMat, g_lightMat, g_purpleSpecularMat;
 std::shared_ptr<Material> g_overridingMaterial;    // used for uniform material'ing' in picking mode
+static std::shared_ptr<Material> g_bunnyMat;
+static std::vector<std::shared_ptr<Material>> g_bunnyShellMats;
 
 // Geometry
 typedef SgGeometryShapeNode MyShapeNode;
 
-// Meshes
-static std::shared_ptr<Mesh> g_Mesh, g_dynamicMesh;
+// Vertex buffer and index buffer associated with the ground and cube geometry
+static shared_ptr<Geometry> g_ground, g_cube, g_sphere;
+static std::shared_ptr<SimpleGeometryPN> g_bunnyGeometry;
+static std::vector<std::shared_ptr<SimpleGeometryPNX> > g_bunnyShellGeometries;
+
+// Bunny geometry parameters
+static const int g_numShells = 24; // constants defining how many layers of shells
+static double g_furHeight = 0.21;
+static double g_hairyness = 0.7;
+
+// Mesh object for holding bunny mesh
+static Mesh g_bunnyMesh;
 
 // Scene graph nodes
 static std::shared_ptr<SgRootNode> g_world;
 static std::shared_ptr<SgRbtNode> g_skyNode, g_groundNode, g_robot1Node, g_robot2Node;
 static std::shared_ptr<SgRbtNode> g_light1Node, g_light2Node;
-static std::shared_ptr<SgRbtNode> g_dynamicCubeNode;
+static std::shared_ptr<SgRbtNode> g_bunnyNode;
 static std::shared_ptr<SgRbtNode> g_currentEyeNode;
 static std::shared_ptr<SgRbtNode> g_currentPickedRbtNode;
 
@@ -121,14 +133,6 @@ static bool g_isPicking = false;
 // Toggle World-Sky frame
 static bool g_isWorldSky = false;
 
-// Vertex buffer and index buffer associated with the ground and cube geometry
-static shared_ptr<Geometry> g_ground, g_cube, g_sphere;
-
-// Subdivision
-static shared_ptr<SimpleGeometryPN> g_refCube, g_dynamicCube;
-static int g_subdivisionStep = 0;
-static bool g_isSmooth = false;
-
 // --------- Animation
 static Animation::KeyframeList g_keyframes = Animation::KeyframeList();
 static std::vector<std::shared_ptr<SgRbtNode>> g_sceneRbtVector = std::vector<std::shared_ptr<SgRbtNode>>();
@@ -137,12 +141,56 @@ static int g_msBetweenKeyFrames = 2000;    // 2 seconds between keyframes
 static float g_deformSpeed = 500;
 static int g_animationFramesPerSecond = 60;    // frames to render per second during animation
 static bool g_playing = false;
+
+// Assignment 9
+// Global variables for used physical simulation
+static const Cvec3 g_gravity(0, -0.5, 0);  // gavity vector
+static double g_timeStep = 0.02;
+static double g_numStepsPerFrame = 10;
+static double g_damping = 0.96;
+static double g_stiffness = 4;
+static int g_simulationsPerSecond = 60;
+
+static std::vector<Cvec3> g_tipPos,        // should be hair tip pos in world-space coordinates
+g_tipVelocity;   // should be hair tip velocity in world-space coordinates
+
 ///////////////// END OF G L O B A L S //////////////////////////////////////////////////
 
-//! Function forward declaration
-static void dumpMeshToGeometry(std::shared_ptr<Mesh> mesh,
-                                std::shared_ptr<SimpleGeometryPN> geometry,
-                                bool isSmooth);
+// Fur simulations
+
+/*
+// Specifying shell geometries based on g_tipPos, g_furHeight, and g_numShells.
+// You need to call this function whenver the shell needs to be updated
+static void updateShellGeometry() {
+    // TASK 1 and 3 TODO: finish this function as part of Task 1 and Task 3
+}
+
+// New glut timer call back that perform dynamics simulation
+// every g_simulationsPerSecond times per second
+static void hairsSimulationCallback(int dontCare) {
+
+    // TASK 2 TODO: wrte dynamics simulation code here as part of TASK2
+
+    ...
+
+        // schedule this to get called again
+        glutTimerFunc(1000 / g_simulationsPerSecond, hairsSimulationCallback, 0);
+    glutPostRedisplay(); // signal redisplaying
+}
+
+// New function that initialize the dynamics simulation
+static void initSimulation() {
+    g_tipPos.resize(g_bunnyMesh.getNumVertices(), Cvec3(0));
+    g_tipVelocity = g_tipPos;
+
+    // TASK 1 TODO: initialize g_tipPos to "at-rest" hair tips in world coordinates
+
+    ...
+
+        // Starts hair tip simulation
+        hairsSimulationCallback(0);
+}
+*/
 
 //! Geometry primitives initialization
 static void initGround() {
@@ -315,37 +363,6 @@ static void animateTimerCallback(int ms) {
             g_playing = false;
         }
     }
-}
-
-static void randomScaleTimerCallback(int ms) {
-
-    // Copy reference mesh
-    *g_dynamicMesh = Mesh(*g_Mesh);
-
-    float t = static_cast<float>(ms) / static_cast<float>(g_deformSpeed);
-
-    for (int i = 0; i < g_dynamicMesh->getNumVertices(); ++i) {
-        Cvec3 vertexPos = g_dynamicMesh->getVertex(i).getPosition();
-        float noise = 2.0 * ((1 / 2.0) * std::sin(i + t) + 1.0);
-        vertexPos *= noise;
-        g_dynamicMesh->getVertex(i).setPosition(vertexPos);
-    }
-
-    // Subdivision
-    for (int i = 0; i < g_subdivisionStep; ++i) {
-        g_dynamicMesh->subdivide();
-    }
-
-    // Update geometry
-    dumpMeshToGeometry(g_dynamicMesh, g_dynamicCube, g_isSmooth);
-
-    // Render scene again
-    glutPostRedisplay();
-
-    // Register another callback
-    glutTimerFunc(1000 / g_animationFramesPerSecond,
-        randomScaleTimerCallback,
-        ms + 1000 / g_animationFramesPerSecond);
 }
 
 static void display() {
@@ -674,50 +691,6 @@ static void keyboard(const unsigned char key, const int x, const int y) {
         break;
     }
 
-    case 'f':
-    {
-        g_isSmooth = !g_isSmooth;
-        dumpMeshToGeometry(g_dynamicMesh, g_dynamicCube, g_isSmooth);
-        glutPostRedisplay();
-        break;
-    }
-
-    case '0':
-    {
-        g_subdivisionStep++;
-        if (g_subdivisionStep > 7) {
-            g_subdivisionStep = 7;
-        }
-
-        std::cout << "Subdivision steps: " << g_subdivisionStep << "\n";
-        glutPostRedisplay();
-        break;
-    }
-
-    case '9':
-    {
-        g_subdivisionStep--;
-        if (g_subdivisionStep < 0) {
-            g_subdivisionStep = 0;
-        }
-
-        std::cout << "Subdivision steps: " << g_subdivisionStep << "\n";
-        glutPostRedisplay();
-        break;
-    }
-
-    case '7':
-    {
-        g_deformSpeed *= 2;
-        break;
-    }
-
-    case '8':
-    {
-        g_deformSpeed /= 2;
-        break;
-    }
-
     case '+':
     {
         if (g_msBetweenKeyFrames >= 200) {
@@ -821,6 +794,29 @@ static void keyboard(const unsigned char key, const int x, const int y) {
     }
 }
 
+// new  special keyboard callback, for arrow keys
+static void specialKeyboard(const int key, const int x, const int y) {
+    switch (key) {
+    case GLUT_KEY_RIGHT:
+        g_furHeight *= 1.05;
+        cerr << "fur height = " << g_furHeight << std::endl;
+        break;
+    case GLUT_KEY_LEFT:
+        g_furHeight /= 1.05;
+        std::cerr << "fur height = " << g_furHeight << std::endl;
+        break;
+    case GLUT_KEY_UP:
+        g_hairyness *= 1.05;
+        cerr << "hairyness = " << g_hairyness << std::endl;
+        break;
+    case GLUT_KEY_DOWN:
+        g_hairyness /= 1.05;
+        cerr << "hairyness = " << g_hairyness << std::endl;
+        break;
+    }
+    glutPostRedisplay();
+}
+
 /* End of GLUT callbacks */
 
 /* Main program routines */
@@ -829,13 +825,14 @@ static void initGlutState(int argc, char* argv[]) {
     glutInit(&argc, argv);                                  // initialize Glut based on cmd-line args
     glutInitDisplayMode(GLUT_RGBA | GLUT_DOUBLE | GLUT_DEPTH);  //  RGBA pixel channels and double buffering
     glutInitWindowSize(g_windowWidth, g_windowHeight);      // create a window
-    glutCreateWindow("Assignment 8");                       // title the window
+    glutCreateWindow("Assignment 9");                       // title the window
 
     glutDisplayFunc(display);                               // display rendering callback
     glutReshapeFunc(reshape);                               // window reshape callback
     glutMotionFunc(motion);                                 // mouse movement callback
     glutMouseFunc(mouse);                                   // mouse click callback
     glutKeyboardFunc(keyboard);
+    glutSpecialFunc(specialKeyboard);                       // special keyboard callback
 }
 
 static void initGLState() {
@@ -880,108 +877,117 @@ static void initMaterials() {
     g_lightMat.reset(new Material(solid));
     g_lightMat->getUniforms().put("uColor", Cvec3f(1, 1, 1));
 
-    // copy specular prototype, and set to color green
+    // pick shader
+    g_pickingMat.reset(new Material("./shaders/basic-gl3.vshader", "./shaders/pick-gl3.fshader"));
+
+    // Assignment 8 -> Dynamic mesh deformation
+    // copy specular prototype, and set to color purple
     g_purpleSpecularMat.reset(new Material(specular));
     g_purpleSpecularMat->getUniforms().put("uColor", Cvec3f(0.35f, 0.27f, 0.82f));
 
-    // pick shader
-    g_pickingMat.reset(new Material("./shaders/basic-gl3.vshader", "./shaders/pick-gl3.fshader"));
+    // Assignment 9 -> Bunny Fur animation
+    // bunny material
+    g_bunnyMat.reset(new Material("./shaders/basic-gl3.vshader", "./shaders/bunny-gl3.fshader"));
+    g_bunnyMat->getUniforms()
+        .put("uColorAmbient", Cvec3f(0.45f, 0.3f, 0.3f))
+        .put("uColorDiffuse", Cvec3f(0.2f, 0.2f, 0.2f));
+
+    // bunny shell materials;
+    std::shared_ptr<ImageTexture> shellTexture(new ImageTexture("shell.ppm", false)); // common shell texture
+
+    // needs to enable repeating of texture coordinates
+    shellTexture->bind();
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+
+    // eachy layer of the shell uses a different material, though the materials will share the
+    // same shader files and some common uniforms. hence we create a prototype here, and will
+    // copy from the prototype later
+    Material bunnyShellMatPrototype("./shaders/bunny-shell-gl3.vshader", "./shaders/bunny-shell-gl3.fshader");
+    bunnyShellMatPrototype.getUniforms().put("uTexShell", shellTexture);
+    bunnyShellMatPrototype.getRenderStates()
+        .blendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA) // set blending mode
+        .enable(GL_BLEND) // enable blending
+        .disable(GL_CULL_FACE); // disable culling
+
+    // allocate array of materials
+    g_bunnyShellMats.resize(g_numShells);
+    for (int i = 0; i < g_numShells; ++i) {
+        g_bunnyShellMats[i].reset(new Material(bunnyShellMatPrototype)); // copy from the prototype
+        // but set a different exponent for blending transparency
+        g_bunnyShellMats[i]->getUniforms().put("uAlphaExponent", 2.f + 5.f * float(i + 1) / g_numShells);
+    }
 }
 
-static void loadMeshs() {
-    // assume that each face of mesh is triangle
-    g_Mesh.reset(new Mesh());
-    g_Mesh->load("./cube.mesh");
-    g_dynamicMesh.reset(new Mesh(*g_Mesh));
-}
+static void initBunnyMeshes() {
 
-static void dumpMeshToGeometry(std::shared_ptr<Mesh> mesh,
-                                std::shared_ptr<SimpleGeometryPN> geometry,
-                                bool isSmooth) {
+    // load mesh file
+    g_bunnyMesh.load("bunny.mesh");
 
-    // Convert Mesh into drawable Geometry
+    // reset geometry
+    g_bunnyGeometry.reset(new SimpleGeometryPN());
+
+    // TODO: Init the per vertex normal of g_bunnyMesh, using codes from asst7
     std::vector<VertexPN> vtx;
 
-    if (!isSmooth) {
-        // Iterate over faces, put associated vertex & normal in the vector
-        for (int i = 0; i < mesh->getNumFaces(); ++i) {
-            Mesh::Face face = mesh->getFace(i);
+    // Bunny geometry should use smooth vector by default
+    std::vector<int> vertexValence(g_bunnyMesh.getNumVertices());
 
-            // first triangle
-            vtx.push_back(VertexPN(face.getVertex(0).getPosition(), face.getNormal()));
-            vtx.push_back(VertexPN(face.getVertex(1).getPosition(), face.getNormal()));
-            vtx.push_back(VertexPN(face.getVertex(2).getPosition(), face.getNormal()));
+    // Step 1. Zero out all normals at each vertex
+    for (int i = 0; i < g_bunnyMesh.getNumVertices(); ++i) {
+        g_bunnyMesh.getVertex(i).setNormal(Cvec3(0, 0, 0));
+    }
 
-            // second triangle
-            vtx.push_back(VertexPN(face.getVertex(0).getPosition(), face.getNormal()));
-            vtx.push_back(VertexPN(face.getVertex(2).getPosition(), face.getNormal()));
-            vtx.push_back(VertexPN(face.getVertex(3).getPosition(), face.getNormal()));
+    // Step 2. Iterate through the faces, accumulate normal to adjacent vertices
+    for (int i = 0; i < g_bunnyMesh.getNumFaces(); ++i) {
+        Mesh::Face face = g_bunnyMesh.getFace(i);
+
+        for (int j = 0; j < face.getNumVertices(); ++j) {
+            Mesh::Vertex currentVertex = face.getVertex(j);
+            Cvec3 currentVertexNormal = currentVertex.getNormal();
+            currentVertexNormal += face.getNormal();
+            currentVertex.setNormal(currentVertexNormal);
+
+            // increase the number of vertex valence
+            vertexValence[currentVertex.getIndex()] += 1;
         }
     }
 
-    else {
-        // Smooth shading.
-        // Normal of each vertex will be calculated by
-        // averaging adjacent faces' normals
+    // Step 3. Visit each vertex and divide normal by valence (averaging)
+    for (int i = 0; i < g_bunnyMesh.getNumVertices(); ++i) {
+        Mesh::Vertex currentVertex = g_bunnyMesh.getVertex(i);
+        Cvec3 currentVertexNormal = currentVertex.getNormal();
+        currentVertexNormal /= vertexValence[currentVertex.getIndex()];
+        currentVertex.setNormal(currentVertexNormal);
+    }
 
-        // container for accumulating valence for each vertex;
-        std::vector<int> vertexValence(mesh->getNumVertices());
+    // Iterate over faces, put associated vertex & normal in the vector
+    for (int i = 0; i < g_bunnyMesh.getNumFaces(); ++i) {
+        Mesh::Face face = g_bunnyMesh.getFace(i);
 
-        // Step 1. Zero out all normals
-        for (int i = 0; i < mesh->getNumVertices(); ++i) {
-            mesh->getVertex(i).setNormal(Cvec3(0, 0, 0));
-        }
-
-        // Step 2. Iterate through the faces, accumulate normal to adjacent vertices
-        for (int i = 0; i < mesh->getNumFaces(); ++i) {
-            Mesh::Face face = mesh->getFace(i);
-
-            for (int j = 0; j < face.getNumVertices(); ++j) {
-                Mesh::Vertex currentVertex = face.getVertex(j);
-                Cvec3 currentVertexNormal = currentVertex.getNormal();
-                currentVertexNormal += face.getNormal();
-                currentVertex.setNormal(currentVertexNormal);
-
-                vertexValence[currentVertex.getIndex()] += 1;
-            }
-        }
-
-        // Step 3. Visit each vertex and divide normal by valence
-        for (int i = 0; i < mesh->getNumVertices(); ++i) {
-            Mesh::Vertex currentVertex = mesh->getVertex(i);
-            Cvec3 currentVertexNormal = currentVertex.getNormal();
-            currentVertexNormal /= vertexValence[currentVertex.getIndex()];
-            currentVertex.setNormal(currentVertexNormal);
-        }
-
-        // Iterate over faces, put associated vertex & normal in the vector
-        for (int i = 0; i < mesh->getNumFaces(); ++i) {
-            Mesh::Face face = mesh->getFace(i);
-
-            // first triangle
-            vtx.push_back(VertexPN(face.getVertex(0).getPosition(), face.getVertex(0).getNormal()));
-            vtx.push_back(VertexPN(face.getVertex(1).getPosition(), face.getVertex(1).getNormal()));
-            vtx.push_back(VertexPN(face.getVertex(2).getPosition(), face.getVertex(2).getNormal()));
-
-            // second triangle
-            vtx.push_back(VertexPN(face.getVertex(0).getPosition(), face.getVertex(0).getNormal()));
-            vtx.push_back(VertexPN(face.getVertex(2).getPosition(), face.getVertex(2).getNormal()));
-            vtx.push_back(VertexPN(face.getVertex(3).getPosition(), face.getVertex(3).getNormal()));
-        }
+        // push triangle parameters
+        vtx.push_back(VertexPN(face.getVertex(0).getPosition(), face.getVertex(0).getNormal()));
+        vtx.push_back(VertexPN(face.getVertex(1).getPosition(), face.getVertex(1).getNormal()));
+        vtx.push_back(VertexPN(face.getVertex(2).getPosition(), face.getVertex(2).getNormal()));
     }
 
     int vbLen = vtx.size();
 
-    geometry->upload(&vtx[0], vbLen);
+    g_bunnyGeometry->upload(&vtx[0], vbLen);
+
+    // Now allocate array of SimpleGeometryPNX to for shells, one per layer
+    g_bunnyShellGeometries.resize(g_numShells);
+    for (int i = 0; i < g_numShells; ++i) {
+        g_bunnyShellGeometries[i].reset(new SimpleGeometryPNX());
+    }
 }
 
 static void initGeometry() {
     initGround();
     initCubes();
     initSpheres();
-    g_refCube.reset(new SimpleGeometryPN());
-    g_dynamicCube.reset(new SimpleGeometryPN());
-    dumpMeshToGeometry(g_dynamicMesh, g_dynamicCube, g_isSmooth);
+    initBunnyMeshes();
 }
 
 static void constructRobot(shared_ptr<SgTransformNode> base, std::shared_ptr<Material> material) {
@@ -1083,9 +1089,19 @@ static void initScene() {
     g_light2Node->addChild(std::shared_ptr<MyShapeNode>(
         new MyShapeNode(g_sphere, g_lightMat, Cvec3(0, 0, 0))));
 
-    g_dynamicCubeNode.reset(new SgRbtNode(RigTForm(Cvec3(0, 0, 0))));
-    g_dynamicCubeNode->addChild(std::shared_ptr<MyShapeNode>(
-        new MyShapeNode(g_dynamicCube, g_purpleSpecularMat, Cvec3(0, 0, 0))));
+    // initialize bunnyNode
+    g_bunnyNode.reset(new SgRbtNode());
+    g_bunnyNode->addChild(shared_ptr<MyShapeNode>(
+        new MyShapeNode(g_bunnyGeometry, g_bunnyMat)));
+
+    // add each shell as shape node
+    for (int i = 0; i < g_numShells; ++i) {
+        g_bunnyNode->addChild(shared_ptr<MyShapeNode>(
+            new MyShapeNode(g_bunnyShellGeometries[i], g_bunnyShellMats[i])));
+    }
+
+    // from this point, calling g_bunnyShellGeometries[i]->reset(...) will change the
+    // geometry of the ith layer of shell that gets drawn
 
     g_robot1Node.reset(new SgRbtNode(RigTForm(Cvec3(-10, 1, 0))));
     g_robot2Node.reset(new SgRbtNode(RigTForm(Cvec3(10, 1, 0))));
@@ -1098,7 +1114,8 @@ static void initScene() {
     g_world->addChild(g_groundNode);
     g_world->addChild(g_light1Node);
     g_world->addChild(g_light2Node);
-    g_world->addChild(g_dynamicCubeNode);
+    // g_world->addChild(g_dynamicCubeNode);
+    g_world->addChild(g_bunnyNode);
     g_world->addChild(g_robot1Node);
     g_world->addChild(g_robot2Node);
 
@@ -1124,10 +1141,13 @@ int main(int argc, char* argv[]) {
 
         initGLState();
         initMaterials();
-        loadMeshs();
         initGeometry();
         initScene();
+        /*
+        * Artifact of assignment 8
         glutTimerFunc(1000 / g_animationFramesPerSecond, randomScaleTimerCallback, 0);
+        */
+        // initSimulation();
         glutMainLoop();
         return 0;
     }
