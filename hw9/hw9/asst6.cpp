@@ -158,13 +158,41 @@ g_tipVelocity;   // should be hair tip velocity in world-space coordinates
 
 // Fur simulations
 
-/*
+
 // Specifying shell geometries based on g_tipPos, g_furHeight, and g_numShells.
 // You need to call this function whenver the shell needs to be updated
 static void updateShellGeometry() {
-    // TASK 1 and 3 TODO: finish this function as part of Task 1 and Task 3
+
+    for (int i = 0; i < g_numShells; ++i) {
+        // base mesh object
+        Mesh bunnyBaseMesh(g_bunnyMesh);
+
+        // translate all vertices by proper offset
+        for (int j = 0; j < bunnyBaseMesh.getNumVertices(); ++j) {
+            Cvec3 p = bunnyBaseMesh.getVertex(j).getPosition();
+            Cvec3 offset = bunnyBaseMesh.getVertex(j).getNormal() * (i + 1) * (g_furHeight / static_cast<float>(g_numShells));
+            bunnyBaseMesh.getVertex(j).setPosition(p + offset);
+        }
+
+        // initialize vector for holding VertexPNX objects
+        std::vector<VertexPNX> vtx;
+
+        // Iterate over faces, put associated vertex & normal in the vector
+        for (int k = 0; k < bunnyBaseMesh.getNumFaces(); ++k) {
+            Mesh::Face face = bunnyBaseMesh.getFace(k);
+
+            // push triangle parameters - position, normal, and texture coordinate (simply unit isosceles triangle)
+            vtx.push_back(VertexPNX(face.getVertex(0).getPosition(), face.getVertex(0).getNormal(), Cvec2(0.0, 0.0)));
+            vtx.push_back(VertexPNX(face.getVertex(1).getPosition(), face.getVertex(1).getNormal(), Cvec2(0.5, 1.0)));
+            vtx.push_back(VertexPNX(face.getVertex(2).getPosition(), face.getVertex(2).getNormal(), Cvec2(1.0, 0.0)));
+        }
+
+        int vbLen = vtx.size();
+        g_bunnyShellGeometries[i]->upload(&vtx[0], vbLen);
+    }
 }
 
+/*
 // New glut timer call back that perform dynamics simulation
 // every g_simulationsPerSecond times per second
 static void hairsSimulationCallback(int dontCare) {
@@ -928,7 +956,6 @@ static void initBunnyMeshes() {
     // reset geometry
     g_bunnyGeometry.reset(new SimpleGeometryPN());
 
-    // TODO: Init the per vertex normal of g_bunnyMesh, using codes from asst7
     std::vector<VertexPN> vtx;
 
     // Bunny geometry should use smooth vector by default
@@ -958,7 +985,12 @@ static void initBunnyMeshes() {
     for (int i = 0; i < g_bunnyMesh.getNumVertices(); ++i) {
         Mesh::Vertex currentVertex = g_bunnyMesh.getVertex(i);
         Cvec3 currentVertexNormal = currentVertex.getNormal();
-        currentVertexNormal /= vertexValence[currentVertex.getIndex()];
+        if (vertexValence[currentVertex.getIndex()] > 0) {
+            currentVertexNormal /= vertexValence[currentVertex.getIndex()];
+        }
+        else {
+            currentVertexNormal = Cvec3(0, 0, 0);
+        }
         currentVertex.setNormal(currentVertexNormal);
     }
 
@@ -988,6 +1020,7 @@ static void initGeometry() {
     initCubes();
     initSpheres();
     initBunnyMeshes();
+    updateShellGeometry();
 }
 
 static void constructRobot(shared_ptr<SgTransformNode> base, std::shared_ptr<Material> material) {
@@ -1114,7 +1147,6 @@ static void initScene() {
     g_world->addChild(g_groundNode);
     g_world->addChild(g_light1Node);
     g_world->addChild(g_light2Node);
-    // g_world->addChild(g_dynamicCubeNode);
     g_world->addChild(g_bunnyNode);
     g_world->addChild(g_robot1Node);
     g_world->addChild(g_robot2Node);
@@ -1143,10 +1175,6 @@ int main(int argc, char* argv[]) {
         initMaterials();
         initGeometry();
         initScene();
-        /*
-        * Artifact of assignment 8
-        glutTimerFunc(1000 / g_animationFramesPerSecond, randomScaleTimerCallback, 0);
-        */
         // initSimulation();
         glutMainLoop();
         return 0;
