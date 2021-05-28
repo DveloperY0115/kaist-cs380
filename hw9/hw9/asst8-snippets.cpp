@@ -87,7 +87,7 @@ static void initMaterials() {
 static void initGeometry() {
   ...
 
-  initBunnyMeshes();
+  initBunnyMeshes();.
 }
 
 // Create corresponding scene graph nodes

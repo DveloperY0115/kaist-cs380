@@ -183,8 +183,8 @@ static void updateShellGeometry() {
 
             // push triangle parameters - position, normal, and texture coordinate (simply unit isosceles triangle)
             vtx.push_back(VertexPNX(face.getVertex(0).getPosition(), face.getVertex(0).getNormal(), Cvec2(0.0, 0.0)));
-            vtx.push_back(VertexPNX(face.getVertex(1).getPosition(), face.getVertex(1).getNormal(), Cvec2(0.5, 1.0)));
-            vtx.push_back(VertexPNX(face.getVertex(2).getPosition(), face.getVertex(2).getNormal(), Cvec2(1.0, 0.0)));
+            vtx.push_back(VertexPNX(face.getVertex(1).getPosition(), face.getVertex(1).getNormal(), Cvec2(g_hairyness, 0.0)));
+            vtx.push_back(VertexPNX(face.getVertex(2).getPosition(), face.getVertex(2).getNormal(), Cvec2(0.0, g_hairyness)));
         }
 
         int vbLen = vtx.size();
@@ -395,6 +395,8 @@ static void animateTimerCallback(int ms) {
 
 static void display() {
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);                   // clear framebuffer color&depth
+
+  updateShellGeometry();
 
   drawStuff(g_isPicking);
 
