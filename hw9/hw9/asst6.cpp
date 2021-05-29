@@ -164,18 +164,23 @@ g_tipVelocity;   // should be hair tip velocity in world-space coordinates
 // You need to call this function whenver the shell needs to be updated
 static void updateShellGeometry() {
 
-    // need to modify this for simulation!
     for (int i = 0; i < g_numShells; ++i) {
         // base mesh object
         Mesh bunnyBaseMesh(g_bunnyMesh);
 
         RigTForm invBunnyFrame = inv(getPathAccumRbt(g_world, g_bunnyNode));     // used to bring hair tip, velocity in world frame to object frame
 
+        // TASK 3 TODO. each shell has slightly different offset for curvy hair!
         // translate all vertices by proper offset
+
+        
+
         for (int j = 0; j < bunnyBaseMesh.getNumVertices(); ++j) {
-            Cvec3 p = bunnyBaseMesh.getVertex(j).getPosition();
-            Cvec3 tip = Cvec3(invBunnyFrame * Cvec4(g_tipPos[j], 1.0));
-            Cvec3 offset = (tip - p) * (i + 1) * (g_furHeight / static_cast<float>(g_numShells));
+            Cvec3 p = bunnyBaseMesh.getVertex(j).getPosition();    // root of the hair in object frame
+            Cvec3 tip = Cvec3(invBunnyFrame * Cvec4(g_tipPos[j], 1.0));    // tip of the hair in object frame
+            Cvec3 n = bunnyBaseMesh.getVertex(j).getNormal() * (g_furHeight / static_cast<float>(g_numShells));    // scaled unit normal in object frame
+            Cvec3 d = (tip - p - n * g_numShells) * (2 / static_cast<float>(g_numShells * (g_numShells - 1)));    // constant displacement vector for curvy hair
+            Cvec3 offset = n * i + d * ((i * (i - 1)) / static_cast<float>(2));    // offset vector for each vertex in each shell
             bunnyBaseMesh.getVertex(j).setPosition(p + offset);
         }
 
@@ -203,8 +208,6 @@ static void updateShellGeometry() {
 // New glut timer call back that perform dynamics simulation
 // every g_simulationsPerSecond times per second
 static void hairsSimulationCallback(int dontCare) {
-
-    // TASK 2 TODO: wrte dynamics simulation code here as part of TASK2
     
     // NOTE! 
     // All calculations are done in wobject frame
