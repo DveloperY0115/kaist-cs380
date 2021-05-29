@@ -144,6 +144,7 @@ static bool g_playing = false;
 
 // Assignment 9
 // Global variables for used physical simulation
+static bool g_shellNeedsUpdate = false;
 static const Cvec3 g_gravity(0, -0.5, 0);  // gavity vector
 static double g_timeStep = 0.02;
 static double g_numStepsPerFrame = 10;
@@ -163,14 +164,18 @@ g_tipVelocity;   // should be hair tip velocity in world-space coordinates
 // You need to call this function whenver the shell needs to be updated
 static void updateShellGeometry() {
 
+    // need to modify this for simulation!
     for (int i = 0; i < g_numShells; ++i) {
         // base mesh object
         Mesh bunnyBaseMesh(g_bunnyMesh);
 
+        RigTForm invBunnyFrame = inv(getPathAccumRbt(g_world, g_bunnyNode));     // used to bring hair tip, velocity in world frame to object frame
+
         // translate all vertices by proper offset
         for (int j = 0; j < bunnyBaseMesh.getNumVertices(); ++j) {
             Cvec3 p = bunnyBaseMesh.getVertex(j).getPosition();
-            Cvec3 offset = bunnyBaseMesh.getVertex(j).getNormal() * (i + 1) * (g_furHeight / static_cast<float>(g_numShells));
+            Cvec3 tip = Cvec3(invBunnyFrame * Cvec4(g_tipPos[j], 1.0));
+            Cvec3 offset = (tip - p) * (i + 1) * (g_furHeight / static_cast<float>(g_numShells));
             bunnyBaseMesh.getVertex(j).setPosition(p + offset);
         }
 
@@ -190,19 +195,51 @@ static void updateShellGeometry() {
         int vbLen = vtx.size();
         g_bunnyShellGeometries[i]->upload(&vtx[0], vbLen);
     }
+
+    g_shellNeedsUpdate = false;
 }
 
-/*
+
 // New glut timer call back that perform dynamics simulation
 // every g_simulationsPerSecond times per second
 static void hairsSimulationCallback(int dontCare) {
 
     // TASK 2 TODO: wrte dynamics simulation code here as part of TASK2
+    
+    // NOTE! 
+    // All calculations are done in wobject frame
+    // and then converted to world frame
 
-    ...
+    // get object frame of bunny in the scene
+    RigTForm bunnyFrame = getPathAccumRbt(g_world, g_bunnyNode);
 
-        // schedule this to get called again
-        glutTimerFunc(1000 / g_simulationsPerSecond, hairsSimulationCallback, 0);
+    for (int step = 0; step < g_numStepsPerFrame; ++step) {
+        for (int i = 0; i < g_tipPos.size(); ++i) {
+
+            // Step 0. Initialize variables
+            Cvec3 vertexPos = Cvec3(bunnyFrame * Cvec4(g_bunnyMesh.getVertex(i).getPosition(), 1.0));    // p    (world frame)
+            Cvec3 straightTip = Cvec3(bunnyFrame * Cvec4(g_bunnyMesh.getVertex(i).getPosition() + g_bunnyMesh.getVertex(i).getNormal() * g_furHeight, 1.0));    // s    (world frame)
+            Cvec3 hairTip = g_tipPos[i];    // t    (world frame)
+            Cvec3 gravity = g_gravity;    // g    (world frame)
+
+            // Step 1. Calculate net force on a fur
+            Cvec3 netForce = gravity + (straightTip - hairTip) * g_stiffness;
+
+            // Step 2. Update tip position
+            g_tipPos[i] += g_tipVelocity[i] * g_timeStep;
+
+            // Step 3. Apply constraint on tip position
+            g_tipPos[i] = vertexPos + normalize(g_tipPos[i] - vertexPos) * g_furHeight;
+
+            // Step 4. Update velocity
+            g_tipVelocity[i] = (g_tipVelocity[i] + netForce * g_timeStep) * g_damping;
+        }
+    }
+
+    g_shellNeedsUpdate = true;
+
+    // schedule this to get called again
+    glutTimerFunc(1000 / g_simulationsPerSecond, hairsSimulationCallback, 0);
     glutPostRedisplay(); // signal redisplaying
 }
 
@@ -211,15 +248,20 @@ static void initSimulation() {
     g_tipPos.resize(g_bunnyMesh.getNumVertices(), Cvec3(0));
     g_tipVelocity = g_tipPos;
 
+    // get object frame of bunny in the scene
+    RigTForm bunnyFrame = getPathAccumRbt(g_world, g_bunnyNode);
+
     // TASK 1 TODO: initialize g_tipPos to "at-rest" hair tips in world coordinates
+    for (int i = 0; i < g_bunnyMesh.getNumVertices(); ++i) {
+        Cvec4 vertexTip = Cvec4(g_bunnyMesh.getVertex(i).getPosition() + g_bunnyMesh.getVertex(i).getNormal() * g_furHeight, 1);    // NOTE! object coordinate
+        vertexTip = bunnyFrame * vertexTip;    // convert to world frame
+        g_tipPos[i] = Cvec3(vertexTip);
+    }
 
-    ...
-
-        // Starts hair tip simulation
-        hairsSimulationCallback(0);
+    // Starts hair tip simulation
+    hairsSimulationCallback(0);
 }
-*/
-
+ 
 //! Geometry primitives initialization
 static void initGround() {
     int ibLen, vbLen;
@@ -300,6 +342,10 @@ static void drawStuff(bool picking) {
 
     uniforms.put("uLight", eyeLight1);
     uniforms.put("uLight2", eyeLight2);
+
+    if (g_shellNeedsUpdate) {
+        updateShellGeometry();
+    }
 
     if (!picking) {
         Drawer drawer(invEyeRbt, uniforms);
@@ -1022,7 +1068,6 @@ static void initGeometry() {
     initCubes();
     initSpheres();
     initBunnyMeshes();
-    updateShellGeometry();
 }
 
 static void constructRobot(shared_ptr<SgTransformNode> base, std::shared_ptr<Material> material) {
@@ -1177,7 +1222,7 @@ int main(int argc, char* argv[]) {
         initMaterials();
         initGeometry();
         initScene();
-        // initSimulation();
+        initSimulation();
         glutMainLoop();
         return 0;
     }

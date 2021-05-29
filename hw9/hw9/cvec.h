@@ -155,7 +155,10 @@ inline T norm(const Cvec<T, n>& v) {
 // function version v.normalize() ).
 template<typename T, int n>
 inline Cvec<T, n> normalize(const Cvec<T,n>& v) {
-  assert(dot(v, v) > CS175_EPS2);
+ //  assert(dot(v, v) > CS175_EPS2);
+  if (dot(v, v) < CS175_EPS2) {
+      return Cvec<T, n>(0);
+  }
   return v / norm(v);
 }
 
